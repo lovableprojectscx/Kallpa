@@ -1,0 +1,235 @@
+import React, { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Dumbbell, Eye, EyeOff, Mail, Lock, Loader2, ArrowRight, User, Gift } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
+
+const Register = () => {
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [referralCode, setReferralCode] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { setTenantId } = useAuth(); // Might need to clear or prepare for onboarding
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+
+    React.useEffect(() => {
+        const ref = searchParams.get("ref");
+        if (ref) {
+            setReferralCode(ref.toUpperCase());
+        }
+    }, [searchParams]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!email || !password || !name) {
+            toast.error("Por favor completa todos los campos requeridos");
+            return;
+        }
+
+        if (password.length < 6) {
+            toast.error("La contraseña debe tener al menos 6 caracteres");
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            // 1. SignUp en Supabase Auth
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        name: name, // Se guarda en user_metadata
+                    }
+                }
+            });
+
+            if (error) {
+                toast.error("Error al registrarse: " + error.message);
+                return;
+            }
+
+            if (data.user) {
+                // Enlazar código de referido si se proporciona
+                if (referralCode.trim()) {
+                    try {
+                        const { data: aff } = await supabase
+                            .from('affiliates')
+                            .select('id')
+                            .eq('code', referralCode.trim().toUpperCase())
+                            .single();
+
+                        if (aff) {
+                            await supabase
+                                .from('profiles')
+                                .update({ referred_by: aff.id })
+                                .eq('id', data.user.id);
+                        }
+                    } catch (err) {
+                        console.error("Error linking affiliate:", err);
+                    }
+                }
+
+                // Si la confirmación de correo está activada en Supabase, indicarlo:
+                if (data.session === null) {
+                    toast.success("¡Registro exitoso! Por favor, verifica tu correo electrónico para confirmar tu cuenta.");
+                    navigate("/login");
+                } else {
+                    toast.success("¡Bienvenido a KALLPA! Tu cuenta ha sido creada.");
+                    // Redirigir al onboarding, que se encargaría AuthGuard automáticamente al detectar login sin tenant
+                    navigate("/onboarding", { replace: true });
+                }
+            }
+        } catch (error) {
+            toast.error("Error inesperado al crear tu cuenta");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen w-full bg-background flex items-center justify-center p-4 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-full pointer-events-none -z-10 overflow-hidden">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-coral/10 rounded-full blur-[120px]" />
+            </div>
+
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                className="w-full max-w-[400px] space-y-8"
+            >
+                <div className="text-center space-y-2">
+                    <div className="flex justify-center mb-6">
+                        <Link to="/login">
+                            <motion.div
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="h-16 w-16 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 mx-auto"
+                            >
+                                <Dumbbell className="h-8 w-8 text-primary-foreground" />
+                            </motion.div>
+                        </Link>
+                    </div>
+                    <h1 className="text-3xl font-display tracking-tight text-foreground">Crear Cuenta</h1>
+                    <p className="text-sm text-muted-foreground uppercase tracking-[0.2em] font-medium">Digitaliza tu negocio</p>
+                </div>
+
+                <div className="rounded-2xl border bg-card/40 text-card-foreground shadow-2xl backdrop-blur-xl p-6 sm:p-8">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Nombre Completo</Label>
+                            <div className="relative group">
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                <Input
+                                    id="name"
+                                    type="text"
+                                    placeholder="Ej. Carlos Mendoza"
+                                    className="pl-10 bg-secondary/30 border-border/50 focus:ring-primary/20 h-11"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="email">Correo Electrónico Oficial</Label>
+                            <div className="relative group">
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="admin@mugym.com"
+                                    className="pl-10 bg-secondary/30 border-border/50 focus:ring-primary/20 h-11"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="password">Contraseña Segura</Label>
+                            <div className="relative group">
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                <Input
+                                    id="password"
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="Mínimo 6 caracteres"
+                                    className="pl-10 pr-10 bg-secondary/30 border-border/50 focus:ring-primary/20 h-11"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    disabled={isSubmitting}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="referralCode">Código de Invitación (Opcional)</Label>
+                            <div className="relative group">
+                                <Gift className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                <Input
+                                    id="referralCode"
+                                    type="text"
+                                    placeholder="Ej. GYM-A1B2C3"
+                                    className="pl-10 uppercase bg-secondary/30 border-border/50 focus:ring-primary/20 h-11"
+                                    value={referralCode}
+                                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+                        </div>
+
+                        <Button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className={cn(
+                                "w-full h-11 text-sm font-semibold transition-all duration-300 gap-2",
+                                isSubmitting ? "bg-secondary text-muted-foreground" : "bg-primary text-primary-foreground hover:opacity-90 active:scale-[0.98] glow-volt"
+                            )}
+                        >
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Generando entorno...
+                                </>
+                            ) : (
+                                <>
+                                    Registrarme Gratis
+                                    <ArrowRight className="h-4 w-4" />
+                                </>
+                            )}
+                        </Button>
+
+                        <div className="text-center pt-2">
+                            <span className="text-xs text-muted-foreground">¿Ya tienes tu gimnasio en KALLPA? </span>
+                            <Link to="/login" className="text-xs text-primary font-bold hover:underline">
+                                Iniciar Sesión
+                            </Link>
+                        </div>
+                    </form>
+                </div>
+            </motion.div>
+        </div>
+    );
+};
+
+export default Register;
