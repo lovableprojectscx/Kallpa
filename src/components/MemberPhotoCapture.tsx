@@ -35,8 +35,8 @@ const MemberPhotoCapture = ({ onPhotoCaptured, existingPhotoUrl, className }: Me
     };
 
     return (
-        <div className={cn("relative group w-full max-w-[180px] mx-auto", className)}>
-            <div className="relative aspect-square w-full rounded-[2.5rem] overflow-hidden bg-secondary/30 ring-2 ring-border/50 group-hover:ring-primary/30 transition-all shadow-2xl">
+        <div className={cn("relative group w-full max-w-[120px]", className)}>
+            <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-secondary/30 ring-2 ring-border/50 group-hover:ring-primary/30 transition-all shadow-lg flex items-center justify-center">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={previewUrl ? "filled" : "empty"}
@@ -58,28 +58,27 @@ const MemberPhotoCapture = ({ onPhotoCaptured, existingPhotoUrl, className }: Me
                         ) : (
                             <div
                                 onClick={() => fileInputRef.current?.click()}
-                                className="flex flex-col items-center gap-3 text-muted-foreground p-4 text-center cursor-pointer w-full h-full hover:bg-secondary/40 transition-colors"
+                                className="flex flex-col items-center justify-center gap-1.5 text-muted-foreground p-2 text-center cursor-pointer w-full h-full hover:bg-secondary/40 transition-colors"
                             >
-                                <div className="p-4 rounded-full bg-secondary/50 group-hover:bg-primary/10 transition-colors">
-                                    <Image className="h-10 w-10 opacity-20 group-hover:opacity-40 transition-opacity" />
+                                <div className="p-2 rounded-full bg-secondary/50 group-hover:bg-primary/10 transition-colors">
+                                    <Image className="h-6 w-6 opacity-30 group-hover:opacity-50 transition-opacity" />
                                 </div>
-                                <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">Subir Foto</span>
+                                <span className="text-[8px] font-bold uppercase tracking-widest opacity-40">Subir</span>
                             </div>
                         )}
                     </motion.div>
                 </AnimatePresence>
             </div>
 
-            <div className="flex justify-center gap-2 mt-4 w-full">
+            <div className="flex justify-center gap-2 mt-2 w-full">
                 <Button
                     type="button"
-                    variant="outline"
+                    variant="link"
                     size="sm"
-                    className="flex-1 h-10 text-[10px] font-bold uppercase tracking-widest gap-2 border-border/40 bg-secondary/10 rounded-2xl hover:bg-secondary/20 transition-all"
+                    className="h-6 text-[9px] font-bold uppercase tracking-widest text-primary/60 hover:text-primary transition-all p-0"
                     onClick={() => fileInputRef.current?.click()}
                 >
-                    <Upload className="h-4 w-4 text-primary" />
-                    {previewUrl ? "Cambiar Foto" : "Seleccionar Foto"}
+                    {previewUrl ? "Cambiar" : "Elegir archivo"}
                 </Button>
             </div>
 

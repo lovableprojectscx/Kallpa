@@ -544,29 +544,33 @@ const Members = () => {
       {/* Modal: Crear Nuevo Miembro */}
       <Dialog open={isNewMemberOpen} onOpenChange={setIsNewMemberOpen}>
         <DialogContent className="sm:max-w-[480px] p-0 border-border/50 bg-card rounded-3xl overflow-hidden shadow-2xl max-h-[96vh] flex flex-col">
-          <div className="px-6 py-6 border-b border-border/50 bg-secondary/10 flex flex-col items-center gap-6 text-center shrink-0">
-            <MemberPhotoCapture onPhotoCaptured={setPhotoFile} />
+          <div className="px-6 py-5 border-b border-border/50 bg-secondary/10 flex items-center justify-between shrink-0">
             <div>
-              <h2 className="text-xl font-bold text-foreground flex items-center justify-center gap-2">
+              <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                 <UserPlus className="h-5 w-5 text-primary" />
                 Registrar Miembro
               </h2>
-              <p className="text-xs text-muted-foreground mt-1 font-medium">
-                Captura una foto profesional para el pase digital.
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-0.5 opacity-50">
+                Pase Digital Kallpa
               </p>
             </div>
           </div>
 
-          <div className="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
-            <div className="space-y-2">
-              <Label htmlFor="fullname">Nombre Completo <span className="text-coral">*</span></Label>
-              <Input
-                id="fullname"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Ej. Juan Pérez"
-                className="bg-secondary/30"
-              />
+          <div className="p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
+            <div className="flex flex-col sm:flex-row gap-6 items-start">
+              <MemberPhotoCapture onPhotoCaptured={setPhotoFile} className="shrink-0" />
+              <div className="flex-1 w-full space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fullname">Nombre Completo <span className="text-coral">*</span></Label>
+                  <Input
+                    id="fullname"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Ej. Juan Pérez"
+                    className="bg-secondary/30 h-11"
+                  />
+                </div>
+              </div>
             </div>
 
 
@@ -703,22 +707,27 @@ const Members = () => {
       {/* Modal: Editar Miembro */}
       <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
         <DialogContent className="sm:max-w-md p-0 border-border/50 bg-card rounded-3xl overflow-hidden shadow-2xl max-h-[96vh] flex flex-col">
-          <div className="px-6 py-6 border-b border-border/50 bg-secondary/10 flex flex-col items-center gap-6 text-center shrink-0">
-            <MemberPhotoCapture
-              onPhotoCaptured={setPhotoFile}
-              existingPhotoUrl={editingMember?.photo_url}
-            />
+          <div className="px-6 py-5 border-b border-border/50 bg-secondary/10 flex items-center justify-between shrink-0">
             <div>
-              <h2 className="text-lg font-bold text-foreground flex items-center justify-center gap-2">
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
                 <Pencil className="h-4 w-4 text-primary" /> Editar Miembro
               </h2>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-1 opacity-50">Configura el acceso del socio</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-0.5 opacity-50">Actualizar registro</p>
             </div>
           </div>
-          <div className="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
-            <div className="space-y-2">
-              <Label>Nombre Completo</Label>
-              <Input value={editForm.full_name} onChange={e => setEditForm({ ...editForm, full_name: e.target.value })} className="bg-secondary/30" />
+          <div className="p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
+            <div className="flex flex-col sm:flex-row gap-6 items-start border-b border-border/10 pb-6">
+              <MemberPhotoCapture
+                onPhotoCaptured={setPhotoFile}
+                existingPhotoUrl={editingMember?.photo_url}
+                className="shrink-0"
+              />
+              <div className="flex-1 w-full space-y-4">
+                <div className="space-y-2">
+                  <Label>Nombre Completo</Label>
+                  <Input value={editForm.full_name} onChange={e => setEditForm({ ...editForm, full_name: e.target.value })} className="bg-secondary/20 h-11" />
+                </div>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
