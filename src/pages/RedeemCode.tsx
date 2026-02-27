@@ -77,7 +77,7 @@ const RedeemCode = () => {
                 months_added: 1
             });
 
-            // Extender la licencia activa en 1 mes
+            // Extender la licencia activa o crear una nueva si no existe
             if (user?.tenantId) {
                 const { data: lic } = await supabase
                     .from('licenses')
@@ -86,11 +86,23 @@ const RedeemCode = () => {
                     .eq('status', 'redeemed')
                     .order('redeemed_at', { ascending: false })
                     .limit(1)
-                    .single();
+                    .maybeSingle();
+
                 if (lic) {
+                    // Extender existente
                     await supabase.from('licenses').update({
                         duration_months: (lic.duration_months || 1) + 1
                     }).eq('id', lic.id);
+                } else {
+                    // Crear nueva ya canjeada
+                    await supabase.from('licenses').insert({
+                        code: `AFF-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+                        duration_months: 1,
+                        status: 'redeemed',
+                        redeemed_by: user.tenantId,
+                        redeemed_at: new Date().toISOString(),
+                        label: 'Canje de Créditos de Afiliado'
+                    });
                 }
             }
             return 1;
