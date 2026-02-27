@@ -41,8 +41,7 @@ export default function Subscription() {
                 body: {
                     planDuration: months,
                     pricePen: pricePen,
-                    tenantId: user.tenantId,
-                    bypassAuth: "confirm_bypass_kallpa_2024"
+                    tenantId: user.tenantId
                 }
             });
 
