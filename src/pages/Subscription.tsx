@@ -210,7 +210,9 @@ export default function Subscription() {
                                         disabled={isProcessingPayment}
                                         className={`w-full mt-auto font-semibold transition-all shadow-md ${plan.popular ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-primary/20' : 'bg-secondary hover:bg-secondary/80 text-foreground'}`}
                                     >
-                                        {isProcessingPayment ? <Loader2 className="h-4 w-4 animate-spin" /> : `Renovar ${plan.months} Mes${plan.months > 1 ? 'es' : ''}`}
+                                        {isProcessingPayment
+                                            ? <Loader2 className="h-4 w-4 animate-spin" />
+                                            : `${hasActiveSubscription ? 'Renovar' : 'Comprar'} ${plan.months} Mes${plan.months > 1 ? 'es' : ''}`}
                                     </Button>
                                 </CardContent>
                             </Card>

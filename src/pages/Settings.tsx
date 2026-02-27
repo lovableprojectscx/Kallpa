@@ -516,11 +516,13 @@ const Settings = () => {
                         >
                           <div className="text-left">
                             <p className="font-bold text-lg">1 Mes</p>
-                            <p className="text-xs text-white/80">Suscripción mensual</p>
+                            <p className="text-xs text-white/80">{hasActiveSubscription ? "Renovación mensual" : "Suscripción mensual"}</p>
                           </div>
                           <div className="text-right">
                             <p className="font-display font-bold text-xl">S/ 49</p>
-                            <p className="text-[10px] text-white/70 uppercase">Pagar ahora</p>
+                            <p className="text-[10px] text-white/70 uppercase">
+                              {hasActiveSubscription ? "Renovar ahora" : "Comprar ahora"}
+                            </p>
                           </div>
                         </Button>
 
@@ -532,11 +534,13 @@ const Settings = () => {
                           <div className="absolute top-0 right-0 bg-success text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg">AHORRA 17%</div>
                           <div className="text-left">
                             <p className="font-bold text-lg">1 Año</p>
-                            <p className="text-xs text-white/80">Suscripción anual</p>
+                            <p className="text-xs text-white/80">{hasActiveSubscription ? "Renovación anual" : "Suscripción anual"}</p>
                           </div>
                           <div className="text-right">
                             <p className="font-display font-bold text-xl">S/ 490</p>
-                            <p className="text-[10px] text-white/70 uppercase">Pagar ahora</p>
+                            <p className="text-[10px] text-white/70 uppercase">
+                              {hasActiveSubscription ? "Renovar ahora" : "Comprar ahora"}
+                            </p>
                           </div>
                         </Button>
                       </div>
