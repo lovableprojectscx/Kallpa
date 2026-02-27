@@ -37,7 +37,7 @@ export default function Subscription() {
         if (!user?.tenantId) return;
         setIsProcessingPayment(true);
         try {
-            const { data, error } = await supabase.functions.invoke('create-mp-preference', {
+            const { data, error } = await supabase.functions.invoke('create-mp-preference-v3', {
                 body: {
                     planDuration: months,
                     pricePen: pricePen,

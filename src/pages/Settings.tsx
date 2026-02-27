@@ -166,7 +166,7 @@ const Settings = () => {
     setIsRedeeming(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('create-mp-preference', {
+      const { data, error } = await supabase.functions.invoke('create-mp-preference-v3', {
         body: {
           planDuration: months,
           pricePen: price,
