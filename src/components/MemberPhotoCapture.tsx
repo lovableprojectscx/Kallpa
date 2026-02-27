@@ -12,7 +12,7 @@ interface MemberPhotoCaptureProps {
     size?: "sm" | "md";
 }
 
-const MemberPhotoCapture = ({ onPhotoCaptured, existingPhotoUrl, className, size = "md" }: MemberPhotoCaptureProps) => {
+const MemberPhotoCapture = ({ onPhotoCaptured, existingPhotoUrl, className }: MemberPhotoCaptureProps) => {
     const [mode, setMode] = useState<"preview" | "camera" | "upload">("preview");
     const [previewUrl, setPreviewUrl] = useState<string | null>(existingPhotoUrl || null);
     const [isCapturing, setIsCapturing] = useState(false);
@@ -55,11 +55,8 @@ const MemberPhotoCapture = ({ onPhotoCaptured, existingPhotoUrl, className, size
     };
 
     return (
-        <div className={cn("relative group", className)}>
-            <div className={cn(
-                "relative aspect-square mx-auto rounded-3xl overflow-hidden bg-secondary/30 ring-2 ring-border/50 group-hover:ring-primary/30 transition-all",
-                size === "sm" ? "w-20 rounded-2xl" : "w-32"
-            )}>
+        <div className={cn("relative group w-full max-w-[180px] mx-auto", className)}>
+            <div className="relative aspect-square w-full rounded-[2.5rem] overflow-hidden bg-secondary/30 ring-2 ring-border/50 group-hover:ring-primary/30 transition-all shadow-2xl">
                 <AnimatePresence mode="wait">
                     {mode === "preview" && (
                         <motion.div
@@ -80,11 +77,11 @@ const MemberPhotoCapture = ({ onPhotoCaptured, existingPhotoUrl, className, size
                                     </button>
                                 </>
                             ) : (
-                                <div className="flex flex-col items-center gap-1 text-muted-foreground p-2 text-center">
-                                    <User className={cn("opacity-10", size === "sm" ? "h-6 w-6" : "h-10 w-10")} />
-                                    <span className={cn("font-bold uppercase tracking-wider opacity-30", size === "sm" ? "text-[7px]" : "text-[9px]")}>
-                                        {size === "sm" ? "Foto" : "Foto Opcional"}
-                                    </span>
+                                <div className="flex flex-col items-center gap-3 text-muted-foreground p-4 text-center">
+                                    <div className="p-4 rounded-full bg-secondary/50">
+                                        <User className="h-10 w-10 opacity-20" />
+                                    </div>
+                                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-40">Foto de Perfil</span>
                                 </div>
                             )}
                         </motion.div>
@@ -118,36 +115,27 @@ const MemberPhotoCapture = ({ onPhotoCaptured, existingPhotoUrl, className, size
                 </AnimatePresence>
             </div>
 
-            <div className={cn(
-                "flex justify-center gap-2 mt-3 w-full",
-                size === "sm" && "mt-1.5"
-            )}>
+            <div className="flex justify-center gap-2 mt-4 w-full">
                 {mode === "preview" && (
                     <>
                         <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            className={cn(
-                                "flex-1 font-bold uppercase tracking-wider gap-1.5 border-border/40 bg-secondary/5 rounded-xl",
-                                size === "sm" ? "h-7 text-[8px] px-1" : "h-9 text-[10px]"
-                            )}
+                            className="flex-1 h-10 text-[10px] font-bold uppercase tracking-widest gap-2 border-border/40 bg-secondary/10 rounded-2xl hover:bg-secondary/20 transition-all"
                             onClick={() => setMode("camera")}
                         >
-                            <Camera className={cn("text-primary", size === "sm" ? "h-2.5 w-2.5" : "h-3.5 w-3.5")} />
+                            <Camera className="h-4 w-4 text-primary" />
                             Cámara
                         </Button>
                         <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            className={cn(
-                                "flex-1 font-bold uppercase tracking-wider gap-1.5 border-border/40 bg-secondary/5 rounded-xl",
-                                size === "sm" ? "h-7 text-[8px] px-1" : "h-9 text-[10px]"
-                            )}
+                            className="flex-1 h-10 text-[10px] font-bold uppercase tracking-widest gap-2 border-border/40 bg-secondary/10 rounded-2xl hover:bg-secondary/20 transition-all"
                             onClick={() => fileInputRef.current?.click()}
                         >
-                            <Upload className={cn("text-primary", size === "sm" ? "h-2.5 w-2.5" : "h-3.5 w-3.5")} />
+                            <Upload className="h-4 w-4 text-primary" />
                             Subir
                         </Button>
                     </>
