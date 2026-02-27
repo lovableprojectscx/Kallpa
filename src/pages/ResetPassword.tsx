@@ -71,9 +71,9 @@ const ResetPassword = () => {
                         <motion.div
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className="h-16 w-16 rounded-2xl bg-success flex items-center justify-center shadow-lg mx-auto"
+                            className="h-16 w-16 overflow-hidden flex items-center justify-center p-1 mx-auto"
                         >
-                            <Dumbbell className="h-8 w-8 text-white" />
+                            <img src="/logo.png" alt="Kallpa Logo" className="h-full w-full object-contain drop-shadow-sm glow-volt" />
                         </motion.div>
                     </div>
                     <h1 className="text-3xl font-display tracking-tight text-foreground">Nueva Contraseña</h1>

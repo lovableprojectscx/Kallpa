@@ -115,9 +115,9 @@ const Register = () => {
                             <motion.div
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="h-16 w-16 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 mx-auto"
+                                className="h-16 w-16 overflow-hidden flex items-center justify-center p-1 mx-auto"
                             >
-                                <Dumbbell className="h-8 w-8 text-primary-foreground" />
+                                <img src="/logo.png" alt="Kallpa Logo" className="h-full w-full object-contain drop-shadow-sm glow-volt" />
                             </motion.div>
                         </Link>
                     </div>
