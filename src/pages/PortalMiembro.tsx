@@ -197,9 +197,9 @@ export default function PortalMiembro() {
                     <div className="relative group">
                         <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-br from-primary to-violet-600 p-[2px] shadow-2xl shadow-primary/20">
                             <div className="w-full h-full rounded-[1.9rem] bg-[#0d0d15] flex items-center justify-center overflow-hidden">
-                                {data.photo_url ? (
+                                {(data as any).photo_url ? (
                                     <img
-                                        src={data.photo_url}
+                                        src={(data as any).photo_url}
                                         alt={data.full_name}
                                         className="w-full h-full object-cover"
                                     />
