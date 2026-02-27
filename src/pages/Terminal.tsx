@@ -24,7 +24,7 @@ const Terminal = () => {
       if (!user?.tenantId) return [];
       const { data, error } = await supabase
         .from('attendance')
-        .select('*, members(full_name, status)')
+        .select('*, members(full_name, status, photo_url)')
         .eq('tenant_id', user.tenantId)
         .order('check_in_time', { ascending: false })
         .limit(5);
@@ -188,7 +188,15 @@ const Terminal = () => {
                       className="flex items-center justify-between px-5 py-3 bg-card hover:bg-secondary/20 transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        <div className={cn("h-2.5 w-2.5 rounded-full shadow-sm", isOk ? "bg-success glow-green" : "bg-coral glow-red")} />
+                        {entry.members?.photo_url ? (
+                          <img
+                            src={entry.members.photo_url}
+                            alt={entry.members.full_name}
+                            className="h-8 w-8 rounded-lg object-cover shadow-sm ring-1 ring-border/30"
+                          />
+                        ) : (
+                          <div className={cn("h-2.5 w-2.5 rounded-full shadow-sm", isOk ? "bg-success glow-green" : "bg-coral glow-red")} />
+                        )}
                         <div className="flex flex-col">
                           <span className="text-sm font-medium text-foreground">{entry.members?.full_name || 'Desconocido'}</span>
                           {!isOk && <span className="text-[10px] text-coral font-semibold uppercase">Acceso Denegado</span>}

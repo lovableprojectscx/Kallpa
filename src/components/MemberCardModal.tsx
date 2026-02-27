@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, Share2, CheckCircle2, XCircle, Loader2, Dumbbell, Zap, Calendar, Sparkles } from "lucide-react";
+import { Download, Share2, CheckCircle2, XCircle, Loader2, Dumbbell, Zap, Calendar, Sparkles, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -16,6 +16,7 @@ interface MemberCardModalProps {
         status?: string;
         phone?: string;
         access_code?: string;
+        photo_url?: string;
     } | null;
     gymName?: string;
     onClose: () => void;
@@ -121,6 +122,17 @@ export function MemberCardModal({ member, gymName = "Kallpa", onClose }: MemberC
                             </div>
 
                             <div className="mt-auto relative z-10 flex items-end justify-between gap-4">
+                                <div className="flex shrink-0 items-center justify-center">
+                                    {member.photo_url ? (
+                                        <div className="h-24 w-24 rounded-2xl overflow-hidden border-2 border-white/20 shadow-lg glow-violet">
+                                            <img src={member.photo_url} alt={member.full_name} className="h-full w-full object-cover" crossOrigin="anonymous" />
+                                        </div>
+                                    ) : (
+                                        <div className="h-24 w-24 rounded-2xl bg-primary/10 flex items-center justify-center border-2 border-white/10">
+                                            <User className="h-10 w-10 text-primary opacity-50" />
+                                        </div>
+                                    )}
+                                </div>
                                 <div className="flex-1 space-y-4">
                                     <div className="space-y-1">
                                         <p className="text-[10px] font-bold text-white/30 tracking-widest uppercase mb-1">Titular del Pase</p>

@@ -193,10 +193,21 @@ export default function PortalMiembro() {
                     animate={{ opacity: 1, y: 0 }}
                     className="flex flex-col items-center text-center gap-4"
                 >
-                    <div className="relative">
-                        <div className="h-24 w-24 rounded-[32px] bg-gradient-to-br from-primary to-violet-600 p-[1px] shadow-2xl shadow-primary/20">
-                            <div className="h-full w-full rounded-[31px] bg-[#0d0d15] flex items-center justify-center text-3xl font-bold">
-                                {data.full_name.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
+                    {/* Perfil */}
+                    <div className="relative group">
+                        <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-br from-primary to-violet-600 p-[2px] shadow-2xl shadow-primary/20">
+                            <div className="w-full h-full rounded-[1.9rem] bg-[#0d0d15] flex items-center justify-center overflow-hidden">
+                                {data.photo_url ? (
+                                    <img
+                                        src={data.photo_url}
+                                        alt={data.full_name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <span className="text-3xl font-bold bg-gradient-to-br from-primary to-violet-600 bg-clip-text text-transparent">
+                                        {data.full_name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()}
+                                    </span>
+                                )}
                             </div>
                         </div>
                         <motion.div

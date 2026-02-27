@@ -18,6 +18,7 @@ import QRCode from "react-qr-code";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { MemberCardModal } from "@/components/MemberCardModal";
+import MemberPhotoCapture from "@/components/MemberPhotoCapture";
 
 const statusMap: Record<string, { label: string; className: string }> = {
   active: { label: "Activo", className: "bg-success/15 text-success" },
@@ -38,6 +39,7 @@ const Members = () => {
   const [email, setEmail] = useState("");
   const [plan, setPlan] = useState("basico");
   const [phone, setPhone] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   // QR Modal State
   const [generatedQRMember, setGeneratedQRMember] = useState<{ id: string, name: string, phone?: string } | null>(null);
@@ -129,6 +131,23 @@ const Members = () => {
     mutationFn: async () => {
       if (!requireSubscription()) throw new Error('sin_licencia');
       if (!user?.tenantId) throw new Error("No tenant ID");
+
+      let photoUrl = null;
+      if (photoFile) {
+        const fileExt = photoFile.name.split('.').pop();
+        const fileName = `${user.tenantId}/${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('member_photos')
+          .upload(fileName, photoFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('member_photos')
+          .getPublicUrl(fileName);
+        photoUrl = publicUrl;
+      }
+
       const selectedPlan = (membershipPlans as any[]).find(p => p.id === plan);
       const durationDays = selectedPlan?.duration_days || 30;
       const startDate = new Date();
@@ -144,6 +163,7 @@ const Members = () => {
           phone,
           status: 'active',
           tenant_id: user.tenantId,
+          photo_url: photoUrl,
           start_date: startDate.toISOString().split('T')[0],
           end_date: endDate.toISOString().split('T')[0]
         })
@@ -159,7 +179,7 @@ const Members = () => {
       setIsNewMemberOpen(false);
       setGeneratedQRMember({ id: data.id, name: data.full_name, phone: data.phone });
       // Reset form
-      setFullName(""); setEmail(""); setPlan("basico"); setPhone("");
+      setFullName(""); setEmail(""); setPlan("basico"); setPhone(""); setPhotoFile(null);
     },
     onError: (error: any) => {
       if (error.message !== 'sin_licencia') toast.error(error.message || "Error al registrar miembro");
@@ -170,6 +190,23 @@ const Members = () => {
   const updateMember = useMutation({
     mutationFn: async () => {
       if (!requireSubscription()) throw new Error('sin_licencia');
+
+      let photoUrl = editingMember?.photo_url;
+      if (photoFile) {
+        const fileExt = photoFile.name.split('.').pop();
+        const fileName = `${user?.tenantId}/${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('member_photos')
+          .upload(fileName, photoFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('member_photos')
+          .getPublicUrl(fileName);
+        photoUrl = publicUrl;
+      }
+
       const { error } = await supabase
         .from('members')
         .update({
@@ -178,6 +215,7 @@ const Members = () => {
           phone: editForm.phone,
           status: editForm.status,
           plan: editForm.plan,
+          photo_url: photoUrl,
           start_date: editForm.start_date || null,
           end_date: editForm.end_date || null
         })
@@ -188,6 +226,7 @@ const Members = () => {
       queryClient.invalidateQueries({ queryKey: ['members'] });
       toast.success('Miembro actualizado');
       setEditingMember(null);
+      setPhotoFile(null);
     },
     onError: (e: any) => { if (e.message !== 'sin_licencia') toast.error(e.message); },
   });
@@ -371,9 +410,17 @@ const Members = () => {
                       {/* Miembro */}
                       <div className="px-4 py-3 md:px-6 md:py-4 flex flex-row items-center justify-between md:justify-start gap-4">
                         <div className="flex items-center gap-3 md:gap-4 w-full overflow-hidden">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold shadow-sm">
-                            {initials}
-                          </div>
+                          {member.photo_url ? (
+                            <img
+                              src={member.photo_url}
+                              alt={member.full_name}
+                              className="h-10 w-10 shrink-0 rounded-xl object-cover shadow-sm ring-1 ring-border/50"
+                            />
+                          ) : (
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold shadow-sm">
+                              {initials}
+                            </div>
+                          )}
                           <div className="flex flex-col overflow-hidden w-full max-w-[80vw] md:max-w-none">
                             <span className="font-medium text-foreground truncate max-w-full">{member.full_name}</span>
                             <span className="text-[11px] text-muted-foreground truncate max-w-full">{member.email || member.phone || 'Sin contacto'}</span>
@@ -497,14 +544,17 @@ const Members = () => {
       {/* Modal: Crear Nuevo Miembro */}
       <Dialog open={isNewMemberOpen} onOpenChange={setIsNewMemberOpen}>
         <DialogContent className="sm:max-w-[450px] p-0 border-border/50 bg-card rounded-2xl overflow-hidden shadow-2xl">
-          <div className="px-6 py-6 border-b border-border/50 bg-secondary/20">
-            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-              <UserPlus className="h-5 w-5 text-primary" />
-              Registrar Miembro
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Ingresa los datos para generar su pase de acceso digital mediante código QR.
-            </p>
+          <div className="px-6 py-6 border-b border-border/50 bg-secondary/20 flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                <UserPlus className="h-5 w-5 text-primary" />
+                Registrar Miembro
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Ingresa los datos para generar el pase digital.
+              </p>
+            </div>
+            <MemberPhotoCapture onPhotoCaptured={setPhotoFile} className="shrink-0" />
           </div>
 
           <div className="p-6 space-y-4">
@@ -653,10 +703,17 @@ const Members = () => {
       {/* Modal: Editar Miembro */}
       <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
         <DialogContent className="sm:max-w-md p-0 border-border/50 bg-card rounded-3xl overflow-hidden shadow-2xl">
-          <div className="px-6 py-5 border-b border-border/50 bg-secondary/20">
-            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <Pencil className="h-5 w-5 text-primary" /> Editar Miembro
-            </h2>
+          <div className="px-6 py-5 border-b border-border/50 bg-secondary/20 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                <Pencil className="h-5 w-5 text-primary" /> Editar Miembro
+              </h2>
+            </div>
+            <MemberPhotoCapture
+              onPhotoCaptured={setPhotoFile}
+              existingPhotoUrl={editingMember?.photo_url}
+              className="shrink-0"
+            />
           </div>
           <div className="p-6 space-y-4">
             <div className="space-y-2">
@@ -772,7 +829,8 @@ const Members = () => {
           status: cardMember.status,
           phone: cardMember.phone,
           access_code: cardMember.access_code,
-        } : null}
+          photo_url: cardMember.photo_url
+        } as any : null}
         gymName={user?.email?.split('@')[0] ?? 'Kallpa'}
         onClose={() => setCardMember(null)}
       />
