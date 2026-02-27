@@ -45,7 +45,17 @@ export default function Subscription() {
                 }
             });
 
-            if (error) throw error;
+            if (error) {
+                // Tentar extraer detalle del error si viene en JSON
+                let detail = "";
+                try {
+                    const errorData = await error.context?.json();
+                    detail = errorData?.detail || errorData?.error || "";
+                } catch (e) { }
+
+                throw new Error(detail || error.message || "Error desconocido en el servidor");
+            }
+
             if (!data || !data.init_point) throw new Error("No se recibió link de pago");
 
             // Redirigir a Mercado Pago
@@ -53,7 +63,7 @@ export default function Subscription() {
 
         } catch (err: any) {
             console.error("Error creating MP preference:", err);
-            toast.error("No se pudo conectar con el sistema de pagos. " + err.message);
+            toast.error("Error de conexión: " + err.message, { duration: 6000 });
             setIsProcessingPayment(false);
         }
     };

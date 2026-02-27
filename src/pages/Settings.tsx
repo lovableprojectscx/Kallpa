@@ -174,7 +174,15 @@ const Settings = () => {
         }
       });
 
-      if (error) throw new Error(error.message);
+      if (error) {
+        let detail = "";
+        try {
+          const errorData = await error.context?.json();
+          detail = errorData?.detail || errorData?.error || "";
+        } catch (e) { }
+        throw new Error(detail || error.message || "Error desconocido");
+      }
+
       if (data?.init_point) {
         // Redirigir a Mercado Pago
         window.location.href = data.init_point;
@@ -182,7 +190,8 @@ const Settings = () => {
         throw new Error("No se pudo iniciar el proceso de pago.");
       }
     } catch (err: any) {
-      toast.error(err.message || 'Error al conectar con Mercado Pago');
+      toast.error("Error de conexión: " + err.message);
+    } finally {
       setIsRedeeming(false);
     }
   };
