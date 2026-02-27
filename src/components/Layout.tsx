@@ -11,7 +11,7 @@ export function Layout({ children }: LayoutProps) {
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AppSidebar />
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
           <header className="flex h-14 items-center justify-between border-b border-border/50 px-4">
             <div className="flex items-center gap-3">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
@@ -20,7 +20,7 @@ export function Layout({ children }: LayoutProps) {
                 <input
                   type="text"
                   placeholder="Buscar miembro..."
-                  className="h-8 w-64 rounded-lg border border-border/50 bg-secondary/50 pl-9 pr-3 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
+                  className="h-8 w-40 sm:w-64 rounded-lg border border-border/50 bg-secondary/50 pl-9 pr-3 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary/30"
                 />
               </div>
             </div>
@@ -28,7 +28,7 @@ export function Layout({ children }: LayoutProps) {
               {/* Espacio reservado para futuras utilidades del header derecho */}
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-6">
+          <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
             {children}
           </main>
         </div>

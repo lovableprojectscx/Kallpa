@@ -45,7 +45,7 @@ const ResetPassword = () => {
                 toast.error("Error al actualizar: " + error.message);
             } else {
                 toast.success("¡Tu contraseña ha sido actualizada!");
-                navigate("/");
+                navigate("/login");
             }
         } catch (error) {
             toast.error("Error inesperado al guardar la contraseña");

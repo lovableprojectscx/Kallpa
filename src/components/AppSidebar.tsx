@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 
 const mainNav = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Terminal", url: "/terminal", icon: ScanLine },
   { title: "Miembros", url: "/members", icon: Users },
   { title: "Planes", url: "/plans", icon: Tags },
@@ -67,7 +67,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={item.url}
-                      end={item.url === "/"}
+                      end={item.url === "/dashboard"}
                       className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-smooth hover:bg-secondary hover:text-foreground"
                       activeClassName="bg-primary/10 text-primary glow-volt"
                     >

@@ -102,8 +102,8 @@ const Staff = () => {
                 {/* Encabezado */}
                 <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                     <div>
-                        <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground">Gestión de Personal</h1>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <h1 className="font-display text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">Gestión de Personal</h1>
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                             {isLoading ? "Cargando..." : `Administra a los recepcionistas y empleados de tu sistema.`}
                         </p>
                     </div>
@@ -153,9 +153,11 @@ const Staff = () => {
                                     </tr>
                                 ) : filteredStaff.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} className="px-6 py-12 text-center text-muted-foreground flex-col items-center">
-                                            <Shield className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-                                            No tienes personal registrado. Haz clic en "Añadir Personal".
+                                        <td colSpan={5} className="px-6 py-10 sm:py-12 text-center text-muted-foreground">
+                                            <div className="flex flex-col items-center justify-center">
+                                                <Shield className="h-8 w-8 sm:h-10 sm:w-10 text-muted-foreground/30 mb-2 sm:mb-3" />
+                                                <span className="text-xs sm:text-sm">No tienes personal registrado. Haz clic en "Añadir Personal".</span>
+                                            </div>
                                         </td>
                                     </tr>
                                 ) : (

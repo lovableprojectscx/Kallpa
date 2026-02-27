@@ -75,12 +75,12 @@ export function RetentionPanel() {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.2, ease: [0.4, 0, 0.2, 1] }}
-      className="rounded-xl border border-border/50 bg-card overflow-hidden"
+      className="rounded-xl border border-border/50 bg-card overflow-hidden shadow-sm"
     >
-      <div className="flex items-center justify-between border-b border-border/30 px-5 py-4 bg-coral/5">
-        <div className="flex items-center gap-2.5">
-          <AlertTriangle className="h-4 w-4 text-coral animate-pulse" />
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+      <div className="flex items-center justify-between border-b border-border/30 px-4 py-3 sm:px-5 sm:py-4 bg-coral/5">
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          <AlertTriangle className="h-4 w-4 text-coral animate-pulse shrink-0" />
+          <h3 className="text-xs sm:text-sm font-semibold text-foreground flex items-center gap-2">
             En Riesgo de Abandono
             {isLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
           </h3>
@@ -91,19 +91,19 @@ export function RetentionPanel() {
           </span>
         )}
       </div>
-      <div className="divide-y divide-border/20 max-h-[400px] overflow-y-auto">
+      <div className="divide-y divide-border/20 max-h-[350px] sm:max-h-[400px] overflow-y-auto">
         {isLoading ? (
-          <div className="px-5 py-12 text-center text-sm text-muted-foreground">
+          <div className="px-5 py-8 sm:py-12 text-center text-sm text-muted-foreground">
             Calculando métricas de retención...
           </div>
         ) : atRiskMembers.length === 0 ? (
-          <div className="px-5 py-12 text-center flex flex-col items-center gap-3">
-            <div className="h-14 w-14 rounded-2xl bg-success/10 border border-success/20 flex items-center justify-center">
-              <ShieldCheck className="h-7 w-7 text-success" />
+          <div className="px-5 py-8 sm:py-12 text-center flex flex-col items-center gap-2 sm:gap-3">
+            <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-success/10 border border-success/20 flex items-center justify-center">
+              <ShieldCheck className="h-6 w-6 sm:h-7 sm:w-7 text-success" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-foreground">¡Excelente retención!</p>
-              <p className="text-xs text-muted-foreground mt-0.5">No hay miembros en riesgo actualmente.</p>
+              <p className="text-xs sm:text-sm font-semibold text-foreground">¡Excelente retención!</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">No hay miembros en riesgo actualmente.</p>
             </div>
           </div>
         ) : (
@@ -113,21 +113,21 @@ export function RetentionPanel() {
               initial={{ opacity: 0, x: -12 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3, delay: 0.05 * i, ease: [0.4, 0, 0.2, 1] }}
-              className="flex items-center justify-between px-5 py-3.5 transition-smooth hover:bg-secondary/30"
+              className="flex items-center justify-between px-3 py-3 sm:px-5 sm:py-3.5 transition-smooth hover:bg-secondary/30 gap-2"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5 sm:gap-3 overflow-hidden">
                 <div className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold shadow-sm",
+                  "flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full text-[10px] sm:text-xs font-bold shadow-sm",
                   member.daysAway > 14 ? "bg-coral/15 text-coral" : "bg-primary/10 text-primary"
                 )}>
                   {member.avatar}
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-foreground">{member.name}</p>
-                  <div className="flex items-center gap-2">
+                <div className="overflow-hidden">
+                  <p className="text-xs sm:text-sm font-medium text-foreground truncate">{member.name}</p>
+                  <div className="flex items-center gap-1 sm:gap-2 flex-wrap sm:flex-nowrap mt-0.5">
                     <Clock className="h-3 w-3 text-muted-foreground/60" />
-                    <span className={cn("text-[11px] font-medium", member.daysAway > 14 ? "text-coral" : "text-muted-foreground")}>{member.lastVisit}</span>
-                    <span className="rounded bg-secondary/50 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">{member.plan}</span>
+                    <span className={cn("text-[10px] sm:text-[11px] font-medium truncate", member.daysAway > 14 ? "text-coral" : "text-muted-foreground")}>{member.lastVisit}</span>
+                    <span className="rounded bg-secondary/50 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground hidden sm:inline-block">{member.plan}</span>
                   </div>
                 </div>
               </div>
@@ -140,10 +140,10 @@ export function RetentionPanel() {
                     window.open(`https://wa.me/?text=${text}`, '_blank');
                   }
                 }}
-                className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-[11px] font-semibold text-primary transition-smooth hover:bg-primary/20 hover:scale-105 active:scale-95"
+                className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-1.5 sm:px-3 sm:py-1.5 text-[10px] sm:text-[11px] font-semibold text-primary transition-smooth hover:bg-primary/20 hover:scale-105 active:scale-95"
               >
                 <MessageSquare className="h-3 w-3" />
-                Reenganche
+                <span className="hidden sm:inline">Reenganche</span>
               </button>
             </motion.div>
           ))

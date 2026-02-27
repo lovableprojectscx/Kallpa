@@ -61,7 +61,7 @@ const Onboarding = () => {
             await setTenantId(tenantData.id);
 
             toast.success("¡Espacio de trabajo creado!");
-            navigate("/", { replace: true });
+            navigate("/dashboard", { replace: true });
         } catch (error: any) {
             toast.error("Error al crear empresa: " + (error.message || "Intenta nuevamente"));
         } finally {

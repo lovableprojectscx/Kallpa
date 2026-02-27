@@ -94,7 +94,7 @@ const Index = () => {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -106,7 +106,7 @@ const Index = () => {
         </motion.div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           <StatCard
             title="Miembros Activos"
             value={isLoading ? "..." : String(stats?.activeMembers || 0)}

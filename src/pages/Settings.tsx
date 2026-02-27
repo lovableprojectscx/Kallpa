@@ -198,8 +198,8 @@ const Settings = () => {
           className="flex flex-col sm:flex-row justify-between sm:items-end gap-4"
         >
           <div>
-            <h1 className="font-display text-3xl text-foreground tracking-tight">Configuraciones del Sistema</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h1 className="font-display text-2xl sm:text-3xl text-foreground tracking-tight">Configuraciones del Sistema</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               Conectado al Workspace seguro ID: <span className="font-mono bg-secondary px-2 rounded-sm text-foreground">{user?.tenantId?.split('-')[0] || 'Unknown'}</span>
             </p>
           </div>
@@ -213,21 +213,21 @@ const Settings = () => {
         </motion.div>
 
         <Tabs defaultValue="gym" className="space-y-6">
-          <TabsList className="bg-secondary/40 p-1 border border-border/50 rounded-xl w-full sm:w-auto h-auto flex-wrap sm:flex-nowrap gap-1">
-            <TabsTrigger value="gym" className="rounded-lg py-2 px-4 text-xs font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
-              <Building2 className="h-3.5 w-3.5 mr-2" /> Empresa
+          <TabsList className="bg-secondary/40 p-1 border border-border/50 rounded-xl w-full sm:w-auto h-auto flex flex-wrap sm:flex-nowrap gap-1">
+            <TabsTrigger value="gym" className="flex-1 sm:flex-none rounded-lg py-2 px-2 sm:px-4 text-[10px] sm:text-xs font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
+              <Building2 className="h-3.5 w-3.5 mr-1 sm:mr-2" /> Empresa
             </TabsTrigger>
-            <TabsTrigger value="staff" className="rounded-lg py-2 px-4 text-xs font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
-              <Users className="h-3.5 w-3.5 mr-2" /> Personal
+            <TabsTrigger value="staff" className="flex-1 sm:flex-none rounded-lg py-2 px-2 sm:px-4 text-[10px] sm:text-xs font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
+              <Users className="h-3.5 w-3.5 mr-1 sm:mr-2" /> Personal
             </TabsTrigger>
-            <TabsTrigger value="license" className="rounded-lg py-2 px-4 text-xs font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
-              <Shield className="h-3.5 w-3.5 mr-2" /> Licencia
+            <TabsTrigger value="license" className="flex-1 sm:flex-none rounded-lg py-2 px-2 sm:px-4 text-[10px] sm:text-xs font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
+              <Shield className="h-3.5 w-3.5 mr-1 sm:mr-2" /> Licencia
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="rounded-lg py-2 px-4 text-xs font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
-              <Bell className="h-3.5 w-3.5 mr-2" /> Alertas
+            <TabsTrigger value="notifications" className="hidden sm:flex flex-none rounded-lg py-2 px-2 sm:px-4 text-[10px] sm:text-xs font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
+              <Bell className="h-3.5 w-3.5 mr-1 sm:mr-2" /> Alertas
             </TabsTrigger>
-            <TabsTrigger value="security" className="rounded-lg py-2 px-4 text-xs font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
-              <Key className="h-3.5 w-3.5 mr-2" /> Seguridad
+            <TabsTrigger value="security" className="flex-1 sm:flex-none rounded-lg py-2 px-2 sm:px-4 text-[10px] sm:text-xs font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
+              <Key className="h-3.5 w-3.5 mr-1 sm:mr-2" /> Seguridad
             </TabsTrigger>
           </TabsList>
 

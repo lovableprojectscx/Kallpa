@@ -176,13 +176,13 @@ const Plans = () => {
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex flex-col sm:flex-row justify-between sm:items-end gap-4"
+                    className="flex flex-col sm:flex-row justify-between sm:items-end gap-3 sm:gap-4"
                 >
                     <div>
-                        <h1 className="font-display text-3xl text-foreground tracking-tight">
+                        <h1 className="font-display text-2xl sm:text-3xl text-foreground tracking-tight">
                             Planes de Membresía
                         </h1>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                             {isLoading ? "Cargando..." : `${activePlans.length} planes activos configurados`}
                         </p>
                     </div>
@@ -192,7 +192,7 @@ const Plans = () => {
                                 openCreate();
                             }
                         }}
-                        className="bg-primary text-primary-foreground hover:opacity-90 shadow-lg glow-volt gap-2"
+                        className="bg-primary text-primary-foreground hover:opacity-90 shadow-lg glow-volt gap-2 w-full sm:w-auto"
                     >
                         <Plus className="h-4 w-4" /> Nuevo Plan
                     </Button>
@@ -439,49 +439,49 @@ const PlanCard = ({
         <Card className="border-border/50 bg-card/50 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
             {/* Color strip */}
             <div className="h-1.5 w-full" style={{ backgroundColor: plan.color }} />
-            <CardHeader className="pb-3 pt-4 px-5">
+            <CardHeader className="pb-3 pt-3 px-4 sm:pt-4 sm:px-5">
                 <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded-lg" style={{ backgroundColor: plan.color + "20" }}>
-                            <Tag className="h-4 w-4" style={{ color: plan.color }} />
+                    <div className="flex items-center gap-2 overflow-hidden w-full">
+                        <div className="p-1 sm:p-1.5 rounded-lg shrink-0" style={{ backgroundColor: plan.color + "20" }}>
+                            <Tag className="h-3.5 w-3.5 sm:h-4 sm:w-4" style={{ color: plan.color }} />
                         </div>
-                        <div>
-                            <p className="font-semibold text-foreground text-sm leading-tight">{plan.name}</p>
+                        <div className="overflow-hidden pr-1">
+                            <p className="font-semibold text-foreground text-sm leading-tight truncate">{plan.name}</p>
                             {plan.description && (
-                                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{plan.description}</p>
+                                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 max-w-[12rem] sm:max-w-none truncate sm:line-clamp-1">{plan.description}</p>
                             )}
                         </div>
                     </div>
-                    <p className="text-xl font-display font-bold shrink-0" style={{ color: plan.color }}>
+                    <p className="text-base sm:text-xl font-display font-bold shrink-0 mt-0.5 sm:mt-0" style={{ color: plan.color }}>
                         S/{plan.price.toFixed(2)}
                     </p>
                 </div>
             </CardHeader>
-            <CardContent className="px-5 pb-4 space-y-3">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span>{plan.duration_days} días de acceso</span>
+            <CardContent className="px-4 pb-3 sm:px-5 sm:pb-4 space-y-3">
+                <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-muted-foreground">
+                    <Clock className="h-3 sm:h-3.5 w-3 sm:w-3.5 shrink-0" />
+                    <span className="truncate">{plan.duration_days} días de acceso</span>
                 </div>
 
-                <div className="flex items-center gap-2 pt-1">
+                <div className="flex items-center gap-1.5 sm:gap-2 pt-1">
                     <Button
                         size="sm"
                         variant="ghost"
                         onClick={onEdit}
-                        className="flex-1 h-8 text-xs hover:bg-secondary gap-1"
+                        className="flex-1 h-7 sm:h-8 text-[10px] sm:text-xs hover:bg-secondary gap-1 px-1 sm:px-3"
                     >
-                        <Pencil className="h-3.5 w-3.5" /> Editar
+                        <Pencil className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> <span className="hidden sm:inline">Editar</span>
                     </Button>
                     <Button
                         size="sm"
                         variant="ghost"
                         onClick={onToggle}
                         disabled={isLoading}
-                        className="flex-1 h-8 text-xs gap-1 hover:bg-secondary"
+                        className="flex-[1.5] sm:flex-1 h-7 sm:h-8 text-[10px] sm:text-xs gap-1 hover:bg-secondary px-1 sm:px-3"
                     >
                         {plan.is_active
-                            ? <><ToggleRight className="h-3.5 w-3.5 text-success" /> Activo</>
-                            : <><ToggleLeft className="h-3.5 w-3.5" /> Inactivo</>
+                            ? <><ToggleRight className="h-3 sm:h-3.5 w-3 sm:w-3.5 text-success" /> Activo</>
+                            : <><ToggleLeft className="h-3 sm:h-3.5 w-3 sm:w-3.5" /> Inactivo</>
                         }
                     </Button>
                     <Button
@@ -489,9 +489,9 @@ const PlanCard = ({
                         variant="ghost"
                         onClick={onDelete}
                         disabled={isLoading}
-                        className="h-8 w-8 p-0 text-xs hover:bg-destructive/10 hover:text-destructive"
+                        className="h-7 w-7 sm:h-8 sm:w-8 p-0 shrink-0 text-xs hover:bg-destructive/10 hover:text-destructive"
                     >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                     </Button>
                 </div>
             </CardContent>

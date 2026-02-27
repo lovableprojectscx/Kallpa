@@ -8,7 +8,8 @@ import { AuthProvider } from "./contexts/AuthContext";
 import AuthGuard from "./components/AuthGuard";
 import SubscriptionGuard from "./components/SubscriptionGuard";
 import AdminGuard from "./components/AdminGuard";
-import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
+import Landing from "./pages/Landing";
 import Terminal from "./pages/Terminal";
 import Members from "./pages/Members";
 import Affiliate from "./pages/Affiliate";
@@ -56,6 +57,7 @@ const App = () => (
               {/* Terminal de Recepción */}
               <Route path="/recepcion" element={<AuthGuard><Recepcion /></AuthGuard>} />
               {/* Rutas públicas — sin autenticación */}
+              <Route path="/" element={<Landing />} />
               <Route path="/carnet/:memberId" element={<CarnetPublico />} />
               <Route path="/portal" element={<PortalBusqueda />} />
               <Route path="/portal/:memberId" element={<PortalMiembro />} />
@@ -65,7 +67,7 @@ const App = () => (
                   <AuthGuard>
                     <SubscriptionGuard>
                       <Routes>
-                        <Route path="/" element={<Index />} />
+                        <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/terminal" element={<Terminal />} />
                         <Route path="/members" element={<Members />} />
                         <Route path="/affiliate" element={<Affiliate />} />

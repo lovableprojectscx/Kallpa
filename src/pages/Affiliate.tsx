@@ -190,26 +190,27 @@ const Affiliate = () => {
 
         return (
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                className="rounded-2xl border border-primary/20 bg-primary/5 p-6 space-y-4 mb-8"
+                className="rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-6 space-y-3 sm:space-y-4 mb-6 sm:mb-8"
             >
-                <div className="flex items-center gap-3">
-                    <Gift className="h-5 w-5 text-primary" />
-                    <h3 className="text-lg font-semibold text-foreground">¿Te refirió otro gimnasio?</h3>
+                <div className="flex items-center gap-2 sm:gap-3">
+                    <Gift className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    <h3 className="text-base sm:text-lg font-semibold text-foreground">¿Te refirió otro gimnasio?</h3>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                     Ingresa su código de embajador. (Solo disponible en tus primeros 7 días)
                 </p>
-                <div className="flex gap-3 max-w-sm">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 max-w-sm">
                     <Input
                         placeholder="Ej. GYM-A1B2"
                         value={referralCodeInput}
                         onChange={(e) => setReferralCodeInput(e.target.value.toUpperCase())}
-                        className="uppercase bg-background"
+                        className="uppercase bg-background h-10 sm:h-auto"
                         disabled={submitReferralCode.isPending}
                     />
                     <Button
                         onClick={() => submitReferralCode.mutate(referralCodeInput)}
                         disabled={submitReferralCode.isPending || !referralCodeInput.trim()}
+                        className="h-10 sm:h-auto"
                     >
                         {submitReferralCode.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                         Aplicar
@@ -223,16 +224,16 @@ const Affiliate = () => {
     if (!affiliateData?.isAffiliate) {
         return (
             <Layout>
-                <div className="max-w-2xl mx-auto space-y-8">
+                <div className="max-w-2xl mx-auto space-y-6 sm:space-y-8">
                     <div>
-                        <h1 className="font-display text-2xl text-foreground">Programa de Afiliados</h1>
+                        <h1 className="font-display text-2xl sm:text-3xl text-foreground">Programa de Afiliados</h1>
                         <p className="text-sm text-muted-foreground">Invita gimnasios, gana meses gratis</p>
                     </div>
 
                     {renderReferralCodeSection()}
 
                     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                        className="rounded-2xl border border-primary/20 bg-primary/5 p-8 text-center space-y-6"
+                        className="rounded-2xl border border-primary/20 bg-primary/5 p-5 sm:p-8 text-center space-y-6"
                     >
                         <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
                             <Gift className="h-8 w-8 text-primary" />
@@ -284,15 +285,15 @@ const Affiliate = () => {
     if (affiliateData?.status === 'pending') {
         return (
             <Layout>
-                <div className="max-w-2xl mx-auto space-y-8">
+                <div className="max-w-2xl mx-auto space-y-6 sm:space-y-8">
                     <div>
-                        <h1 className="font-display text-2xl text-foreground">Programa de Afiliados</h1>
+                        <h1 className="font-display text-2xl sm:text-3xl text-foreground">Programa de Afiliados</h1>
                         <p className="text-sm text-muted-foreground">Tu solicitud está en revisión</p>
                     </div>
 
                     {renderReferralCodeSection()}
                     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                        className="rounded-2xl border border-border/50 bg-card p-8 text-center space-y-4"
+                        className="rounded-2xl border border-border/50 bg-card p-5 sm:p-8 text-center space-y-4"
                     >
                         <Loader2 className="h-10 w-10 text-muted-foreground animate-spin mx-auto" />
                         <h2 className="text-lg font-semibold text-foreground">Solicitud en Revisión</h2>
@@ -308,26 +309,26 @@ const Affiliate = () => {
 
     return (
         <Layout>
-            <div className="max-w-4xl mx-auto space-y-8">
+            <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
                 <div>
-                    <h1 className="font-display text-2xl text-foreground">Panel de Embajador</h1>
-                    <p className="text-sm text-muted-foreground">Gestiona tu código, créditos y canjes</p>
+                    <h1 className="font-display text-2xl sm:text-3xl text-foreground">Panel de Embajador</h1>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">Gestiona tu código, créditos y canjes</p>
                 </div>
 
                 {renderReferralCodeSection()}
 
                 {/* Stats Row */}
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                    className="grid grid-cols-3 gap-4"
+                    className="grid grid-cols-3 gap-2 sm:gap-4"
                 >
                     {[
                         { label: "Registrados", value: affiliateData.registered, color: "text-foreground" },
                         { label: "Activados", value: affiliateData.activated, color: "text-success" },
                         { label: "Créditos", value: credits, color: "text-primary" },
                     ].map(({ label, value, color }) => (
-                        <Card key={label} className="border-border/50 bg-card/50 text-center py-5">
-                            <p className={`text-4xl font-display font-black ${color}`}>{value}</p>
-                            <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest mt-1">{label}</p>
+                        <Card key={label} className="border-border/50 bg-card/50 text-center py-4 sm:py-5 px-1 sm:px-2 overflow-hidden">
+                            <p className={`text-3xl sm:text-4xl font-display font-black ${color}`}>{value}</p>
+                            <p className="text-[9px] sm:text-xs text-muted-foreground uppercase font-bold tracking-wider sm:tracking-widest mt-1 truncate px-1">{label}</p>
                         </Card>
                     ))}
                 </motion.div>
@@ -336,19 +337,19 @@ const Affiliate = () => {
                     {/* Código de Embajador */}
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
                         <Card className="border-border/50 bg-card/50 h-full">
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-base flex items-center gap-2">
-                                    <Star className="h-4 w-4 text-primary" /> Tu Código de Embajador
+                            <CardHeader className="pb-3 px-4 sm:px-6 pt-4 sm:pt-6">
+                                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                                    <Star className="h-4 w-4 text-primary shrink-0" /> Tu Código de Embajador
                                 </CardTitle>
-                                <CardDescription>Compártelo con dueños de gimnasio para ganar créditos</CardDescription>
+                                <CardDescription className="text-xs sm:text-sm">Compártelo con dueños de gimnasio para ganar créditos</CardDescription>
                             </CardHeader>
-                            <CardContent className="space-y-4">
+                            <CardContent className="space-y-4 px-4 sm:px-6 pb-4 sm:pb-6">
                                 <div
                                     onClick={() => copyToClipboard(affiliateData.code)}
-                                    className="p-5 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 cursor-pointer hover:bg-primary/10 transition-all group text-center"
+                                    className="p-4 sm:p-5 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 cursor-pointer hover:bg-primary/10 transition-all group text-center"
                                 >
-                                    <p className="text-[10px] text-primary/60 uppercase font-bold tracking-widest mb-1">Código de Invitación</p>
-                                    <p className="text-2xl font-mono font-black text-primary flex items-center justify-center gap-3 uppercase">
+                                    <p className="text-[9px] sm:text-[10px] text-primary/60 uppercase font-bold tracking-widest mb-1">Código de Invitación</p>
+                                    <p className="text-xl sm:text-2xl font-mono font-black text-primary flex items-center justify-center gap-2 sm:gap-3 uppercase">
                                         {affiliateData.code}
                                         <Copy className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     </p>
@@ -389,20 +390,20 @@ const Affiliate = () => {
                     {/* Canjear Créditos */}
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                         <Card className="border-border/50 bg-card/50 h-full">
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-base flex items-center gap-2">
-                                    <Coins className="h-4 w-4 text-primary" /> Canjear Créditos
+                            <CardHeader className="pb-3 px-4 sm:px-6 pt-4 sm:pt-6">
+                                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                                    <Coins className="h-4 w-4 text-primary shrink-0" /> Canjear Créditos
                                 </CardTitle>
-                                <CardDescription>1 crédito = 1 mes extra de suscripción en tu gimnasio</CardDescription>
+                                <CardDescription className="text-xs sm:text-sm">1 crédito = 1 mes extra de suscripción</CardDescription>
                             </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="flex items-center justify-between p-4 rounded-xl bg-primary/5 border border-primary/20">
-                                    <span className="text-sm text-muted-foreground">Saldo actual</span>
-                                    <span className="text-3xl font-black font-display text-primary">{credits} <span className="text-sm font-normal">créditos</span></span>
+                            <CardContent className="space-y-4 px-4 sm:px-6 pb-4 sm:pb-6">
+                                <div className="flex flex-col sm:flex-row items-center sm:justify-between p-3 sm:p-4 gap-1 sm:gap-0 rounded-xl bg-primary/5 border border-primary/20 text-center sm:text-left">
+                                    <span className="text-xs sm:text-sm text-muted-foreground w-full sm:w-auto">Saldo actual</span>
+                                    <span className="text-2xl sm:text-3xl font-black font-display text-primary">{credits} <span className="text-[10px] sm:text-sm font-normal">créditos</span></span>
                                 </div>
 
                                 {credits > 0 ? (
-                                    <div className="grid grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-3 gap-2 sm:gap-3">
                                         {[1, 3, 6].map((months) => {
                                             const canRedeem = credits >= months;
                                             return (
@@ -411,7 +412,7 @@ const Affiliate = () => {
                                                     onClick={() => redeemCredits.mutate(months)}
                                                     disabled={!canRedeem || redeemCredits.isPending}
                                                     className={cn(
-                                                        "rounded-xl border py-4 px-2 text-center transition-all",
+                                                        "rounded-xl border py-3 sm:py-4 px-1 sm:px-2 text-center transition-all",
                                                         canRedeem
                                                             ? "border-primary/40 text-primary bg-primary/5 hover:bg-primary/15 active:scale-95"
                                                             : "border-border/30 text-muted-foreground bg-secondary/20 opacity-40 cursor-not-allowed"
@@ -421,8 +422,8 @@ const Affiliate = () => {
                                                         <Loader2 className="h-4 w-4 animate-spin mx-auto" />
                                                     ) : (
                                                         <>
-                                                            <span className="block text-2xl font-black">+{months}</span>
-                                                            <span className="text-[11px]">mes{months > 1 ? 'es' : ''}</span>
+                                                            <span className="block text-xl sm:text-2xl font-black">+{months}</span>
+                                                            <span className="text-[10px] sm:text-[11px]">mes{months > 1 ? 'es' : ''}</span>
                                                         </>
                                                     )}
                                                 </button>

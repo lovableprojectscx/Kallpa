@@ -284,7 +284,7 @@ const Members = () => {
         {/* Encabezado */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div>
-            <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground">Directorio de Miembros</h1>
+            <h1 className="font-display text-2xl sm:text-3xl font-semibold tracking-tight text-foreground line-clamp-1">Directorio de Miembros</h1>
             <p className="text-sm text-muted-foreground mt-1">
               {isLoading ? "Cargando..." : `Gestiona tus ${members.length} miembros registrados y visualiza sus pases de acceso.`}
             </p>
@@ -299,7 +299,7 @@ const Members = () => {
             className="w-full sm:w-auto bg-primary text-primary-foreground hover:opacity-90 glow-volt shadow-lg gap-2"
           >
             <UserPlus className="h-4 w-4" />
-            Nuevo Miembro
+            Nuevo
           </Button>
         </div>
 
@@ -322,171 +322,174 @@ const Members = () => {
         </div>
 
         {/* Lista de Miembros */}
-        <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[800px] text-sm text-left">
-              <thead className="bg-secondary/40 border-b border-border/50">
-                <tr>
-                  <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px]">Miembro</th>
-                  <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px]">Plan</th>
-                  <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px]">Estado</th>
-                  <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px]">Última Visita</th>
-                  <th className="px-6 py-4 font-semibold text-muted-foreground uppercase tracking-wider text-[11px]">Racha</th>
-                  <th className="px-6 py-4 text-right"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/30">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
-                      Cargando base de datos...
-                    </td>
-                  </tr>
-                ) : filteredMembers.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
-                      No hay miembros registrados todavía. Haz clic en "Nuevo Miembro" para comenzar.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredMembers.map((member, i) => {
-                    let currentStatus = member.status || 'inactive';
-                    if (member.end_date) {
-                      const end = new Date(member.end_date);
-                      const today = new Date();
-                      today.setHours(0, 0, 0, 0);
-                      end.setHours(0, 0, 0, 0);
-                      if (end < today && currentStatus === 'active') {
-                        currentStatus = 'expired';
-                      }
-                    }
-                    const st = statusMap[currentStatus];
-                    const initials = member.full_name?.substring(0, 2).toUpperCase() || 'US';
-                    const planName = getPlanName(member.plan);
-                    const planColor = getPlanColor(member.plan);
+        <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm shadow-sm ring-1 ring-border/20">
+          <div>
+            {/* Cabecera de Grid - Solo Desktop */}
+            <div className="hidden md:grid grid-cols-[2.5fr_1.5fr_1.5fr_1fr_1fr_180px] bg-secondary/40 border-b border-border/50 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <div className="px-6 py-4">Miembro</div>
+              <div className="px-6 py-4">Plan</div>
+              <div className="px-6 py-4">Estado</div>
+              <div className="px-6 py-4">Última Visita</div>
+              <div className="px-6 py-4">Racha</div>
+              <div className="px-6 py-4 text-right"></div>
+            </div>
 
-                    return (
-                      <motion.tr
-                        key={member.id}
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.2, delay: i * 0.02 }}
-                        className="hover:bg-secondary/20 transition-colors group cursor-pointer"
-                      >
-                        {/* Miembro */}
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-4">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold shadow-sm">
-                              {initials}
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="font-medium text-foreground">{member.full_name}</span>
-                              <span className="text-[11px] text-muted-foreground">{member.email || member.phone || 'Sin contacto'}</span>
-                            </div>
+            <div className="divide-y divide-border/30">
+              {isLoading ? (
+                <div className="px-6 py-12 text-center text-muted-foreground">
+                  Cargando base de datos...
+                </div>
+              ) : filteredMembers.length === 0 ? (
+                <div className="px-6 py-12 text-center text-muted-foreground">
+                  No hay miembros registrados todavía. Haz clic en "Nuevo Miembro" para comenzar.
+                </div>
+              ) : (
+                filteredMembers.map((member, i) => {
+                  let currentStatus = member.status || 'inactive';
+                  if (member.end_date) {
+                    const end = new Date(member.end_date);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    end.setHours(0, 0, 0, 0);
+                    if (end < today && currentStatus === 'active') {
+                      currentStatus = 'expired';
+                    }
+                  }
+                  const st = statusMap[currentStatus];
+                  const initials = member.full_name?.substring(0, 2).toUpperCase() || 'US';
+                  const planName = getPlanName(member.plan);
+                  const planColor = getPlanColor(member.plan);
+
+                  return (
+                    <motion.div
+                      key={member.id}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2, delay: i * 0.02 }}
+                      className="flex flex-col md:grid md:grid-cols-[2.5fr_1.5fr_1.5fr_1fr_1fr_180px] md:items-center relative hover:bg-secondary/20 transition-colors group cursor-pointer"
+                    >
+                      {/* Miembro */}
+                      <div className="px-4 py-3 md:px-6 md:py-4 flex flex-row items-center justify-between md:justify-start gap-4">
+                        <div className="flex items-center gap-3 md:gap-4 w-full overflow-hidden">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold shadow-sm">
+                            {initials}
                           </div>
-                        </td>
+                          <div className="flex flex-col overflow-hidden w-full max-w-[80vw] md:max-w-none">
+                            <span className="font-medium text-foreground truncate max-w-full">{member.full_name}</span>
+                            <span className="text-[11px] text-muted-foreground truncate max-w-full">{member.email || member.phone || 'Sin contacto'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Flex grid en móvil para métricas */}
+                      <div className="px-4 pb-3 md:p-0 flex md:contents flex-row flex-wrap gap-2 md:gap-0">
                         {/* Plan */}
-                        <td className="px-6 py-4">
+                        <div className="md:px-6 md:py-4 flex-1 md:flex-none">
                           <span
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] md:text-[11px] font-semibold max-w-[150px] truncate"
                             style={{ backgroundColor: planColor + '20', color: planColor }}
                           >
-                            <Tag className="h-3 w-3" />
-                            {planName}
+                            <Tag className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{planName}</span>
                           </span>
-                        </td>
+                        </div>
+
                         {/* Estado */}
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col items-start gap-1">
-                            <span className={cn("inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider", st.className)}>
-                              {st.label}
+                        <div className="md:px-6 md:py-4 flex flex-col md:items-start items-end flex-shrink-0">
+                          <span className={cn("inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider", st.className)}>
+                            {st.label}
+                          </span>
+                          {member.end_date && (
+                            <span className={cn("text-[10px] pl-1 hidden sm:block", currentStatus === 'expired' ? "text-red-400 font-medium" : "text-muted-foreground")} title="Fecha de vencimiento del plan">
+                              Vence: {format(new Date(member.end_date), "d MMM yy", { locale: es })}
                             </span>
-                            {member.end_date && (
-                              <span className={cn("text-[10px] pl-1", currentStatus === 'expired' ? "text-red-400 font-medium" : "text-muted-foreground")} title="Fecha de vencimiento del plan">
-                                Vence: {format(new Date(member.end_date), "d MMM yy", { locale: es })}
+                          )}
+                        </div>
+
+                        {/* Última Visita & Racha juntas en celular, separadas en tablet/PC */}
+                        <div className="w-full md:w-auto md:contents flex flex-row justify-between pt-2 md:pt-0 border-t border-border/10 md:border-0 mt-1 md:mt-0">
+                          <div className="md:px-6 md:py-4 text-xs md:text-sm text-muted-foreground mt-1 md:mt-0">
+                            <span className="md:hidden text-[10px] uppercase font-semibold text-muted-foreground/60 mr-2">Visita:</span>
+                            {member.last_visit
+                              ? format(new Date(member.last_visit), "dd MMM yyyy", { locale: es })
+                              : <span className="text-muted-foreground/40 italic">Sin visitas</span>
+                            }
+                          </div>
+
+                          <div className="md:px-6 md:py-4 mt-1 md:mt-0 flex items-center">
+                            <span className="md:hidden text-[10px] uppercase font-semibold text-muted-foreground/60 mr-2">Racha:</span>
+                            {member.streak > 0 ? (
+                              <span className="inline-flex items-center gap-1 text-amber-400 font-bold text-xs md:text-sm">
+                                <Flame className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                                {member.streak}d
                               </span>
+                            ) : (
+                              <span className="text-muted-foreground/40 text-xs md:text-sm">—</span>
                             )}
                           </div>
-                        </td>
-                        {/* Última visita */}
-                        <td className="px-6 py-4 text-sm text-muted-foreground">
-                          {member.last_visit
-                            ? format(new Date(member.last_visit), "dd MMM yyyy", { locale: es })
-                            : <span className="text-muted-foreground/40 italic">Sin visitas</span>
-                          }
-                        </td>
-                        {/* Racha */}
-                        <td className="px-6 py-4">
-                          {member.streak > 0 ? (
-                            <span className="inline-flex items-center gap-1 text-amber-400 font-bold text-sm">
-                              <Flame className="h-4 w-4" />
-                              {member.streak}d
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground/40 text-sm">—</span>
-                          )}
-                        </td>
-                        {/* Acciones */}
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-primary"
-                              title="Ver Carnet"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (!requireSubscription()) return;
-                                setCardMember(member);
-                              }}
-                            >
-                              <CreditCard className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              title="Editar"
-                              onClick={(e) => { e.stopPropagation(); openEdit(member); }}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-[#25D366] hover:bg-[#25D366]/10"
-                              title="Enviar Enlace por WhatsApp"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const portalUrl = `${window.location.origin}/portal/${member.id}`;
-                                const nombre = member.full_name.split(" ")[0];
-                                const text = `¡Hola ${nombre}! 🎉 Bienvenido a tu nuevo gimnasio. 🏋️‍♂️\n\nAquí tienes tu Portal de Miembro, donde podrás ver el estado de tu cuenta, vigencia de tu plan y descargar tu Pase Digital:\n👉 ${portalUrl}\n\n¡A entrenar duro!`;
-                                const encodedUrl = encodeURIComponent(text);
-                                if (member.phone) {
-                                  const cleanPhone = member.phone.replace(/\D/g, '');
-                                  window.open(`https://wa.me/${cleanPhone}?text=${encodedUrl}`, '_blank');
-                                } else {
-                                  window.open(`https://wa.me/?text=${encodedUrl}`, '_blank');
-                                }
-                              }}
-                            >
-                              <MessageCircle className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                              title="Eliminar"
-                              onClick={(e) => { e.stopPropagation(); setDeletingMember(member); }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </motion.tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                        </div>
+                      </div>
+
+                      {/* Acciones */}
+                      <div className="absolute top-3 right-3 md:relative md:top-0 md:right-0 md:px-6 md:py-4 flex items-center justify-end gap-1 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary md:bg-transparent bg-secondary/80 backdrop-blur-md"
+                          title="Ver Carnet"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!requireSubscription()) return;
+                            setCardMember(member);
+                          }}
+                        >
+                          <CreditCard className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground md:hover:text-primary md:bg-transparent bg-secondary/80 backdrop-blur-md"
+                          title="Editar"
+                          onClick={(e) => { e.stopPropagation(); openEdit(member); }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-[#25D366] hover:bg-[#25D366]/10 md:bg-transparent bg-secondary/80 backdrop-blur-md hidden sm:inline-flex"
+                          title="Enviar Enlace por WhatsApp"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const portalUrl = `${window.location.origin}/portal/${member.id}`;
+                            const nombre = member.full_name.split(" ")[0];
+                            const text = `¡Hola ${nombre}! 🎉 Bienvenido a tu nuevo gimnasio. 🏋️‍♂️\n\nAquí tienes tu Portal de Miembro, donde podrás ver el estado de tu cuenta, vigencia de tu plan y descargar tu Pase Digital:\n👉 ${portalUrl}\n\n¡A entrenar duro!`;
+                            const encodedUrl = encodeURIComponent(text);
+                            if (member.phone) {
+                              const cleanPhone = member.phone.replace(/\D/g, '');
+                              window.open(`https://wa.me/${cleanPhone}?text=${encodedUrl}`, '_blank');
+                            } else {
+                              window.open(`https://wa.me/?text=${encodedUrl}`, '_blank');
+                            }
+                          }}
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 md:bg-transparent bg-secondary/80 backdrop-blur-md hidden sm:inline-flex"
+                          title="Eliminar"
+                          onClick={(e) => { e.stopPropagation(); setDeletingMember(member); }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </motion.div>
+                  );
+                })
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -11,7 +11,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     <SidebarProvider>
       <div className="flex min-h-screen w-full">
         <AdminSidebar />
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
           <header className="flex h-14 items-center gap-3 border-b border-border/50 px-4">
             <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
             <span className="text-xs font-medium uppercase tracking-widest text-coral">Panel de Administración</span>

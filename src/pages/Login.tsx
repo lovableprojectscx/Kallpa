@@ -20,7 +20,8 @@ const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const from = location.state?.from?.pathname || "/";
+    const fromPath = location.state?.from?.pathname;
+    const from = (!fromPath || fromPath === "/") ? "/dashboard" : fromPath;
 
     const handleSubmitOwner = async (e: React.FormEvent) => {
         e.preventDefault();

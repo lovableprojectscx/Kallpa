@@ -66,14 +66,14 @@ const Retention = () => {
     <Layout>
       <div className="space-y-6">
         <div>
-          <h1 className="font-display text-2xl text-foreground flex items-center gap-2">
+          <h1 className="font-display text-2xl sm:text-3xl text-foreground flex items-center gap-2">
             Central de Retención
-            {isLoading && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
+            {isLoading && <Loader2 className="h-4 sm:h-5 w-4 sm:w-5 animate-spin text-muted-foreground" />}
           </h1>
-          <p className="text-sm text-muted-foreground">Monitorea y recupera miembros en riesgo</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Monitorea y recupera miembros en riesgo</p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <StatCard
             title="Tasa de Retención"
             value={isLoading ? "..." : `${stats?.retentionRate}%`}
@@ -97,8 +97,8 @@ const Retention = () => {
           />
           <StatCard
             title="Reenganchados"
-            value={isLoading ? "..." : "Pronto"}
-            change="Módulo prod."
+            value={isLoading ? "..." : `${stats?.reengaged || 0}`}
+            change="miembros recuperados"
             changeType="neutral"
             icon={RefreshCw}
           />

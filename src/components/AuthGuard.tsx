@@ -42,9 +42,9 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         return <Navigate to="/onboarding" replace />;
     }
 
-    // Si ya tiene empresa e intenta entrar a Onboarding, redirigir al inicio
+    // Si ya tiene empresa e intenta entrar a Onboarding, redirigir al dashboard
     if (isAuthenticated && hasTenant && location.pathname === "/onboarding") {
-        return <Navigate to="/" replace />;
+        return <Navigate to="/dashboard" replace />;
     }
 
     return <>{children}</>;
