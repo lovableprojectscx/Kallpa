@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
+
 
 const Login = () => {
     const [email, setEmail] = useState("");
@@ -35,13 +37,16 @@ const Login = () => {
             const success = await login(email, password);
             if (success) {
                 // Verificar que sea admin — bloquear si es staff
-                const { data: { user: authUser } } = await import("@/lib/supabase").then(m => m.supabase.auth.getUser());
+                const { data: { user: authUser } } = await supabase.auth.getUser();
                 if (authUser) {
-                    const { data: profile } = await import("@/lib/supabase").then(m =>
-                        m.supabase.from("profiles").select("role").eq("id", authUser.id).single()
-                    );
+                    const { data: profile } = await supabase
+                        .from("profiles")
+                        .select("role")
+                        .eq("id", authUser.id)
+                        .single();
+
                     if (profile?.role === "staff") {
-                        await import("@/lib/supabase").then(m => m.supabase.auth.signOut());
+                        await supabase.auth.signOut();
                         toast.error("Esta cuenta es de recepcionista. Usa el acceso de recepción.", { duration: 6000 });
                         navigate("/recepcion/login");
                         return;
@@ -52,11 +57,13 @@ const Login = () => {
             } else {
                 toast.error("Credenciales incorrectas. Verifica tu email y contraseña.");
             }
-        } catch {
-            toast.error("Error al iniciar sesión");
+        } catch (error) {
+            console.error("Login catch error:", error);
+            toast.error("Error al iniciar sesión. Intenta de nuevo.");
         } finally {
             setIsSubmitting(false);
         }
+
     };
 
     const handleSubmitStaff = async (e: React.FormEvent) => {
