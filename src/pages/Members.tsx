@@ -386,567 +386,566 @@ const Members = () => {
               {isLoading ? "Cargando..." : `Gestiona tus ${members.length} miembros registrados y visualiza sus pases de acceso.`}
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <Button
                 onClick={() => {
                   if (requireSubscription()) {
                     setIsNewMemberOpen(true);
                   }
                 }}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl px-6 py-6 shadow-lg shadow-primary/20 flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl px-6 py-6 shadow-lg shadow-primary/20 flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
                 <UserPlus className="h-5 w-5" />
-                <span>Nuevo Miembro</span>
+                <span>Nuevo</span>
               </Button>
 
               <Button
                 onClick={handleExportExcel}
                 variant="outline"
-                className="border-border/40 bg-card hover:bg-secondary/50 text-foreground rounded-2xl px-5 py-6 flex items-center gap-2 transition-all"
+                className="flex-1 sm:flex-none border-border/40 bg-card hover:bg-secondary/50 text-foreground rounded-2xl px-5 py-6 flex items-center gap-2 transition-all"
               >
                 <FileDown className="h-5 w-5 text-emerald-500" />
-                <span className="hidden xs:inline">Exportar Excel</span>
+                <span>Exportar</span>
               </Button>
             </div>
 
             <div className="relative w-full sm:w-80 group">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Buscar por nombre o documento..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 h-11 bg-card border-border/50 text-foreground focus:border-primary/50 transition-colors"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Filtros */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
               <Input
                 type="text"
                 placeholder="Buscar por nombre o documento..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-11 bg-card border-border/50 text-foreground focus:border-primary/50 transition-colors"
+                className="pl-10 h-11 bg-card border-border/50 text-foreground focus:border-primary/50 transition-colors rounded-2xl"
               />
-            </div>
-            <Button variant="outline" className="h-11 border-border/50 bg-card gap-2 text-muted-foreground hover:text-foreground">
-              <Filter className="h-4 w-4" />
-              <span className="hidden sm:inline">Filtros</span>
-            </Button>
-          </div>
-
-          {/* Lista de Miembros */}
-          <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm shadow-sm ring-1 ring-border/20">
-            <div>
-              {/* Cabecera de Grid - Solo Desktop */}
-              <div className="hidden md:grid grid-cols-[2.5fr_1.5fr_1.5fr_1fr_1fr_180px] bg-secondary/40 border-b border-border/50 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                <div className="px-6 py-4">Miembro</div>
-                <div className="px-6 py-4">Plan</div>
-                <div className="px-6 py-4">Estado</div>
-                <div className="px-6 py-4">Última Visita</div>
-                <div className="px-6 py-4">Racha</div>
-                <div className="px-6 py-4 text-right"></div>
-              </div>
-
-              <div className="divide-y divide-border/30">
-                {isLoading ? (
-                  <div className="px-6 py-12 text-center text-muted-foreground">
-                    Cargando base de datos...
-                  </div>
-                ) : filteredMembers.length === 0 ? (
-                  <div className="px-6 py-12 text-center text-muted-foreground">
-                    No hay miembros registrados todavía. Haz clic en "Nuevo Miembro" para comenzar.
-                  </div>
-                ) : (
-                  filteredMembers.map((member, i) => {
-                    let currentStatus = member.status || 'inactive';
-                    if (member.end_date) {
-                      const end = new Date(member.end_date);
-                      const today = new Date();
-                      today.setHours(0, 0, 0, 0);
-                      end.setHours(0, 0, 0, 0);
-                      if (end < today && currentStatus === 'active') {
-                        currentStatus = 'expired';
-                      }
-                    }
-                    const st = statusMap[currentStatus];
-                    const initials = member.full_name?.substring(0, 2).toUpperCase() || 'US';
-                    const planName = getPlanName(member.plan);
-                    const planColor = getPlanColor(member.plan);
-
-                    return (
-                      <motion.div
-                        key={member.id}
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.2, delay: i * 0.02 }}
-                        className="flex flex-col md:grid md:grid-cols-[2.5fr_1.5fr_1.5fr_1fr_1fr_180px] md:items-center relative hover:bg-secondary/20 transition-colors group cursor-pointer"
-                      >
-                        {/* Miembro */}
-                        <div className="px-4 py-3 md:px-6 md:py-4 flex flex-row items-center justify-between md:justify-start gap-4">
-                          <div className="flex items-center gap-3 md:gap-4 w-full overflow-hidden">
-                            {member.photo_url ? (
-                              <img
-                                src={member.photo_url}
-                                alt={member.full_name}
-                                className="h-10 w-10 shrink-0 rounded-xl object-cover shadow-sm ring-1 ring-border/50"
-                              />
-                            ) : (
-                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold shadow-sm">
-                                {initials}
-                              </div>
-                            )}
-                            <div className="flex flex-col overflow-hidden w-full max-w-[80vw] md:max-w-none">
-                              <span className="font-medium text-foreground truncate max-w-full">{member.full_name}</span>
-                              <span className="text-[11px] text-muted-foreground truncate max-w-full">{member.email || member.phone || 'Sin contacto'}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Flex grid en móvil para métricas */}
-                        <div className="px-4 pb-3 md:p-0 flex md:contents flex-row flex-wrap gap-2 md:gap-0">
-                          {/* Plan */}
-                          <div className="md:px-6 md:py-4 flex-1 md:flex-none">
-                            <span
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] md:text-[11px] font-semibold max-w-[150px] truncate"
-                              style={{ backgroundColor: planColor + '20', color: planColor }}
-                            >
-                              <Tag className="h-3 w-3 shrink-0" />
-                              <span className="truncate">{planName}</span>
-                            </span>
-                          </div>
-
-                          {/* Estado */}
-                          <div className="md:px-6 md:py-4 flex flex-col md:items-start items-end flex-shrink-0">
-                            <span className={cn("inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider", st.className)}>
-                              {st.label}
-                            </span>
-                            {member.end_date && (
-                              <span className={cn("text-[10px] pl-1 hidden sm:block", currentStatus === 'expired' ? "text-red-400 font-medium" : "text-muted-foreground")} title="Fecha de vencimiento del plan">
-                                Vence: {format(new Date(member.end_date), "d MMM yy", { locale: es })}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Última Visita & Racha juntas en celular, separadas en tablet/PC */}
-                          <div className="w-full md:w-auto md:contents flex flex-row justify-between pt-2 md:pt-0 border-t border-border/10 md:border-0 mt-1 md:mt-0">
-                            <div className="md:px-6 md:py-4 text-xs md:text-sm text-muted-foreground mt-1 md:mt-0">
-                              <span className="md:hidden text-[10px] uppercase font-semibold text-muted-foreground/60 mr-2">Visita:</span>
-                              {member.last_visit
-                                ? format(new Date(member.last_visit), "dd MMM yyyy", { locale: es })
-                                : <span className="text-muted-foreground/40 italic">Sin visitas</span>
-                              }
-                            </div>
-
-                            <div className="md:px-6 md:py-4 mt-1 md:mt-0 flex items-center">
-                              <span className="md:hidden text-[10px] uppercase font-semibold text-muted-foreground/60 mr-2">Racha:</span>
-                              {member.streak > 0 ? (
-                                <span className="inline-flex items-center gap-1 text-amber-400 font-bold text-xs md:text-sm">
-                                  <Flame className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                                  {member.streak}d
-                                </span>
-                              ) : (
-                                <span className="text-muted-foreground/40 text-xs md:text-sm">—</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Acciones */}
-                        <div className="absolute top-3 right-3 md:relative md:top-0 md:right-0 md:px-6 md:py-4 flex items-center justify-end gap-1 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-primary md:bg-transparent bg-secondary/80 backdrop-blur-md"
-                            title="Ver Carnet"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!requireSubscription()) return;
-                              setCardMember(member);
-                            }}
-                          >
-                            <CreditCard className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground md:hover:text-primary md:bg-transparent bg-secondary/80 backdrop-blur-md"
-                            title="Editar"
-                            onClick={(e) => { e.stopPropagation(); openEdit(member); }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-[#25D366] hover:bg-[#25D366]/10 md:bg-transparent bg-secondary/80 backdrop-blur-md hidden sm:inline-flex"
-                            title="Enviar Enlace por WhatsApp"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const portalUrl = `${window.location.origin}/portal/${member.id}`;
-                              const nombre = member.full_name.split(" ")[0];
-                              const text = `¡Hola ${nombre}! \u{1F389} Bienvenido a tu nuevo gimnasio. \u{1F3CB}\u{FE0F}\u{200D}\u{2642}\u{FE0F}\n\nAquí tienes tu Portal de Miembro, donde podrás ver el estado de tu cuenta, vigencia de tu plan y descargar tu Pase Digital:\n\u{1F449} ${portalUrl}\n\n¡A entrenar duro!`;
-                              const encodedUrl = encodeURIComponent(text);
-                              if (member.phone) {
-                                const cleanPhone = member.phone.replace(/\D/g, '');
-                                window.open(`https://wa.me/${cleanPhone}?text=${encodedUrl}`, '_blank');
-                              } else {
-                                window.open(`https://wa.me/?text=${encodedUrl}`, '_blank');
-                              }
-                            }}
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 md:bg-transparent bg-secondary/80 backdrop-blur-md hidden sm:inline-flex"
-                            title="Eliminar"
-                            onClick={(e) => { e.stopPropagation(); setDeletingMember(member); }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </motion.div>
-                    );
-                  })
-                )}
-              </div>
             </div>
           </div>
         </div>
 
-        {/* Modal: Crear Nuevo Miembro */}
-        <Dialog open={isNewMemberOpen} onOpenChange={setIsNewMemberOpen}>
-          <DialogContent className="sm:max-w-[480px] p-0 border-border/50 bg-card rounded-3xl overflow-hidden shadow-2xl max-h-[96vh] flex flex-col">
-            <div className="px-6 py-5 border-b border-border/50 bg-secondary/10 flex items-center justify-between shrink-0">
-              <div>
-                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                  <UserPlus className="h-5 w-5 text-primary" />
-                  Registrar Miembro
-                </h2>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-0.5 opacity-50">
-                  Pase Digital Kallpa
-                </p>
-              </div>
+        {/* Filtros */}
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Buscar por nombre o documento..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-11 bg-card border-border/50 text-foreground focus:border-primary/50 transition-colors"
+            />
+          </div>
+          <Button variant="outline" className="h-11 border-border/50 bg-card gap-2 text-muted-foreground hover:text-foreground">
+            <Filter className="h-4 w-4" />
+            <span className="hidden sm:inline">Filtros</span>
+          </Button>
+        </div>
+
+        {/* Lista de Miembros */}
+        <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm shadow-sm ring-1 ring-border/20">
+          <div>
+            {/* Cabecera de Grid - Solo Desktop */}
+            <div className="hidden md:grid grid-cols-[2.5fr_1.5fr_1.5fr_1fr_1fr_180px] bg-secondary/40 border-b border-border/50 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <div className="px-6 py-4">Miembro</div>
+              <div className="px-6 py-4">Plan</div>
+              <div className="px-6 py-4">Estado</div>
+              <div className="px-6 py-4">Última Visita</div>
+              <div className="px-6 py-4">Racha</div>
+              <div className="px-6 py-4 text-right"></div>
             </div>
 
-            <div className="p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
-              <div className="flex gap-4 items-start">
-                <MemberPhotoCapture onPhotoCaptured={setPhotoFile} className="shrink-0" />
-                <div className="flex-1 space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="fullname">Nombre Completo <span className="text-coral">*</span></Label>
-                    <Input
-                      id="fullname"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Ej. Juan Pérez"
-                      className="bg-secondary/30 h-11"
-                    />
-                  </div>
+            <div className="divide-y divide-border/30">
+              {isLoading ? (
+                <div className="px-6 py-12 text-center text-muted-foreground">
+                  Cargando base de datos...
                 </div>
-              </div>
-
-
-              <div className="space-y-2">
-                <Label htmlFor="plan">Plan de Membresía</Label>
-                <Select value={plan} onValueChange={setPlan}>
-                  <SelectTrigger id="plan" className="w-full bg-secondary/30 h-11 border-border/50 hover:bg-secondary/50 transition-colors focus:ring-primary/20">
-                    <SelectValue placeholder="Selecciona un plan" />
-                  </SelectTrigger>
-                  <SelectContent className="border-border/50 bg-card rounded-xl shadow-xl select-none">
-                    {membershipPlans.length > 0 ? (
-                      membershipPlans.map((p: any) => (
-                        <SelectItem key={p.id} value={p.id} className="cursor-pointer py-3 focus:bg-secondary/40">
-                          <div className="flex items-center gap-2.5">
-                            <span className="h-2.5 w-2.5 rounded-full shadow-sm" style={{ backgroundColor: p.color || '#6b7280' }} />
-                            <span className="font-semibold text-foreground text-sm">{p.name}</span>
-                            <span className="text-muted-foreground text-xs ml-1 font-medium bg-secondary px-1.5 py-0.5 rounded-md">
-                              S/{p.price} / {p.duration_days} días
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <>
-                        <SelectItem value="basico" className="cursor-pointer py-3"><span className="font-medium text-sm">Básico (predeterminado)</span></SelectItem>
-                        <SelectItem value="estandar" className="cursor-pointer py-3"><span className="font-medium text-sm">Estándar</span></SelectItem>
-                        <SelectItem value="premium" className="cursor-pointer py-3"><span className="font-medium text-sm">Premium</span></SelectItem>
-                        <SelectItem value="vip" className="cursor-pointer py-3"><span className="font-medium text-sm">VIP</span></SelectItem>
-                      </>
-                    )}
-                  </SelectContent>
-                </Select>
-                {membershipPlans.length === 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    · Configura planes reales en <span className="text-primary font-medium">Planes</span> del menú.
-                  </p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Teléfono / WhatsApp</label>
-                  <Input
-                    placeholder="+51..."
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="bg-secondary/20 border-border/50 h-11"
-                  />
+              ) : filteredMembers.length === 0 ? (
+                <div className="px-6 py-12 text-center text-muted-foreground">
+                  No hay miembros registrados todavía. Haz clic en "Nuevo Miembro" para comenzar.
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                    Email <span className="text-[10px] font-medium opacity-50 capitalize">(Opcional)</span>
-                  </label>
-                  <Input
-                    type="email"
-                    placeholder="correo@ejemplo.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="bg-secondary/20 border-border/50 h-11"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 bg-secondary/10 border-t border-border/50 flex flex-col md:flex-row gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setIsNewMemberOpen(false)}
-                className="flex-1 h-12 rounded-xl font-bold order-2 md:order-1"
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={() => createMember.mutate()}
-                disabled={createMember.isPending || !fullName}
-                className="flex-[2] h-12 bg-volt text-black hover:bg-volt/90 rounded-xl font-bold glow-volt order-1 md:order-2"
-              >
-                {createMember.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Registrar y Crear Pase"}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Modal: QR Generado */}
-        <Dialog open={!!generatedQRMember} onOpenChange={(open) => !open && setGeneratedQRMember(null)}>
-          <DialogContent className="sm:max-w-md p-0 border-border/50 bg-card rounded-3xl overflow-hidden shadow-2xl">
-            <div className="p-8 text-center space-y-6">
-              <div className="space-y-2">
-                <div className="mx-auto w-12 h-12 bg-success/15 rounded-full flex items-center justify-center mb-4">
-                  <CheckCircle2 className="h-6 w-6 text-success" />
-                </div>
-                <h2 className="text-2xl font-display text-foreground">Pase Digital Creado</h2>
-                <p className="text-sm text-muted-foreground px-4">
-                  Pase de acceso de <span className="text-foreground font-semibold">{generatedQRMember?.name}</span>
-                </p>
-              </div>
-
-              <div className="mx-auto bg-white p-6 rounded-2xl w-fit shadow-inner ring-1 ring-border">
-                {generatedQRMember && (
-                  <QRCode
-                    value={generatedQRMember.id}
-                    size={200}
-                    level="H"
-                    className="w-full h-full"
-                  />
-                )}
-              </div>
-
-              <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold flex items-center justify-center gap-2">
-                <QrCode className="h-3 w-3" />
-                ID: {generatedQRMember?.id.split('-')[0]}
-              </p>
-
-              <div className="pt-2 flex flex-col gap-3">
-                <Button
-                  onClick={handleWhatsApp}
-                  className="w-full h-12 bg-[#25D366] hover:bg-[#128C7E] text-white font-semibold transition-colors gap-2 shadow-lg shadow-[#25d366]/20"
-                >
-                  <Smartphone className="h-5 w-5" />
-                  Enviar Pase por WhatsApp
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => setGeneratedQRMember(null)}
-                  className="w-full text-muted-foreground hover:text-foreground"
-                >
-                  Cerrar e imprimir luego
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Modal: Editar Miembro */}
-        <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
-          <DialogContent className="sm:max-w-md p-0 border-border/50 bg-card rounded-3xl overflow-hidden shadow-2xl max-h-[96vh] flex flex-col">
-            <div className="px-6 py-5 border-b border-border/50 bg-secondary/10 flex items-center justify-between shrink-0">
-              <div>
-                <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                  <Pencil className="h-4 w-4 text-primary" /> Editar Miembro
-                </h2>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-0.5 opacity-50">Actualizar registro</p>
-              </div>
-            </div>
-            <div className="p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
-              <div className="flex gap-4 items-start border-b border-border/10">
-                <MemberPhotoCapture
-                  onPhotoCaptured={setPhotoFile}
-                  existingPhotoUrl={editingMember?.photo_url}
-                  className="shrink-0"
-                />
-                <div className="flex-1 w-full space-y-4">
-                  <div className="space-y-2">
-                    <Label>Nombre Completo</Label>
-                    <Input value={editForm.full_name} onChange={e => setEditForm({ ...editForm, full_name: e.target.value })} className="bg-secondary/20 h-11" />
-                  </div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Teléfono</Label>
-                  <Input value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} placeholder="+51..." className="bg-secondary/30" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email</Label>
-                  <Input type="email" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} className="bg-secondary/30" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Plan de Membresía</Label>
-                <Select value={editForm.plan} onValueChange={handleEditPlanChange}>
-                  <SelectTrigger className="w-full bg-secondary/30 h-11 border-border/50 hover:bg-secondary/50 transition-colors focus:ring-primary/20">
-                    <SelectValue placeholder="Selecciona un plan" />
-                  </SelectTrigger>
-                  <SelectContent className="border-border/50 bg-card rounded-xl shadow-xl select-none">
-                    {(membershipPlans as any[]).length > 0 ? (
-                      (membershipPlans as any[]).map((p: any) => (
-                        <SelectItem key={p.id} value={p.id} className="cursor-pointer py-3 focus:bg-secondary/40">
-                          <div className="flex items-center gap-2.5">
-                            <span className="h-2.5 w-2.5 rounded-full shadow-sm" style={{ backgroundColor: p.color || '#6b7280' }} />
-                            <span className="font-semibold text-foreground text-sm">{p.name}</span>
-                            <span className="text-muted-foreground text-xs ml-1 font-medium bg-secondary px-1.5 py-0.5 rounded-md">
-                              S/{p.price} / {p.duration_days} días
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <>
-                        <SelectItem value="basico" className="cursor-pointer py-3">Básico</SelectItem>
-                        <SelectItem value="estandar" className="cursor-pointer py-3">Estándar</SelectItem>
-                        <SelectItem value="premium" className="cursor-pointer py-3">Premium</SelectItem>
-                        <SelectItem value="vip" className="cursor-pointer py-3">VIP</SelectItem>
-                      </>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Estado</Label>
-                <Select value={editForm.status} onValueChange={(val) => setEditForm({ ...editForm, status: val })}>
-                  <SelectTrigger className="w-full bg-secondary/30 h-11 border-border/50 hover:bg-secondary/50 transition-colors focus:ring-primary/20">
-                    <SelectValue placeholder="Selecciona un estado" />
-                  </SelectTrigger>
-                  <SelectContent className="border-border/50 bg-card rounded-xl shadow-xl select-none">
-                    <SelectItem value="active" className="cursor-pointer py-2 focus:bg-success/10"><div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-success" /><span className="font-medium">Activo</span></div></SelectItem>
-                    <SelectItem value="expired" className="cursor-pointer py-2 focus:bg-coral/10"><div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-coral" /><span className="font-medium">Vencido</span></div></SelectItem>
-                    <SelectItem value="suspended" className="cursor-pointer py-2 focus:bg-destructive/10"><div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-destructive" /><span className="font-medium">Suspendido</span></div></SelectItem>
-                    <SelectItem value="inactive" className="cursor-pointer py-2 focus:bg-secondary"><div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-muted-foreground" /><span className="font-medium">Inactivo</span></div></SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Fecha Inicio</Label>
-                  <Input type="date" value={editForm.start_date} onChange={e => {
-                    const newStartDate = e.target.value;
-                    if (!newStartDate || !editForm.plan) {
-                      setEditForm({ ...editForm, start_date: newStartDate });
-                      return;
+              ) : (
+                filteredMembers.map((member, i) => {
+                  let currentStatus = member.status || 'inactive';
+                  if (member.end_date) {
+                    const end = new Date(member.end_date);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    end.setHours(0, 0, 0, 0);
+                    if (end < today && currentStatus === 'active') {
+                      currentStatus = 'expired';
                     }
-                    // Recalcular el endDate automáticamente al cambiar el startDate
-                    const selectedPlan = (membershipPlans as any[]).find(p => p.id === editForm.plan);
-                    const durationDays = selectedPlan?.duration_days || 30;
+                  }
+                  const st = statusMap[currentStatus];
+                  const initials = member.full_name?.substring(0, 2).toUpperCase() || 'US';
+                  const planName = getPlanName(member.plan);
+                  const planColor = getPlanColor(member.plan);
 
-                    const startDate = new Date(newStartDate);
-                    startDate.setMinutes(startDate.getMinutes() + startDate.getTimezoneOffset());
+                  return (
+                    <motion.div
+                      key={member.id}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2, delay: i * 0.02 }}
+                      className="flex flex-col md:grid md:grid-cols-[2.5fr_1.5fr_1.5fr_1fr_1fr_180px] md:items-center relative hover:bg-secondary/20 transition-colors group cursor-pointer"
+                    >
+                      {/* Miembro */}
+                      <div className="px-4 py-3 md:px-6 md:py-4 flex flex-row items-center justify-between md:justify-start gap-4">
+                        <div className="flex items-center gap-3 md:gap-4 w-full overflow-hidden">
+                          {member.photo_url ? (
+                            <img
+                              src={member.photo_url}
+                              alt={member.full_name}
+                              className="h-10 w-10 shrink-0 rounded-xl object-cover shadow-sm ring-1 ring-border/50"
+                            />
+                          ) : (
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold shadow-sm">
+                              {initials}
+                            </div>
+                          )}
+                          <div className="flex flex-col overflow-hidden w-full max-w-[80vw] md:max-w-none">
+                            <span className="font-medium text-foreground truncate max-w-full">{member.full_name}</span>
+                            <span className="text-[11px] text-muted-foreground truncate max-w-full">{member.email || member.phone || 'Sin contacto'}</span>
+                          </div>
+                        </div>
+                      </div>
 
-                    const endDate = new Date(startDate);
-                    endDate.setDate(startDate.getDate() + durationDays);
+                      {/* Flex grid en móvil para métricas */}
+                      <div className="px-4 pb-3 md:p-0 flex md:contents flex-row flex-wrap gap-2 md:gap-0">
+                        {/* Plan */}
+                        <div className="md:px-6 md:py-4 flex-1 md:flex-none">
+                          <span
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] md:text-[11px] font-semibold max-w-[150px] truncate"
+                            style={{ backgroundColor: planColor + '20', color: planColor }}
+                          >
+                            <Tag className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{planName}</span>
+                          </span>
+                        </div>
 
-                    setEditForm({
-                      ...editForm,
-                      start_date: newStartDate,
-                      end_date: endDate.toISOString().split('T')[0]
-                    });
-                  }} className="bg-secondary/30 min-h-11" />
-                </div>
+                        {/* Estado */}
+                        <div className="md:px-6 md:py-4 flex flex-col md:items-start items-end flex-shrink-0">
+                          <span className={cn("inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider", st.className)}>
+                            {st.label}
+                          </span>
+                          {member.end_date && (
+                            <span className={cn("text-[10px] pl-1 hidden sm:block", currentStatus === 'expired' ? "text-red-400 font-medium" : "text-muted-foreground")} title="Fecha de vencimiento del plan">
+                              Vence: {format(new Date(member.end_date), "d MMM yy", { locale: es })}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Última Visita & Racha juntas en celular, separadas en tablet/PC */}
+                        <div className="w-full md:w-auto md:contents flex flex-row justify-between pt-2 md:pt-0 border-t border-border/10 md:border-0 mt-1 md:mt-0">
+                          <div className="md:px-6 md:py-4 text-xs md:text-sm text-muted-foreground mt-1 md:mt-0">
+                            <span className="md:hidden text-[10px] uppercase font-semibold text-muted-foreground/60 mr-2">Visita:</span>
+                            {member.last_visit
+                              ? format(new Date(member.last_visit), "dd MMM yyyy", { locale: es })
+                              : <span className="text-muted-foreground/40 italic">Sin visitas</span>
+                            }
+                          </div>
+
+                          <div className="md:px-6 md:py-4 mt-1 md:mt-0 flex items-center">
+                            <span className="md:hidden text-[10px] uppercase font-semibold text-muted-foreground/60 mr-2">Racha:</span>
+                            {member.streak > 0 ? (
+                              <span className="inline-flex items-center gap-1 text-amber-400 font-bold text-xs md:text-sm">
+                                <Flame className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                                {member.streak}d
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground/40 text-xs md:text-sm">—</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Acciones */}
+                      <div className="absolute top-3 right-3 md:relative md:top-0 md:right-0 md:px-6 md:py-4 flex items-center justify-end gap-1 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary md:bg-transparent bg-secondary/80 backdrop-blur-md"
+                          title="Ver Carnet"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!requireSubscription()) return;
+                            setCardMember(member);
+                          }}
+                        >
+                          <CreditCard className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground md:hover:text-primary md:bg-transparent bg-secondary/80 backdrop-blur-md"
+                          title="Editar"
+                          onClick={(e) => { e.stopPropagation(); openEdit(member); }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-[#25D366] hover:bg-[#25D366]/10 md:bg-transparent bg-secondary/80 backdrop-blur-md hidden sm:inline-flex"
+                          title="Enviar Enlace por WhatsApp"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const portalUrl = `${window.location.origin}/portal/${member.id}`;
+                            const nombre = member.full_name.split(" ")[0];
+                            const text = `¡Hola ${nombre}! \u{1F389} Bienvenido a tu nuevo gimnasio. \u{1F3CB}\u{FE0F}\u{200D}\u{2642}\u{FE0F}\n\nAquí tienes tu Portal de Miembro, donde podrás ver el estado de tu cuenta, vigencia de tu plan y descargar tu Pase Digital:\n\u{1F449} ${portalUrl}\n\n¡A entrenar duro!`;
+                            const encodedUrl = encodeURIComponent(text);
+                            if (member.phone) {
+                              const cleanPhone = member.phone.replace(/\D/g, '');
+                              window.open(`https://wa.me/${cleanPhone}?text=${encodedUrl}`, '_blank');
+                            } else {
+                              window.open(`https://wa.me/?text=${encodedUrl}`, '_blank');
+                            }
+                          }}
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 md:bg-transparent bg-secondary/80 backdrop-blur-md hidden sm:inline-flex"
+                          title="Eliminar"
+                          onClick={(e) => { e.stopPropagation(); setDeletingMember(member); }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </motion.div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal: Crear Nuevo Miembro */}
+      <Dialog open={isNewMemberOpen} onOpenChange={setIsNewMemberOpen}>
+        <DialogContent className="sm:max-w-[480px] p-0 border-border/50 bg-card rounded-3xl overflow-hidden shadow-2xl max-h-[96vh] flex flex-col">
+          <div className="px-6 py-5 border-b border-border/50 bg-secondary/10 flex items-center justify-between shrink-0">
+            <div>
+              <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                <UserPlus className="h-5 w-5 text-primary" />
+                Registrar Miembro
+              </h2>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-0.5 opacity-50">
+                Pase Digital Kallpa
+              </p>
+            </div>
+          </div>
+
+          <div className="p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
+            <div className="flex gap-4 items-start">
+              <MemberPhotoCapture onPhotoCaptured={setPhotoFile} className="shrink-0" />
+              <div className="flex-1 space-y-4">
                 <div className="space-y-2">
-                  <Label>Fecha Fin (Vencimiento)</Label>
-                  <Input type="date" value={editForm.end_date} onChange={e => setEditForm({ ...editForm, end_date: e.target.value })} className="bg-secondary/30 min-h-11" />
+                  <Label htmlFor="fullname">Nombre Completo <span className="text-coral">*</span></Label>
+                  <Input
+                    id="fullname"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Ej. Juan Pérez"
+                    className="bg-secondary/30 h-11"
+                  />
                 </div>
               </div>
             </div>
-            <div className="p-6 pt-0 flex gap-3">
-              <Button variant="outline" className="w-full" onClick={() => setEditingMember(null)}>Cancelar</Button>
+
+
+            <div className="space-y-2">
+              <Label htmlFor="plan">Plan de Membresía</Label>
+              <Select value={plan} onValueChange={setPlan}>
+                <SelectTrigger id="plan" className="w-full bg-secondary/30 h-11 border-border/50 hover:bg-secondary/50 transition-colors focus:ring-primary/20">
+                  <SelectValue placeholder="Selecciona un plan" />
+                </SelectTrigger>
+                <SelectContent className="border-border/50 bg-card rounded-xl shadow-xl select-none">
+                  {membershipPlans.length > 0 ? (
+                    membershipPlans.map((p: any) => (
+                      <SelectItem key={p.id} value={p.id} className="cursor-pointer py-3 focus:bg-secondary/40">
+                        <div className="flex items-center gap-2.5">
+                          <span className="h-2.5 w-2.5 rounded-full shadow-sm" style={{ backgroundColor: p.color || '#6b7280' }} />
+                          <span className="font-semibold text-foreground text-sm">{p.name}</span>
+                          <span className="text-muted-foreground text-xs ml-1 font-medium bg-secondary px-1.5 py-0.5 rounded-md">
+                            S/{p.price} / {p.duration_days} días
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <>
+                      <SelectItem value="basico" className="cursor-pointer py-3"><span className="font-medium text-sm">Básico (predeterminado)</span></SelectItem>
+                      <SelectItem value="estandar" className="cursor-pointer py-3"><span className="font-medium text-sm">Estándar</span></SelectItem>
+                      <SelectItem value="premium" className="cursor-pointer py-3"><span className="font-medium text-sm">Premium</span></SelectItem>
+                      <SelectItem value="vip" className="cursor-pointer py-3"><span className="font-medium text-sm">VIP</span></SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+              {membershipPlans.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  · Configura planes reales en <span className="text-primary font-medium">Planes</span> del menú.
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Teléfono / WhatsApp</label>
+                <Input
+                  placeholder="+51..."
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="bg-secondary/20 border-border/50 h-11"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                  Email <span className="text-[10px] font-medium opacity-50 capitalize">(Opcional)</span>
+                </label>
+                <Input
+                  type="email"
+                  placeholder="correo@ejemplo.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-secondary/20 border-border/50 h-11"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 bg-secondary/10 border-t border-border/50 flex flex-col md:flex-row gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setIsNewMemberOpen(false)}
+              className="flex-1 h-12 rounded-xl font-bold order-2 md:order-1"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => createMember.mutate()}
+              disabled={createMember.isPending || !fullName}
+              className="flex-[2] h-12 bg-volt text-black hover:bg-volt/90 rounded-xl font-bold glow-volt order-1 md:order-2"
+            >
+              {createMember.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Registrar y Crear Pase"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal: QR Generado */}
+      <Dialog open={!!generatedQRMember} onOpenChange={(open) => !open && setGeneratedQRMember(null)}>
+        <DialogContent className="sm:max-w-md p-0 border-border/50 bg-card rounded-3xl overflow-hidden shadow-2xl">
+          <div className="p-8 text-center space-y-6">
+            <div className="space-y-2">
+              <div className="mx-auto w-12 h-12 bg-success/15 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle2 className="h-6 w-6 text-success" />
+              </div>
+              <h2 className="text-2xl font-display text-foreground">Pase Digital Creado</h2>
+              <p className="text-sm text-muted-foreground px-4">
+                Pase de acceso de <span className="text-foreground font-semibold">{generatedQRMember?.name}</span>
+              </p>
+            </div>
+
+            <div className="mx-auto bg-white p-6 rounded-2xl w-fit shadow-inner ring-1 ring-border">
+              {generatedQRMember && (
+                <QRCode
+                  value={generatedQRMember.id}
+                  size={200}
+                  level="H"
+                  className="w-full h-full"
+                />
+              )}
+            </div>
+
+            <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold flex items-center justify-center gap-2">
+              <QrCode className="h-3 w-3" />
+              ID: {generatedQRMember?.id.split('-')[0]}
+            </p>
+
+            <div className="pt-2 flex flex-col gap-3">
               <Button
-                className="w-full bg-primary text-primary-foreground hover:opacity-90 glow-volt"
-                disabled={updateMember.isPending || !editForm.full_name}
-                onClick={() => updateMember.mutate()}
+                onClick={handleWhatsApp}
+                className="w-full h-12 bg-[#25D366] hover:bg-[#128C7E] text-white font-semibold transition-colors gap-2 shadow-lg shadow-[#25d366]/20"
               >
-                {updateMember.isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Guardando...</> : "Guardar Cambios"}
+                <Smartphone className="h-5 w-5" />
+                Enviar Pase por WhatsApp
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setGeneratedQRMember(null)}
+                className="w-full text-muted-foreground hover:text-foreground"
+              >
+                Cerrar e imprimir luego
               </Button>
             </div>
-          </DialogContent>
-        </Dialog>
-        {/* Carnet Digital */}
-        <MemberCardModal
-          member={cardMember ? {
-            id: cardMember.id,
-            full_name: cardMember.full_name,
-            plan: cardMember.plan,
-            planName: getPlanName(cardMember.plan),
-            planColor: getPlanColor(cardMember.plan),
-            status: cardMember.status,
-            phone: cardMember.phone,
-            access_code: cardMember.access_code,
-            photo_url: cardMember.photo_url
-          } as any : null}
-          gymName={user?.email?.split('@')[0] ?? 'Kallpa'}
-          onClose={() => setCardMember(null)}
-        />
+          </div>
+        </DialogContent>
+      </Dialog>
 
-        {/* Alerta de Eliminación */}
-        <AlertDialog open={!!deletingMember} onOpenChange={(open) => !open && setDeletingMember(null)}>
-          <AlertDialogContent className="border-border/50 bg-card rounded-2xl">
-            <AlertDialogHeader>
-              <AlertDialogTitle>¿Eliminar a {deletingMember?.full_name}?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esta acción no se puede deshacer. Esto eliminará permanentemente al miembro, su registro de asistencia y su pase digital.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="bg-transparent border-border hover:bg-secondary">Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => deleteMember.mutate(deletingMember?.id)}
-                disabled={deleteMember.isPending}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                {deleteMember.isPending ? "Eliminando..." : "Sí, Eliminar"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+      {/* Modal: Editar Miembro */}
+      <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
+        <DialogContent className="sm:max-w-md p-0 border-border/50 bg-card rounded-3xl overflow-hidden shadow-2xl max-h-[96vh] flex flex-col">
+          <div className="px-6 py-5 border-b border-border/50 bg-secondary/10 flex items-center justify-between shrink-0">
+            <div>
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <Pencil className="h-4 w-4 text-primary" /> Editar Miembro
+              </h2>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-0.5 opacity-50">Actualizar registro</p>
+            </div>
+          </div>
+          <div className="p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
+            <div className="flex gap-4 items-start border-b border-border/10">
+              <MemberPhotoCapture
+                onPhotoCaptured={setPhotoFile}
+                existingPhotoUrl={editingMember?.photo_url}
+                className="shrink-0"
+              />
+              <div className="flex-1 w-full space-y-4">
+                <div className="space-y-2">
+                  <Label>Nombre Completo</Label>
+                  <Input value={editForm.full_name} onChange={e => setEditForm({ ...editForm, full_name: e.target.value })} className="bg-secondary/20 h-11" />
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Teléfono</Label>
+                <Input value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} placeholder="+51..." className="bg-secondary/30" />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input type="email" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} className="bg-secondary/30" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Plan de Membresía</Label>
+              <Select value={editForm.plan} onValueChange={handleEditPlanChange}>
+                <SelectTrigger className="w-full bg-secondary/30 h-11 border-border/50 hover:bg-secondary/50 transition-colors focus:ring-primary/20">
+                  <SelectValue placeholder="Selecciona un plan" />
+                </SelectTrigger>
+                <SelectContent className="border-border/50 bg-card rounded-xl shadow-xl select-none">
+                  {(membershipPlans as any[]).length > 0 ? (
+                    (membershipPlans as any[]).map((p: any) => (
+                      <SelectItem key={p.id} value={p.id} className="cursor-pointer py-3 focus:bg-secondary/40">
+                        <div className="flex items-center gap-2.5">
+                          <span className="h-2.5 w-2.5 rounded-full shadow-sm" style={{ backgroundColor: p.color || '#6b7280' }} />
+                          <span className="font-semibold text-foreground text-sm">{p.name}</span>
+                          <span className="text-muted-foreground text-xs ml-1 font-medium bg-secondary px-1.5 py-0.5 rounded-md">
+                            S/{p.price} / {p.duration_days} días
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <>
+                      <SelectItem value="basico" className="cursor-pointer py-3">Básico</SelectItem>
+                      <SelectItem value="estandar" className="cursor-pointer py-3">Estándar</SelectItem>
+                      <SelectItem value="premium" className="cursor-pointer py-3">Premium</SelectItem>
+                      <SelectItem value="vip" className="cursor-pointer py-3">VIP</SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Estado</Label>
+              <Select value={editForm.status} onValueChange={(val) => setEditForm({ ...editForm, status: val })}>
+                <SelectTrigger className="w-full bg-secondary/30 h-11 border-border/50 hover:bg-secondary/50 transition-colors focus:ring-primary/20">
+                  <SelectValue placeholder="Selecciona un estado" />
+                </SelectTrigger>
+                <SelectContent className="border-border/50 bg-card rounded-xl shadow-xl select-none">
+                  <SelectItem value="active" className="cursor-pointer py-2 focus:bg-success/10"><div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-success" /><span className="font-medium">Activo</span></div></SelectItem>
+                  <SelectItem value="expired" className="cursor-pointer py-2 focus:bg-coral/10"><div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-coral" /><span className="font-medium">Vencido</span></div></SelectItem>
+                  <SelectItem value="suspended" className="cursor-pointer py-2 focus:bg-destructive/10"><div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-destructive" /><span className="font-medium">Suspendido</span></div></SelectItem>
+                  <SelectItem value="inactive" className="cursor-pointer py-2 focus:bg-secondary"><div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-muted-foreground" /><span className="font-medium">Inactivo</span></div></SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Fecha Inicio</Label>
+                <Input type="date" value={editForm.start_date} onChange={e => {
+                  const newStartDate = e.target.value;
+                  if (!newStartDate || !editForm.plan) {
+                    setEditForm({ ...editForm, start_date: newStartDate });
+                    return;
+                  }
+                  // Recalcular el endDate automáticamente al cambiar el startDate
+                  const selectedPlan = (membershipPlans as any[]).find(p => p.id === editForm.plan);
+                  const durationDays = selectedPlan?.duration_days || 30;
+
+                  const startDate = new Date(newStartDate);
+                  startDate.setMinutes(startDate.getMinutes() + startDate.getTimezoneOffset());
+
+                  const endDate = new Date(startDate);
+                  endDate.setDate(startDate.getDate() + durationDays);
+
+                  setEditForm({
+                    ...editForm,
+                    start_date: newStartDate,
+                    end_date: endDate.toISOString().split('T')[0]
+                  });
+                }} className="bg-secondary/30 min-h-11" />
+              </div>
+              <div className="space-y-2">
+                <Label>Fecha Fin (Vencimiento)</Label>
+                <Input type="date" value={editForm.end_date} onChange={e => setEditForm({ ...editForm, end_date: e.target.value })} className="bg-secondary/30 min-h-11" />
+              </div>
+            </div>
+          </div>
+          <div className="p-6 pt-0 flex gap-3">
+            <Button variant="outline" className="w-full" onClick={() => setEditingMember(null)}>Cancelar</Button>
+            <Button
+              className="w-full bg-primary text-primary-foreground hover:opacity-90 glow-volt"
+              disabled={updateMember.isPending || !editForm.full_name}
+              onClick={() => updateMember.mutate()}
+            >
+              {updateMember.isPending ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Guardando...</> : "Guardar Cambios"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Carnet Digital */}
+      <MemberCardModal
+        member={cardMember ? {
+          id: cardMember.id,
+          full_name: cardMember.full_name,
+          plan: cardMember.plan,
+          planName: getPlanName(cardMember.plan),
+          planColor: getPlanColor(cardMember.plan),
+          status: cardMember.status,
+          phone: cardMember.phone,
+          access_code: cardMember.access_code,
+          photo_url: cardMember.photo_url
+        } as any : null}
+        gymName={user?.email?.split('@')[0] ?? 'Kallpa'}
+        onClose={() => setCardMember(null)}
+      />
+
+      {/* Alerta de Eliminación */}
+      <AlertDialog open={!!deletingMember} onOpenChange={(open) => !open && setDeletingMember(null)}>
+        <AlertDialogContent className="border-border/50 bg-card rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar a {deletingMember?.full_name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Esto eliminará permanentemente al miembro, su registro de asistencia y su pase digital.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-transparent border-border hover:bg-secondary">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMember.mutate(deletingMember?.id)}
+              disabled={deleteMember.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMember.isPending ? "Eliminando..." : "Sí, Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </Layout>
 
