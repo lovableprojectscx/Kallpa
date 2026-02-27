@@ -249,7 +249,7 @@ const Members = () => {
     if (!generatedQRMember) return;
     const portalUrl = `${window.location.origin}/portal/${generatedQRMember.id}`;
     const nombre = generatedQRMember.name.split(" ")[0];
-    const text = `¡Hola ${nombre}! 🎉 Bienvenido a tu nuevo gimnasio. 🏋️‍♂️\n\nAquí tienes tu Portal de Miembro, donde podrás ver el estado de tu cuenta, vigencia de tu plan y descargar tu Pase Digital:\n👉 ${portalUrl}\n\n¡A entrenar duro!`;
+    const text = `¡Hola ${nombre}! \u{1F389} Bienvenido a tu nuevo gimnasio. \u{1F3CB}\u{FE0F}\u{200D}\u{2642}\u{FE0F}\n\nAquí tienes tu Portal de Miembro, donde podrás ver el estado de tu cuenta, vigencia de tu plan y descargar tu Pase Digital:\n\u{1F449} ${portalUrl}\n\n¡A entrenar duro!`;
     const encodedUrl = encodeURIComponent(text);
 
     // Si tenemos el teléfono, enviamos el mensaje directo a ese número,
@@ -463,7 +463,7 @@ const Members = () => {
                             e.stopPropagation();
                             const portalUrl = `${window.location.origin}/portal/${member.id}`;
                             const nombre = member.full_name.split(" ")[0];
-                            const text = `¡Hola ${nombre}! 🎉 Bienvenido a tu nuevo gimnasio. 🏋️‍♂️\n\nAquí tienes tu Portal de Miembro, donde podrás ver el estado de tu cuenta, vigencia de tu plan y descargar tu Pase Digital:\n👉 ${portalUrl}\n\n¡A entrenar duro!`;
+                            const text = `¡Hola ${nombre}! \u{1F389} Bienvenido a tu nuevo gimnasio. \u{1F3CB}\u{FE0F}\u{200D}\u{2642}\u{FE0F}\n\nAquí tienes tu Portal de Miembro, donde podrás ver el estado de tu cuenta, vigencia de tu plan y descargar tu Pase Digital:\n\u{1F449} ${portalUrl}\n\n¡A entrenar duro!`;
                             const encodedUrl = encodeURIComponent(text);
                             if (member.phone) {
                               const cleanPhone = member.phone.replace(/\D/g, '');

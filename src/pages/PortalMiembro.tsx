@@ -110,7 +110,7 @@ export default function PortalMiembro() {
 
     const handleRenewal = () => {
         if (!data) return;
-        const msg = `¡Hola! Soy ${data.full_name}. Mi membresía "${data.planName}" está por vencer y me gustaría renovarla. 🎉`;
+        const msg = `¡Hola! Soy ${data.full_name}. Mi membresía "${data.planName}" está por vencer y me gustaría renovarla. \u{1F389}`;
         const phone = data.gymWhatsApp?.replace(/\D/g, "") || "";
         window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
     };

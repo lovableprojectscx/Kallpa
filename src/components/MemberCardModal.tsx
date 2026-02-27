@@ -75,8 +75,8 @@ export function MemberCardModal({ member, gymName = "Kallpa", onClose }: MemberC
     const shareWhatsApp = () => {
         const portalUrl = `${window.location.origin}/portal/${member.id}`;
         const nombre = member.full_name.split(" ")[0];
-        const codigo = member.access_code ? `\n\n🔑 *Tu código de acceso:* \`${member.access_code}\`` : "";
-        const text = `¡Hola ${nombre}! 🎉 Ya tienes acceso a tu portal de miembro.\n\nDesde aquí puedes ver tu carnet, plan activo, vigencia y renovar tu membresía:\n👉 ${portalUrl}${codigo}\n\n¡Nos vemos en el gym! 💪`;
+        const codigo = member.access_code ? `\n\n\u{1F511} *Tu código de acceso:* \`${member.access_code}\`` : "";
+        const text = `¡Hola ${nombre}! \u{1F389} Ya tienes acceso a tu portal de miembro.\n\nDesde aquí puedes ver tu carnet, plan activo, vigencia y renovar tu membresía:\n\u{1F449} ${portalUrl}${codigo}\n\n¡Nos vemos en el gym! \u{1F4AA}`;
         const phone = member.phone ? member.phone.replace(/\D/g, "") : "";
         window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
     };
