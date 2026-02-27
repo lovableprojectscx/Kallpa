@@ -58,12 +58,12 @@ export default function Landing() {
                 <motion.div
                     animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.15, 0.1] }}
                     transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-[#D3FF24] blur-[150px] rounded-full"
+                    className="hidden md:block absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-[#D3FF24] blur-[150px] rounded-full"
                 />
                 <motion.div
                     animate={{ scale: [1, 1.5, 1], opacity: [0.05, 0.1, 0.05] }}
                     transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-                    className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-[#7C3AED] blur-[150px] rounded-full"
+                    className="hidden md:block absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-[#7C3AED] blur-[150px] rounded-full"
                 />
 
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20 mix-blend-overlay" />
@@ -232,7 +232,7 @@ export default function Landing() {
 
                     {/* Bottom CTA */}
                     <div className="mt-24 md:mt-40 mb-20 text-center relative px-4">
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl h-64 bg-[#D3FF24]/10 blur-[100px] rounded-full -z-10" />
+                        <div className="hidden md:block absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl h-64 bg-[#D3FF24]/10 blur-[100px] rounded-full -z-10" />
                         <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-8">No administres. <br /> <span className="text-[#D3FF24]">Evoluciona.</span></h2>
                         <Button
                             onClick={handleCTA}
