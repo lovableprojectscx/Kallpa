@@ -84,7 +84,7 @@ export function MemberCardModal({ member, gymName = "Kallpa", onClose }: MemberC
 
     return (
         <Dialog open={!!member} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md p-0 border-none bg-transparent shadow-none overflow-visible">
+            <DialogContent className="sm:max-w-md p-0 border-none bg-transparent shadow-none overflow-y-auto max-h-[98vh] custom-scrollbar">
                 <AnimatePresence>
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: 30 }}

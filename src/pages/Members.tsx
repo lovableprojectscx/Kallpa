@@ -543,23 +543,22 @@ const Members = () => {
 
       {/* Modal: Crear Nuevo Miembro */}
       <Dialog open={isNewMemberOpen} onOpenChange={setIsNewMemberOpen}>
-        <DialogContent className="sm:max-w-[450px] p-0 border-border/50 bg-card rounded-2xl overflow-hidden shadow-2xl">
-          <div className="px-6 py-6 border-b border-border/50 bg-secondary/10 flex flex-col md:flex-row items-center gap-6 md:justify-between text-center md:text-left">
-            <div className="order-2 md:order-1">
-              <h2 className="text-xl font-semibold text-foreground flex items-center justify-center md:justify-start gap-2">
+        <DialogContent className="sm:max-w-[480px] p-0 border-border/50 bg-card rounded-3xl overflow-hidden shadow-2xl max-h-[96vh] flex flex-col">
+          <div className="px-6 py-5 border-b border-border/50 bg-secondary/10 flex items-center justify-between gap-4 shrink-0">
+            <div className="flex-1">
+              <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                 <UserPlus className="h-5 w-5 text-primary" />
-                Registrar Miembro
+                <span className="hidden xs:inline">Registrar Miembro</span>
+                <span className="xs:hidden text-lg">Nuevo Miembro</span>
               </h2>
-              <p className="text-sm text-muted-foreground mt-1 max-w-[280px] md:max-w-none">
-                Completa los datos para generar el pase digital de acceso.
+              <p className="text-xs text-muted-foreground mt-0.5 font-medium">
+                Genera un pase digital profesional.
               </p>
             </div>
-            <div className="order-1 md:order-2">
-              <MemberPhotoCapture onPhotoCaptured={setPhotoFile} />
-            </div>
+            <MemberPhotoCapture onPhotoCaptured={setPhotoFile} size="sm" />
           </div>
 
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
             <div className="space-y-2">
               <Label htmlFor="fullname">Nombre Completo <span className="text-coral">*</span></Label>
               <Input
@@ -704,19 +703,21 @@ const Members = () => {
 
       {/* Modal: Editar Miembro */}
       <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
-        <DialogContent className="sm:max-w-md p-0 border-border/50 bg-card rounded-3xl overflow-hidden shadow-2xl">
-          <div className="px-6 py-5 border-b border-border/50 bg-secondary/10 flex flex-col md:flex-row items-center gap-4 md:justify-between">
-            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 order-2 md:order-1">
-              <Pencil className="h-5 w-5 text-primary" /> Editar Miembro
-            </h2>
-            <div className="order-1 md:order-2">
-              <MemberPhotoCapture
-                onPhotoCaptured={setPhotoFile}
-                existingPhotoUrl={editingMember?.photo_url}
-              />
+        <DialogContent className="sm:max-w-md p-0 border-border/50 bg-card rounded-3xl overflow-hidden shadow-2xl max-h-[96vh] flex flex-col">
+          <div className="px-6 py-5 border-b border-border/50 bg-secondary/10 flex items-center justify-between gap-4 shrink-0">
+            <div className="flex-1">
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <Pencil className="h-4 w-4 text-primary" /> Editar Miembro
+              </h2>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-1 opacity-50">Configura el acceso</p>
             </div>
+            <MemberPhotoCapture
+              onPhotoCaptured={setPhotoFile}
+              existingPhotoUrl={editingMember?.photo_url}
+              size="sm"
+            />
           </div>
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
             <div className="space-y-2">
               <Label>Nombre Completo</Label>
               <Input value={editForm.full_name} onChange={e => setEditForm({ ...editForm, full_name: e.target.value })} className="bg-secondary/30" />
