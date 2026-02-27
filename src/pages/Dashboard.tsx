@@ -20,7 +20,7 @@ const Index = () => {
 
   // Cargar métricas principales
   const { data: stats, isLoading } = useQuery({
-    queryKey: ['dashboard-stats', user?.tenantId],
+    queryKey: ['dashboard-stats-v2', user?.tenantId],
     queryFn: async () => {
       if (!user?.tenantId) return null;
 
@@ -36,15 +36,20 @@ const Index = () => {
       const startOfLastMonth = new Date(startOfMonth);
       startOfLastMonth.setMonth(startOfLastMonth.getMonth() - 1);
 
-      const [activeMembersRes, checkinsTodayRes, expiredMembersRes, allMembersRes,
+      const [activeMembersRes, checkinsTodayRes, inactiveMembersRes, expiredActiveRes, allMembersRes,
         activeMembersData, plansData, lastMonthActiveRes] = await Promise.all([
           // Conteos básicos
           supabase.from('members').select('*', { count: 'exact', head: true })
             .eq('tenant_id', user.tenantId).eq('status', 'active'),
           supabase.from('attendance').select('*', { count: 'exact', head: true })
             .eq('tenant_id', user.tenantId).gte('check_in_time', startOfToday.toISOString()),
+          // Miembros inactivos
           supabase.from('members').select('*', { count: 'exact', head: true })
-            .eq('tenant_id', user.tenantId).eq('status', 'expired'),
+            .eq('tenant_id', user.tenantId).eq('status', 'inactive'),
+          // Miembros activos pero con plan vencido
+          supabase.from('members').select('*', { count: 'exact', head: true })
+            .eq('tenant_id', user.tenantId).eq('status', 'active')
+            .lt('end_date', startOfToday.toISOString().split('T')[0]),
           supabase.from('members').select('*', { count: 'exact', head: true })
             .eq('tenant_id', user.tenantId),
           // Miembros activos con su plan para calcular ingresos
@@ -57,7 +62,13 @@ const Index = () => {
           supabase.from('members').select('*', { count: 'exact', head: true })
             .eq('tenant_id', user.tenantId).eq('status', 'active')
             .lt('created_at', startOfMonth.toISOString()),
-        ]);
+        ]).catch(err => {
+          console.error("Error fetching dashboard counts:", err);
+          return [];
+        });
+
+      // Asegurarse de tener `expiredMembers` sumando los resultados
+      const expiredMembersCount = (inactiveMembersRes?.count || 0) + (expiredActiveRes?.count || 0);
 
       // Calcular ingresos mensuales: suma del precio del plan de cada miembro activo
       const planPriceMap: Record<string, number> = {};
@@ -80,7 +91,7 @@ const Index = () => {
         activeMembers: activeMembersRes.count || 0,
         totalMembers: allMembersRes.count || 0,
         checkinsToday: checkinsTodayRes.count || 0,
-        expiredMembers: expiredMembersRes.count || 0,
+        expiredMembers: expiredMembersCount,
         monthlyRevenue,
         revenueChange: revenueChange ? Number(revenueChange) : null,
         lastMonthRevenue,

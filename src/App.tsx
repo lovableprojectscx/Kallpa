@@ -13,6 +13,7 @@ import Landing from "./pages/Landing";
 import Terminal from "./pages/Terminal";
 import Members from "./pages/Members";
 import Affiliate from "./pages/Affiliate";
+import Subscription from "./pages/Subscription";
 import Retention from "./pages/Retention";
 import Settings from "./pages/Settings";
 import Plans from "./pages/Plans";
@@ -43,7 +44,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
@@ -70,6 +71,7 @@ const App = () => (
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/terminal" element={<Terminal />} />
                         <Route path="/members" element={<Members />} />
+                        <Route path="/subscription" element={<Subscription />} />
                         <Route path="/affiliate" element={<Affiliate />} />
                         <Route path="/retention" element={<Retention />} />
                         <Route path="/settings" element={<Settings />} />

@@ -241,7 +241,7 @@ const Affiliate = () => {
                         <div className="space-y-2">
                             <h2 className="text-xl font-bold text-foreground">Conviértete en Embajador</h2>
                             <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                                Recibe un código único para invitar a otros dueños de gimnasio. Cada vez que uno de tus referidos active su suscripción, ganas <span className="text-primary font-semibold">1 mes gratis</span> de KALLPA.
+                                Recibe un código único para invitar a otros dueños de gimnasio. Cada vez que uno de tus referidos active su suscripción, ganas <span className="text-primary font-semibold">100 créditos por mes adquirido</span> para canjear en tu gimnasio.
                             </p>
                         </div>
 
@@ -249,7 +249,7 @@ const Affiliate = () => {
                             {[
                                 { icon: Share2, label: "Comparte tu código" },
                                 { icon: Users, label: "Ellos se registran" },
-                                { icon: Coins, label: "Ganas meses gratis" },
+                                { icon: Coins, label: "Ganas créditos" },
                             ].map(({ icon: Icon, label }) => (
                                 <div key={label} className="space-y-2">
                                     <div className="mx-auto w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -394,7 +394,7 @@ const Affiliate = () => {
                                 <CardTitle className="text-sm sm:text-base flex items-center gap-2">
                                     <Coins className="h-4 w-4 text-primary shrink-0" /> Canjear Créditos
                                 </CardTitle>
-                                <CardDescription className="text-xs sm:text-sm">1 crédito = 1 mes extra de suscripción</CardDescription>
+                                <CardDescription className="text-xs sm:text-sm">100 créditos = 1 mes extra de suscripción</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4 px-4 sm:px-6 pb-4 sm:pb-6">
                                 <div className="flex flex-col sm:flex-row items-center sm:justify-between p-3 sm:p-4 gap-1 sm:gap-0 rounded-xl bg-primary/5 border border-primary/20 text-center sm:text-left">
@@ -405,7 +405,8 @@ const Affiliate = () => {
                                 {credits > 0 ? (
                                     <div className="grid grid-cols-3 gap-2 sm:gap-3">
                                         {[1, 3, 6].map((months) => {
-                                            const canRedeem = credits >= months;
+                                            const cost = months * 100;
+                                            const canRedeem = credits >= cost;
                                             return (
                                                 <button
                                                     key={months}
@@ -421,10 +422,11 @@ const Affiliate = () => {
                                                     {redeemCredits.isPending ? (
                                                         <Loader2 className="h-4 w-4 animate-spin mx-auto" />
                                                     ) : (
-                                                        <>
+                                                        <div className="flex flex-col gap-0.5 items-center justify-center">
                                                             <span className="block text-xl sm:text-2xl font-black">+{months}</span>
-                                                            <span className="text-[10px] sm:text-[11px]">mes{months > 1 ? 'es' : ''}</span>
-                                                        </>
+                                                            <span className="text-[10px] sm:text-[11px] mb-1">mes{months > 1 ? 'es' : ''}</span>
+                                                            <span className="text-[9px] bg-primary/10 text-primary px-2 py-0.5 rounded-full mt-1 border border-primary/20">{cost} CR</span>
+                                                        </div>
                                                     )}
                                                 </button>
                                             );
@@ -433,7 +435,7 @@ const Affiliate = () => {
                                 ) : (
                                     <div className="text-center py-4 space-y-2">
                                         <p className="text-sm text-muted-foreground">Aún no tienes créditos.</p>
-                                        <p className="text-xs text-muted-foreground">Cuando un referido tuyo active su suscripción, recibirás 1 crédito automáticamente.</p>
+                                        <p className="text-xs text-muted-foreground">Cuando un referido tuyo active su suscripción, recibirás 100 créditos por cada mes que compren.</p>
                                     </div>
                                 )}
 
@@ -441,7 +443,7 @@ const Affiliate = () => {
                                     {[
                                         "Invita a un dueño de gimnasio con tu código",
                                         "Ellos se registran en sus primeros 7 días",
-                                        "Activan su primera suscripción → tú ganas 1 crédito",
+                                        "Activan suscripción → ganas 100 créditos por mes",
                                     ].map((step, i) => (
                                         <div key={i} className="flex items-start gap-2.5">
                                             <span className="min-w-5 min-h-5 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-[10px] font-black text-primary mt-0.5">{i + 1}</span>
@@ -468,7 +470,7 @@ const Affiliate = () => {
                                     {affiliateData.logs.map((log: any) => (
                                         <div key={log.id} className="flex items-center justify-between py-2.5 border-b border-border/30 last:border-0">
                                             <p className="text-xs text-muted-foreground">{log.reason}</p>
-                                            <span className="text-sm font-bold text-success">+{log.amount} crédito</span>
+                                            <span className="text-sm font-bold text-success">+{log.amount} créditos</span>
                                         </div>
                                     ))}
                                 </div>

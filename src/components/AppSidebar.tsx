@@ -34,6 +34,7 @@ const mainNav = [
 ];
 
 const secondaryNav = [
+  { title: "Planes PRO", url: "/subscription", icon: CreditCard },
   { title: "Afiliados", url: "/affiliate", icon: Gift },
   { title: "Ajustes", url: "/settings", icon: Settings },
 ];

@@ -133,9 +133,9 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                         .single();
 
                     if (affiliateRecord) {
-                        // 1 crédito = 1 mes extra de suscripción (escala 1 a 1 para igualar la UI)
+                        // 100 créditos = 1 mes extra de suscripción
                         const dur = license.duration_months || 1;
-                        const creditsToAdd = dur;
+                        const creditsToAdd = dur * 100;
 
                         const reasonText = `Referido activó ${dur} mes${dur > 1 ? 'es' : ''} → +${creditsToAdd} créditos (Tenant: ${user.tenantId})`;
 
