@@ -79,14 +79,25 @@ const Register = () => {
                     }
                 }
 
-                // Si la confirmación de correo está activada en Supabase, indicarlo:
-                if (data.session === null) {
-                    toast.success("¡Registro exitoso! Por favor, verifica tu correo electrónico para confirmar tu cuenta.");
-                    navigate("/login");
-                } else {
+                // Iniciar sesión automáticamente después del registro
+                // Nota: SignUp ya devuelve una sesión si el correo no requiere confirmación
+                if (data.session) {
                     toast.success("¡Bienvenido a KALLPA! Tu cuenta ha sido creada.");
-                    // Redirigir al onboarding, que se encargaría AuthGuard automáticamente al detectar login sin tenant
                     navigate("/onboarding", { replace: true });
+                } else {
+                    // Si por alguna razón no hay sesión (ej. config cambió), intentamos login manual silencioso
+                    const { error: loginError } = await supabase.auth.signInWithPassword({
+                        email,
+                        password,
+                    });
+
+                    if (loginError) {
+                        toast.error("Cuenta creada, pero por favor inicia sesión manualmente.");
+                        navigate("/login");
+                    } else {
+                        toast.success("¡Bienvenido a KALLPA!");
+                        navigate("/onboarding", { replace: true });
+                    }
                 }
             }
         } catch (error) {
