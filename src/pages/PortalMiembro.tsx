@@ -154,7 +154,8 @@ export default function PortalMiembro() {
     let currentStatus = data.status ?? "active";
     if (isExpired && currentStatus === "active") currentStatus = "expired";
     const st = statusConfig[currentStatus] ?? statusConfig.active;
-    const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(data.id)}&size=220&margin=1&dark=ffffff&light=00000000`;
+    // Fix: Using black pixels (dark=000000) for contrast on white background
+    const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(data.id)}&size=300&margin=2&dark=000000&light=ffffff`;
     const memberIdShort = data.id.toUpperCase().slice(-8);
 
     return (
@@ -322,34 +323,34 @@ export default function PortalMiembro() {
                                     {/* Shimmer Effect */}
                                     <div className="absolute inset-x-0 top-0 h-[200%] w-full bg-gradient-to-b from-white/5 via-transparent to-transparent -rotate-45 -translate-y-[50%] animate-shimmer pointer-events-none" />
 
-                                    <div className="flex justify-between items-start relative z-10">
+                                    <div className="flex justify-between items-start relative z-10 mb-6">
                                         <div className="space-y-1">
-                                            <p className="text-[9px] font-black tracking-[.3em] text-primary uppercase">Membresía Premium</p>
-                                            <h3 className="text-lg font-bold">{data.gymName}</h3>
+                                            <p className="text-[10px] font-black tracking-[0.3em] text-primary uppercase">Membresía KALLPA</p>
+                                            <h3 className="text-xl font-bold text-white uppercase leading-none">{data.gymName}</h3>
                                         </div>
-                                        <div className="h-10 w-14 bg-gradient-to-br from-white/10 to-transparent rounded-lg border border-white/5 backdrop-blur-md flex items-center justify-center">
-                                            <div className="w-8 h-5 bg-amber-400/20 rounded-sm border border-amber-400/40 opacity-50 overflow-hidden" />
+                                        <div className="h-10 w-14 bg-gradient-to-br from-white/20 to-transparent rounded-lg border border-white/10 backdrop-blur-md flex items-center justify-center shadow-lg">
+                                            <Sparkles className="h-5 w-5 text-amber-400" />
                                         </div>
                                     </div>
 
-                                    <div className="mt-auto relative z-10 flex items-end justify-between">
-                                        <div className="space-y-2">
+                                    <div className="mt-auto relative z-10 flex items-end justify-between gap-4">
+                                        <div className="flex-1 space-y-4">
                                             <div className="space-y-1">
-                                                <p className="text-[10px] font-bold text-white/30 tracking-widest uppercase mb-1">Titular</p>
-                                                <p className="text-2xl font-bold tracking-tight">{data.full_name}</p>
+                                                <p className="text-[10px] font-bold text-white/30 tracking-widest uppercase">Titular del Pase</p>
+                                                <p className="text-2xl font-bold tracking-tight text-white leading-tight truncate">{data.full_name}</p>
                                             </div>
-                                            <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-6">
                                                 <div>
-                                                    <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest">ID Miembro</p>
-                                                    <p className="text-xs font-mono font-bold text-primary">#{memberIdShort}</p>
+                                                    <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">ID Miembro</p>
+                                                    <p className="text-sm font-mono font-bold text-primary">#{memberIdShort}</p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest">Plan</p>
-                                                    <p className="text-xs font-bold text-white/80">{data.planName}</p>
+                                                    <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Plan Activo</p>
+                                                    <p className="text-sm font-bold text-white/90">{data.planName}</p>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="p-2 bg-white rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.1)]">
+                                        <div className="shrink-0 p-1.5 bg-white rounded-2xl shadow-[0_0_25px_rgba(255,255,255,0.15)] ring-1 ring-black/5">
                                             <img src={qrUrl} alt="QR" className="h-16 w-16" crossOrigin="anonymous" />
                                         </div>
                                     </div>

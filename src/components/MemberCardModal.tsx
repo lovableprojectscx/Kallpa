@@ -35,7 +35,8 @@ export function MemberCardModal({ member, gymName = "Kallpa", onClose }: MemberC
     if (!member) return null;
 
     const status = statusConfig[member.status || "active"] || statusConfig.active;
-    const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(member.id)}&size=200&margin=1&dark=ffffff&light=00000000`;
+    // Fix: Using black pixels (dark=000000) for contrast on white background
+    const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(member.id)}&size=300&margin=2&dark=000000&light=ffffff`;
     const memberIdShort = member.id.toUpperCase().slice(-8);
     const planColor = member.planColor || "#7C3AED";
 
@@ -103,47 +104,47 @@ export function MemberCardModal({ member, gymName = "Kallpa", onClose }: MemberC
                             <div className="absolute -top-20 -right-20 w-48 h-48 bg-primary/10 blur-[60px] rounded-full pointer-events-none" />
                             <div className="absolute -bottom-20 -left-20 w-48 h-48 bg-violet-600/10 blur-[60px] rounded-full pointer-events-none" />
 
-                            <div className="flex justify-between items-start relative z-10">
+                            <div className="flex justify-between items-start relative z-10 mb-6">
                                 <div className="space-y-1">
                                     <div className="flex items-center gap-2">
                                         <div className="h-6 w-6 rounded-lg bg-primary/20 flex items-center justify-center">
                                             <Dumbbell className="h-3.5 w-3.5 text-primary" />
                                         </div>
-                                        <p className="text-[9px] font-black tracking-[.3em] text-primary uppercase">Carnet Digital</p>
+                                        <p className="text-[10px] font-black tracking-[0.3em] text-primary uppercase">Carnet Digital</p>
                                     </div>
-                                    <h3 className="text-lg font-bold text-white/90">{gymName}</h3>
+                                    <h3 className="text-xl font-bold text-white uppercase leading-none">{gymName}</h3>
                                 </div>
                                 <div className="h-10 w-14 bg-white/5 rounded-lg border border-white/10 backdrop-blur-md flex items-center justify-center overflow-hidden">
                                     <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent" />
-                                    <Sparkles className="h-4 w-4 text-amber-400/30" />
+                                    <Sparkles className="h-5 w-5 text-amber-400" />
                                 </div>
                             </div>
 
-                            <div className="mt-auto relative z-10 flex items-end justify-between">
-                                <div className="space-y-4">
+                            <div className="mt-auto relative z-10 flex items-end justify-between gap-4">
+                                <div className="flex-1 space-y-4">
                                     <div className="space-y-1">
-                                        <p className="text-[10px] font-bold text-white/30 tracking-widest uppercase">Titular del Pase</p>
-                                        <p className="text-2xl font-bold tracking-tight text-white leading-tight">{member.full_name}</p>
+                                        <p className="text-[10px] font-bold text-white/30 tracking-widest uppercase mb-1">Titular del Pase</p>
+                                        <p className="text-2xl font-bold tracking-tight text-white leading-tight truncate">{member.full_name}</p>
                                     </div>
-                                    <div className="flex items-center gap-5">
+                                    <div className="flex items-center gap-6">
                                         <div>
-                                            <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest">Member ID</p>
-                                            <p className="text-xs font-mono font-bold text-primary">#{memberIdShort}</p>
+                                            <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest mb-1">Member ID</p>
+                                            <p className="text-sm font-mono font-bold text-primary">#{memberIdShort}</p>
                                         </div>
                                         <div>
-                                            <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest">Plan Activo</p>
+                                            <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest mb-1">Plan Activo</p>
                                             <div className="flex items-center gap-1.5">
                                                 <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: planColor }} />
-                                                <p className="text-xs font-bold text-white/80">{member.planName || "Básico"}</p>
+                                                <p className="text-sm font-bold text-white/80">{member.planName || "Básico"}</p>
                                             </div>
                                         </div>
                                         <div>
-                                            <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest">Estado</p>
-                                            <p className="text-[10px] font-bold" style={{ color: status.color }}>{status.label}</p>
+                                            <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest mb-1">Estado</p>
+                                            <p className="text-[11px] font-bold" style={{ color: status.color }}>{status.label}</p>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="p-2 bg-white rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.1)] ring-4 ring-black/5">
+                                <div className="shrink-0 p-1.5 bg-white rounded-2xl shadow-[0_0_25px_rgba(255,255,255,0.15)] ring-1 ring-black/5">
                                     <img src={qrUrl} alt="QR" className="h-16 w-16" crossOrigin="anonymous" />
                                 </div>
                             </div>
