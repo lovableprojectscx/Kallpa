@@ -35,8 +35,8 @@ const MemberPhotoCapture = ({ onPhotoCaptured, existingPhotoUrl, className }: Me
     };
 
     return (
-        <div className={cn("relative group w-full max-w-[120px]", className)}>
-            <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-secondary/30 ring-2 ring-border/50 group-hover:ring-primary/30 transition-all shadow-lg flex items-center justify-center">
+        <div className={cn("relative group w-full max-w-[110px]", className)}>
+            <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-secondary/20 ring-1 ring-border/50 group-hover:ring-primary/30 transition-all shadow-md flex items-center justify-center">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={previewUrl ? "filled" : "empty"}
@@ -70,15 +70,15 @@ const MemberPhotoCapture = ({ onPhotoCaptured, existingPhotoUrl, className }: Me
                 </AnimatePresence>
             </div>
 
-            <div className="flex justify-center gap-2 mt-2 w-full">
+            <div className="flex justify-start mt-2 w-full">
                 <Button
                     type="button"
                     variant="link"
                     size="sm"
-                    className="h-6 text-[9px] font-bold uppercase tracking-widest text-primary/60 hover:text-primary transition-all p-0"
+                    className="h-6 text-[8px] font-bold uppercase tracking-widest text-primary/50 hover:text-primary transition-all p-0"
                     onClick={() => fileInputRef.current?.click()}
                 >
-                    {previewUrl ? "Cambiar" : "Elegir archivo"}
+                    {previewUrl ? "Cambiar Foto" : "Seleccionar"}
                 </Button>
             </div>
 

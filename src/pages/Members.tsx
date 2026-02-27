@@ -557,9 +557,9 @@ const Members = () => {
           </div>
 
           <div className="p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
-            <div className="flex flex-col sm:flex-row gap-6 items-start">
+            <div className="flex gap-4 items-start">
               <MemberPhotoCapture onPhotoCaptured={setPhotoFile} className="shrink-0" />
-              <div className="flex-1 w-full space-y-4">
+              <div className="flex-1 space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="fullname">Nombre Completo <span className="text-coral">*</span></Label>
                   <Input
@@ -716,7 +716,7 @@ const Members = () => {
             </div>
           </div>
           <div className="p-6 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
-            <div className="flex flex-col sm:flex-row gap-6 items-start border-b border-border/10 pb-6">
+            <div className="flex gap-4 items-start border-b border-border/10">
               <MemberPhotoCapture
                 onPhotoCaptured={setPhotoFile}
                 existingPhotoUrl={editingMember?.photo_url}
