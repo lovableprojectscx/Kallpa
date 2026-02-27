@@ -70,15 +70,15 @@ const MemberPhotoCapture = ({ onPhotoCaptured, existingPhotoUrl, className }: Me
                                     <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
                                     <button
                                         onClick={clearPhoto}
-                                        className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+                                        className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity"
                                     >
-                                        <X className="h-3 w-3" />
+                                        <RefreshCw className="h-6 w-6 text-white" />
                                     </button>
                                 </>
                             ) : (
-                                <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                                    <User className="h-10 w-10 opacity-20" />
-                                    <span className="text-[10px] font-medium uppercase tracking-wider opacity-50 font-bold">Sin Foto</span>
+                                <div className="flex flex-col items-center gap-2 text-muted-foreground p-4 text-center">
+                                    <User className="h-10 w-10 opacity-10" />
+                                    <span className="text-[9px] font-bold uppercase tracking-wider opacity-30">Foto Opcional</span>
                                 </div>
                             )}
                         </motion.div>
@@ -112,14 +112,14 @@ const MemberPhotoCapture = ({ onPhotoCaptured, existingPhotoUrl, className }: Me
                 </AnimatePresence>
             </div>
 
-            <div className="flex justify-center gap-2 mt-3">
+            <div className="flex justify-center gap-2 mt-3 w-full">
                 {mode === "preview" && (
                     <>
                         <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="h-8 text-[11px] font-bold uppercase tracking-wider gap-1.5 border-border/50 bg-secondary/10"
+                            className="flex-1 h-9 text-[10px] font-bold uppercase tracking-wider gap-1.5 border-border/40 bg-secondary/5 rounded-xl"
                             onClick={() => setMode("camera")}
                         >
                             <Camera className="h-3.5 w-3.5 text-primary" />
@@ -129,7 +129,7 @@ const MemberPhotoCapture = ({ onPhotoCaptured, existingPhotoUrl, className }: Me
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="h-8 text-[11px] font-bold uppercase tracking-wider gap-1.5 border-border/50 bg-secondary/10"
+                            className="flex-1 h-9 text-[10px] font-bold uppercase tracking-wider gap-1.5 border-border/40 bg-secondary/5 rounded-xl"
                             onClick={() => fileInputRef.current?.click()}
                         >
                             <Upload className="h-3.5 w-3.5 text-primary" />

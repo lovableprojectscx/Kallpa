@@ -544,17 +544,19 @@ const Members = () => {
       {/* Modal: Crear Nuevo Miembro */}
       <Dialog open={isNewMemberOpen} onOpenChange={setIsNewMemberOpen}>
         <DialogContent className="sm:max-w-[450px] p-0 border-border/50 bg-card rounded-2xl overflow-hidden shadow-2xl">
-          <div className="px-6 py-6 border-b border-border/50 bg-secondary/20 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+          <div className="px-6 py-6 border-b border-border/50 bg-secondary/10 flex flex-col md:flex-row items-center gap-6 md:justify-between text-center md:text-left">
+            <div className="order-2 md:order-1">
+              <h2 className="text-xl font-semibold text-foreground flex items-center justify-center md:justify-start gap-2">
                 <UserPlus className="h-5 w-5 text-primary" />
                 Registrar Miembro
               </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Ingresa los datos para generar el pase digital.
+              <p className="text-sm text-muted-foreground mt-1 max-w-[280px] md:max-w-none">
+                Completa los datos para generar el pase digital de acceso.
               </p>
             </div>
-            <MemberPhotoCapture onPhotoCaptured={setPhotoFile} className="shrink-0" />
+            <div className="order-1 md:order-2">
+              <MemberPhotoCapture onPhotoCaptured={setPhotoFile} />
+            </div>
           </div>
 
           <div className="p-6 space-y-4">
@@ -606,45 +608,45 @@ const Members = () => {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="phone">Teléfono / WhatsApp</Label>
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Teléfono / WhatsApp</label>
                 <Input
-                  id="phone"
+                  placeholder="+51..."
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+51..."
-                  className="bg-secondary/30"
+                  className="bg-secondary/20 border-border/50 h-11"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email Opcional</Label>
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                  Email <span className="text-[10px] font-medium opacity-50 capitalize">(Opcional)</span>
+                </label>
                 <Input
-                  id="email"
                   type="email"
+                  placeholder="correo@ejemplo.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="correo@ejemplo.com"
-                  className="bg-secondary/30"
+                  className="bg-secondary/20 border-border/50 h-11"
                 />
               </div>
             </div>
           </div>
 
-          <div className="p-6 pt-0 flex gap-3">
+          <div className="p-6 bg-secondary/10 border-t border-border/50 flex flex-col md:flex-row gap-3">
             <Button
               variant="outline"
-              className="w-full bg-transparent border-border hover:bg-secondary"
               onClick={() => setIsNewMemberOpen(false)}
+              className="flex-1 h-12 rounded-xl font-bold order-2 md:order-1"
             >
               Cancelar
             </Button>
             <Button
-              className="w-full bg-primary text-primary-foreground hover:opacity-90 glow-volt shadow-lg"
-              disabled={createMember.isPending || !fullName}
               onClick={() => createMember.mutate()}
+              disabled={createMember.isPending || !fullName}
+              className="flex-[2] h-12 bg-volt text-black hover:bg-volt/90 rounded-xl font-bold glow-volt order-1 md:order-2"
             >
-              {createMember.isPending ? "Registrando..." : "Registrar y Crear Pase"}
+              {createMember.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Registrar y Crear Pase"}
             </Button>
           </div>
         </DialogContent>
@@ -703,17 +705,16 @@ const Members = () => {
       {/* Modal: Editar Miembro */}
       <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
         <DialogContent className="sm:max-w-md p-0 border-border/50 bg-card rounded-3xl overflow-hidden shadow-2xl">
-          <div className="px-6 py-5 border-b border-border/50 bg-secondary/20 flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                <Pencil className="h-5 w-5 text-primary" /> Editar Miembro
-              </h2>
+          <div className="px-6 py-5 border-b border-border/50 bg-secondary/10 flex flex-col md:flex-row items-center gap-4 md:justify-between">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2 order-2 md:order-1">
+              <Pencil className="h-5 w-5 text-primary" /> Editar Miembro
+            </h2>
+            <div className="order-1 md:order-2">
+              <MemberPhotoCapture
+                onPhotoCaptured={setPhotoFile}
+                existingPhotoUrl={editingMember?.photo_url}
+              />
             </div>
-            <MemberPhotoCapture
-              onPhotoCaptured={setPhotoFile}
-              existingPhotoUrl={editingMember?.photo_url}
-              className="shrink-0"
-            />
           </div>
           <div className="p-6 space-y-4">
             <div className="space-y-2">
