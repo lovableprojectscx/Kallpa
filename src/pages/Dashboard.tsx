@@ -31,6 +31,9 @@ const Index = () => {
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const todayStr = startOfToday.toLocaleDateString('sv-SE');
 
+      // Inicio del mes actual
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
       // Inicio del mes anterior
       const startOfLastMonth = new Date(startOfMonth);
       startOfLastMonth.setMonth(startOfLastMonth.getMonth() - 1);
