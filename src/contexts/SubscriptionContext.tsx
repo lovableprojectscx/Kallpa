@@ -60,7 +60,15 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
             if (data && data.redeemed_at) {
                 const redeemedDate = new Date(data.redeemed_at);
-                const expiry = new Date(redeemedDate.setMonth(redeemedDate.getMonth() + data.duration_months));
+                let expiry: Date;
+
+                if (data.duration_months === 0 || data.code?.startsWith('TRIAL-')) {
+                    // Trial mode: 3 days
+                    expiry = new Date(redeemedDate.getTime() + 3 * 24 * 60 * 60 * 1000);
+                } else {
+                    // Standard subscription
+                    expiry = new Date(redeemedDate.setMonth(redeemedDate.getMonth() + data.duration_months));
+                }
 
                 setExpirationDate(expiry);
                 setHasActiveSubscription(expiry > new Date());
