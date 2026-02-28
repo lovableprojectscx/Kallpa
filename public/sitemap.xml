@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Página Principal -->
   <url>
-    <loc>https://kallpasystems.com/</loc>
+    <loc>https://kallpa.app/</loc>
     <lastmod>2026-02-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>1.0</priority>
@@ -10,7 +10,7 @@
 
   <!-- Login -->
   <url>
-    <loc>https://kallpasystems.com/login</loc>
+    <loc>https://kallpa.app/login</loc>
     <lastmod>2026-02-28</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
@@ -18,7 +18,7 @@
 
   <!-- Registro -->
   <url>
-    <loc>https://kallpasystems.com/register</loc>
+    <loc>https://kallpa.app/register</loc>
     <lastmod>2026-02-28</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.8</priority>
@@ -26,7 +26,7 @@
 
   <!-- Portal de Búsqueda Pública -->
   <url>
-    <loc>https://kallpasystems.com/portal</loc>
+    <loc>https://kallpa.app/portal</loc>
     <lastmod>2026-02-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

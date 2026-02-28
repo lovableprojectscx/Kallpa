@@ -27,4 +27,4 @@ Disallow: /forgot-password
 Disallow: /carnet/*
 
 # Sitemap link
-Sitemap: https://kallpasystems.com/sitemap.xml
+Sitemap: https://kallpa.app/sitemap.xml
