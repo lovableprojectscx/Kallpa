@@ -253,6 +253,17 @@ export default function Landing() {
                     <span className="font-display font-medium tracking-wide">KALLPA</span>
                 </div>
                 <p>© {new Date().getFullYear()} Kallpa Systems. El software de control para gimnasios dominantes.</p>
+                <div className="mt-4 opacity-40 hover:opacity-100 transition-opacity">
+                    <a
+                        href="https://www.facebook.com/profile.php?id=61586273853555"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 group"
+                    >
+                        <span className="text-[11px] uppercase tracking-[0.2em]">hecho por</span>
+                        <span className="font-bold text-[#D3FF24] group-hover:underline">IDENZA</span>
+                    </a>
+                </div>
             </footer>
         </div>
     );
