@@ -75,9 +75,10 @@ async function processPayment(paymentId: string) {
 
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-        // Generar un código de licencia aleatorio que sirve de registro histórico
-        const generateRandomBlock = () => Math.random().toString(36).substring(2, 6).toUpperCase().padStart(4, '0');
-        const randomCode = `MP-${generateRandomBlock()}-${generateRandomBlock()}`;
+        // Usar el ID del pago de Mercado Pago como código único de la licencia.
+        // Esto garantiza idempotencia: si MP envía el mismo webhook ('approved') dos veces,
+        // la base de datos rechazará el insert duplicado gracias a la restricción UNIQUE() de 'code'.
+        const randomCode = `MP-PAY-${paymentId}`;
 
         // Insertar Licencia Canjeada directamente para el gym (tenant)
         const { error: insertError } = await supabase.from("licenses").insert([
@@ -87,13 +88,18 @@ async function processPayment(paymentId: string) {
                 status: "redeemed",
                 created_by: user_id || null, // A veces no está presente si es automático, pero lo recibimos en refData
                 price_pen: p.transaction_amount || 0,
-                label: `Mercado Pago (Auto) - ${duration_months} mes(es)`,
+                label: `Mercado Pago (Auto) - ${duration_months} mes(es) - ID: ${paymentId}`,
                 redeemed_by: tenant_id,
                 redeemed_at: new Date().toISOString()
             }
         ]);
 
         if (insertError) {
+            // Error 23505 == Unique Violation en Postgres (ya existe la licencia con ese código)
+            if (insertError.code === "23505") {
+                console.log(`Payment ${paymentId} already processed (idempotency caught). Ignoring...`);
+                return;
+            }
             console.error("Error creating license for tenant:", tenant_id, insertError);
             throw insertError;
         }
