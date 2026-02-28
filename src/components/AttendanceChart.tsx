@@ -10,18 +10,17 @@ export function AttendanceChart() {
   const { user } = useAuth();
 
   const { data: attendanceData = [], isLoading } = useQuery({
-    queryKey: ['attendance_chart', user?.tenantId, new Date().toISOString().split('T')[0]],
+    queryKey: ['attendance_chart', user?.tenantId, new Date().toLocaleDateString('sv-SE')],
     queryFn: async () => {
       if (!user?.tenantId) return [];
 
-      const startOfToday = new Date();
-      startOfToday.setHours(0, 0, 0, 0);
+      const todayStr = new Date().toLocaleDateString('sv-SE');
 
       const { data, error } = await supabase
         .from('attendance')
         .select('check_in_time')
         .eq('tenant_id', user.tenantId)
-        .gte('check_in_time', startOfToday.toISOString());
+        .gte('check_in_time', `${todayStr}T00:00:00`);
 
       if (error) {
         console.error(error);

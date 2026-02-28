@@ -23,12 +23,11 @@ const Index = () => {
 
   // Cargar métricas principales
   const { data: stats, isLoading } = useQuery({
-    queryKey: ['dashboard-stats-v2', user?.tenantId, new Date().toISOString().split('T')[0]],
+    queryKey: ['dashboard-stats-v2', user?.tenantId, new Date().toLocaleDateString('sv-SE')],
     queryFn: async () => {
       if (!user?.tenantId) return null;
 
-      const startOfToday = new Date();
-      startOfToday.setHours(0, 0, 0, 0);
+      const todayStr = new Date().toLocaleDateString('sv-SE');
 
       // Inicio del mes actual
       const startOfMonth = new Date();
@@ -45,14 +44,14 @@ const Index = () => {
           supabase.from('members').select('*', { count: 'exact', head: true })
             .eq('tenant_id', user.tenantId).eq('status', 'active'),
           supabase.from('attendance').select('*', { count: 'exact', head: true })
-            .eq('tenant_id', user.tenantId).gte('check_in_time', startOfToday.toISOString()),
+            .eq('tenant_id', user.tenantId).gte('check_in_time', `${todayStr}T00:00:00`),
           // Miembros inactivos
           supabase.from('members').select('*', { count: 'exact', head: true })
             .eq('tenant_id', user.tenantId).eq('status', 'inactive'),
           // Miembros activos pero con plan vencido
           supabase.from('members').select('*', { count: 'exact', head: true })
             .eq('tenant_id', user.tenantId).eq('status', 'active')
-            .lt('end_date', startOfToday.toISOString().split('T')[0]),
+            .lt('end_date', todayStr),
           supabase.from('members').select('*', { count: 'exact', head: true })
             .eq('tenant_id', user.tenantId),
           // Miembros activos con su plan para calcular ingresos
