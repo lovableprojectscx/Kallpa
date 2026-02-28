@@ -108,25 +108,25 @@ export default function Landing() {
                         initial="hidden"
                         animate="visible"
                         variants={containerVariants}
-                        className="text-center max-w-4xl mx-auto mt-8 md:mt-20"
+                        className="text-center max-w-4xl mx-auto mt-8 md:mt-20 px-4 sm:px-0 w-full"
                     >
                         <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-3 py-1 mb-6 md:mb-8 rounded-full border border-[#D3FF24]/30 bg-[#D3FF24]/10 backdrop-blur-md">
                             <Zap className="w-3 h-3 md:w-4 md:h-4 text-[#D3FF24]" />
                             <span className="text-[10px] md:text-xs font-medium text-[#D3FF24] uppercase tracking-wider">Sistema Operativo para Gimnasios</span>
                         </motion.div>
 
-                        <motion.h1 variants={itemVariants} className="text-3xl sm:text-5xl md:text-7xl font-black tracking-tight mb-4 md:mb-6 leading-[1.2] md:leading-[1.1] px-2 sm:px-0">
+                        <motion.h1 variants={itemVariants} className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight mb-4 md:mb-6 leading-[1.2] md:leading-[1.1] w-full break-words">
                             El Software que hace <br className="hidden sm:block" />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D3FF24] to-lime-400">
                                 Crecer tu Gimnasio.
                             </span>
                         </motion.h1>
 
-                        <motion.p variants={itemVariants} className="text-sm sm:text-base md:text-xl text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed px-4 md:px-0">
+                        <motion.p variants={itemVariants} className="text-sm sm:text-base md:text-xl text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed px-2 sm:px-0">
                             Automatiza accesos, predice abandonos y recupera socios por WhatsApp. Kallpa es tu gerente virtual 24/7.
                         </motion.p>
 
-                        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full px-4 sm:px-0">
+                        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full px-2 sm:px-0">
                             <Button
                                 onClick={handleCTA}
                                 size="lg"
