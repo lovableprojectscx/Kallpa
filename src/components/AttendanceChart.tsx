@@ -14,13 +14,14 @@ export function AttendanceChart() {
     queryFn: async () => {
       if (!user?.tenantId) return [];
 
-      const todayStr = new Date().toLocaleDateString('sv-SE');
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
       const { data, error } = await supabase
         .from('attendance')
         .select('check_in_time')
         .eq('tenant_id', user.tenantId)
-        .gte('check_in_time', `${todayStr}T00:00:00`);
+        .gte('check_in_time', startOfToday.toISOString());
 
       if (error) {
         console.error(error);

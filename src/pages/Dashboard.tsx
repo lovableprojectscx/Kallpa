@@ -27,12 +27,9 @@ const Index = () => {
     queryFn: async () => {
       if (!user?.tenantId) return null;
 
-      const todayStr = new Date().toLocaleDateString('sv-SE');
-
-      // Inicio del mes actual
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const todayStr = startOfToday.toLocaleDateString('sv-SE');
 
       // Inicio del mes anterior
       const startOfLastMonth = new Date(startOfMonth);
@@ -44,7 +41,7 @@ const Index = () => {
           supabase.from('members').select('*', { count: 'exact', head: true })
             .eq('tenant_id', user.tenantId).eq('status', 'active'),
           supabase.from('attendance').select('*', { count: 'exact', head: true })
-            .eq('tenant_id', user.tenantId).gte('check_in_time', `${todayStr}T00:00:00`),
+            .eq('tenant_id', user.tenantId).gte('check_in_time', startOfToday.toISOString()),
           // Miembros inactivos
           supabase.from('members').select('*', { count: 'exact', head: true })
             .eq('tenant_id', user.tenantId).eq('status', 'inactive'),
