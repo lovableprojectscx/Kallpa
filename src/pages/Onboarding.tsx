@@ -57,17 +57,7 @@ const Onboarding = () => {
                 { tenant_id: tenantData.id, name: 'Premium', description: 'Acceso total VIP y nutrición', price: 200, duration_days: 30, color: '#f59e0b', is_active: true }
             ]);
 
-            // 4. Otorgar licencia de prueba gratuita de 3 días
-            const trialCode = `TRIAL-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-            await supabase.from('licenses').insert({
-                code: trialCode,
-                status: 'redeemed', // Ya canjeada automáticamente
-                redeemed_by: tenantData.id,
-                redeemed_at: new Date().toISOString(),
-                duration_months: 0, // Identificador de que es la prueba
-            });
-
-            // 5. Vincular Tenant al perfil
+            // 4. Vincular Tenant al perfil
             await setTenantId(tenantData.id);
 
             toast.success("¡Espacio de trabajo creado!");
