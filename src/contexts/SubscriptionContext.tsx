@@ -117,16 +117,14 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
 
         try {
-            const trialCode = `TRIAL-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-            const { error: insertError } = await supabase.from('licenses').insert({
-                code: trialCode,
-                status: 'redeemed',
-                redeemed_by: user.tenantId,
-                redeemed_at: new Date().toISOString(),
-                duration_months: 0,
-            });
+            const { data, error: rpcError } = await supabase.rpc('activate_gym_trial');
 
-            if (insertError) throw insertError;
+            if (rpcError) throw rpcError;
+
+            if (data && !data.success) {
+                toast.error(data.message || "No se pudo activar la prueba.");
+                return false;
+            }
 
             toast.success("¡Prueba de 3 días activada con éxito!");
             await checkSubscription();

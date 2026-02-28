@@ -23,7 +23,7 @@ export default function Subscription() {
             // Limpiar la URL para evitar que se repita el toast al recargar
             window.history.replaceState({}, document.title, window.location.pathname);
             // Refrescar el estado global de la suscripción
-            checkSubscription && checkSubscription();
+            if (checkSubscription) checkSubscription();
         } else if (paymentStatus === 'failure') {
             toast.error("El pago no pudo ser procesado o fue cancelado.");
             window.history.replaceState({}, document.title, window.location.pathname);
@@ -51,7 +51,9 @@ export default function Subscription() {
                 try {
                     const errorData = await error.context?.json();
                     detail = errorData?.detail || errorData?.error || "";
-                } catch (e) { }
+                } catch (e) {
+                    // Fallback to error message
+                }
 
                 throw new Error(detail || error.message || "Error desconocido en el servidor");
             }

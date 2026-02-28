@@ -77,15 +77,15 @@ const Retention = () => {
           <StatCard
             title="Tasa de Retención"
             value={isLoading ? "..." : `${stats?.retentionRate}%`}
-            change={!isLoading && stats?.retentionRate! >= 90 ? "Óptimo" : "Requiere Acción"}
-            changeType={!isLoading && stats?.retentionRate! >= 90 ? "positive" : "negative"}
+            change={!isLoading && (stats?.retentionRate ?? 0) >= 90 ? "Óptimo" : "Requiere Acción"}
+            changeType={!isLoading && (stats?.retentionRate ?? 0) >= 90 ? "positive" : "negative"}
             icon={Target}
           />
           <StatCard
             title="En Riesgo"
             value={isLoading ? "..." : `${stats?.atRisk}`}
             change="7+ días sin visita"
-            changeType={!isLoading && stats?.atRisk! > 0 ? "negative" : "neutral"}
+            changeType={!isLoading && (stats?.atRisk ?? 0) > 0 ? "negative" : "neutral"}
             icon={TrendingDown}
           />
           <StatCard

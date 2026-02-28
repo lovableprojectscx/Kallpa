@@ -69,11 +69,14 @@ const Settings = () => {
         throw tenError;
       }
 
-      let { data: settings, error: setE } = await supabase
+      const settingsResponse = await supabase
         .from('gym_settings')
         .select('*')
         .eq('tenant_id', user.tenantId)
         .single();
+
+      let settings = settingsResponse.data;
+      const setE = settingsResponse.error;
 
       if (setE && setE.code === 'PGRST116') {
         const { data: newSettings, error: insertE } = await supabase
@@ -196,7 +199,9 @@ const Settings = () => {
         try {
           const errorData = await error.context?.json();
           detail = errorData?.detail || errorData?.error || "";
-        } catch (e) { }
+        } catch (e) {
+          // Ignore JSON parse error
+        }
         throw new Error(detail || error.message || "Error desconocido");
       }
 
