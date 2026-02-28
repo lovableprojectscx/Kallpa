@@ -174,11 +174,11 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const requireSubscription = (): boolean => {
         if (hasActiveSubscription || user?.role === 'superadmin') return true;
         toast.error(
-            'Licencia requerida — Canjea un código en Ajustes › Licencia para habilitar esta acción.',
+            'Suscripción requerida — Adquiere un Plan PRO para tu gimnasio.',
             {
                 action: {
-                    label: 'Ir a Ajustes',
-                    onClick: () => { window.location.href = '/settings'; },
+                    label: 'Ver Planes',
+                    onClick: () => { window.location.href = '/plans'; },
                 },
                 duration: 6000,
             }
