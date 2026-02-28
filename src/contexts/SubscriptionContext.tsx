@@ -52,9 +52,9 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 .eq('status', 'redeemed')
                 .order('redeemed_at', { ascending: false })
                 .limit(1)
-                .single();
+                .maybeSingle();
 
-            if (error && error.code !== 'PGRST116') { // Ignorar error de no filas
+            if (error) {
                 console.error("Error al verificar suscripción:", error);
             }
 
