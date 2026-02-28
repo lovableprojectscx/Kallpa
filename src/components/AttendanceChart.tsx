@@ -10,7 +10,7 @@ export function AttendanceChart() {
   const { user } = useAuth();
 
   const { data: attendanceData = [], isLoading } = useQuery({
-    queryKey: ['attendance_chart', user?.tenantId],
+    queryKey: ['attendance_chart', user?.tenantId, new Date().toISOString().split('T')[0]],
     queryFn: async () => {
       if (!user?.tenantId) return [];
 
@@ -66,30 +66,30 @@ export function AttendanceChart() {
           </div>
         </div>
       </div>
-      <div className="flex h-40 items-end gap-1.5 relative">
-        <AnimatePresence>
-          {values.map((val, i) => (
-            <div key={i} className="group relative flex flex-1 flex-col items-center">
-              <motion.div
-                initial={{ height: 0 }}
-                animate={{ height: `${(val / maxVal) * 100}%` }}
-                transition={{ duration: 0.8, delay: 0.02 * i, ease: [0.16, 1, 0.3, 1] }}
-                className="w-full rounded-t-lg bg-primary/10 transition-all duration-300 group-hover:bg-primary/20 relative"
-              >
-                <div
-                  className="absolute bottom-0 w-full rounded-t-lg bg-primary/40 group-hover:bg-primary transition-colors shadow-[0_-4px_12px_rgba(var(--primary),0.2)]"
-                  style={{ height: `${(val / maxVal) * 80}%` }}
-                />
-              </motion.div>
+      <div className="flex h-40 items-end gap-1.5 relative border-b border-border/20 pb-1">
+        {values.map((val, i) => (
+          <div key={i} className="group relative flex flex-1 flex-col items-center">
+            <motion.div
+              initial={{ height: 0 }}
+              animate={{ height: `${(val / maxVal) * 100}%` }}
+              transition={{ duration: 0.8, delay: 0.02 * i, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full rounded-t-md bg-primary/20 transition-all duration-300 group-hover:bg-primary/30 relative"
+            >
               {val > 0 && (
-                <div className="absolute -top-6 text-[10px] font-bold text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                  {val}
-                </div>
+                <div
+                  className="absolute bottom-0 w-full rounded-t-md bg-primary shadow-[0_0_15px_rgba(182,255,0,0.3)] transition-all duration-300 group-hover:shadow-[0_0_25px_rgba(182,255,0,0.5)]"
+                  style={{ height: '100%' }}
+                />
               )}
-              <span className="mt-2 text-[8px] text-muted-foreground/60">{hours[i]}</span>
-            </div>
-          ))}
-        </AnimatePresence>
+            </motion.div>
+            {val > 0 && (
+              <div className="absolute -top-7 text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity bg-secondary/80 px-1.5 py-0.5 rounded shadow-sm">
+                {val}
+              </div>
+            )}
+            <span className="mt-2 text-[8px] text-muted-foreground/60 font-medium">{hours[i]}</span>
+          </div>
+        ))}
       </div>
     </motion.div>
   );

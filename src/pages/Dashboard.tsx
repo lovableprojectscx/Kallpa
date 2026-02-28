@@ -23,7 +23,7 @@ const Index = () => {
 
   // Cargar métricas principales
   const { data: stats, isLoading } = useQuery({
-    queryKey: ['dashboard-stats-v2', user?.tenantId],
+    queryKey: ['dashboard-stats-v2', user?.tenantId, new Date().toISOString().split('T')[0]],
     queryFn: async () => {
       if (!user?.tenantId) return null;
 
