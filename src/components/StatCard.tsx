@@ -47,7 +47,6 @@ export function StatCard({ title, value, change, changeType = "neutral", icon: I
           )}>
             {changeType === "positive" && <TrendingUp className="h-3 w-3" />}
             {changeType === "negative" && <TrendingDown className="h-3 w-3" />}
-            {changeType === "neutral" && <Minus className="h-3 w-3" />}
             {change}
           </div>
           {comparisonLabel && (
