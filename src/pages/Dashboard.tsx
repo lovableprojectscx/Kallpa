@@ -190,9 +190,9 @@ const Index = () => {
                 value={isLoading ? "..." : String(stats?.activeMembers || 0)}
                 changeType="neutral"
                 icon={Users}
-                subtitle="Socios con acceso vigente"
-                change={`${stats?.totalMembers || 0}`}
-                comparisonLabel="Registrados"
+                subtitle="Socio con plan vigente hoy"
+                change="Total"
+                comparisonLabel={`de ${stats?.totalMembers || 0}`}
               />
               <StatCard
                 title="Check-ins Hoy"
@@ -200,8 +200,8 @@ const Index = () => {
                 changeType="neutral"
                 icon={UserCheck}
                 subtitle="Accesos registrados hoy"
-                change="Frecuencia"
-                comparisonLabel="Diaria"
+                change="Actividad"
+                comparisonLabel="del día"
               />
               <StatCard
                 title="Tasa Retención"
