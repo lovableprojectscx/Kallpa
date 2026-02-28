@@ -246,24 +246,37 @@ export default function Landing() {
                 </div>
             </main>
 
-            {/* Footer */}
-            <footer className="border-t border-white/5 bg-[#030303] py-8 text-center text-sm text-gray-500">
-                <div className="flex items-center justify-center gap-2 mb-4">
-                    <img src="/logo.png" alt="Kallpa Logo" className="h-5 w-5 opacity-50 grayscale" />
-                    <span className="font-display font-medium tracking-wide">KALLPA</span>
-                </div>
-                <p>© {new Date().getFullYear()} Kallpa Systems. El software de control para gimnasios dominantes.</p>
+            {/* Footer Signature */}
+            <footer className="relative z-10 border-t border-white/10 bg-[#030303] pt-16 pb-12 px-6 overflow-hidden">
+                <div className="max-w-7xl mx-auto flex flex-col items-center">
+                    {/* Logo & Copyright */}
+                    <div className="flex flex-col items-center gap-4 mb-10 text-center">
+                        <div className="flex items-center gap-2">
+                            <img src="/logo.png" alt="Kallpa Logo" className="h-6 w-6 opacity-90" />
+                            <span className="font-display font-bold tracking-[0.2em] text-white">KALLPA SYSTEMS</span>
+                        </div>
+                        <p className="text-[11px] text-gray-500 font-medium max-w-sm leading-relaxed">
+                            © {new Date().getFullYear()} El ecosistema definitivo para gimnasios de alto rendimiento.
+                        </p>
+                    </div>
 
-                <div className="mt-10 flex flex-col items-center gap-2">
-                    <span className="text-[10px] uppercase tracking-[0.4em] font-bold text-gray-500 opacity-60">desarrollado por</span>
+                    <div className="h-px w-24 bg-gradient-to-r from-transparent via-white/20 to-transparent mb-10" />
+
+                    {/* Agency Credit */}
                     <a
                         href="https://www.facebook.com/profile.php?id=61586273853555"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="group flex items-center gap-2 transition-transform duration-300 hover:scale-105"
+                        className="group relative flex flex-col items-center gap-2 bg-white/[0.02] p-6 rounded-2xl border border-white/5 hover:border-[#D3FF24]/20 transition-all duration-500 hover:shadow-[0_0_30px_rgba(211,255,36,0.05)]"
                     >
-                        <span className="text-sm font-black tracking-tight text-white group-hover:text-[#D3FF24] transition-colors">IDENZA</span>
-                        <div className="h-px w-8 bg-gradient-to-r from-[#D3FF24] to-transparent opacity-50" />
+                        <span className="text-[9px] uppercase tracking-[0.6em] text-gray-400 font-bold group-hover:text-[#D3FF24] transition-colors">Estrategia & Desarrollo</span>
+                        <div className="flex items-center gap-1 group-hover:scale-110 transition-transform duration-500">
+                            <span className="text-2xl font-black tracking-tight text-white">IDENZA</span>
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#D3FF24] animate-pulse" />
+                        </div>
+
+                        {/* Interactive underline */}
+                        <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-[#D3FF24] to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-700" />
                     </a>
                 </div>
             </footer>
