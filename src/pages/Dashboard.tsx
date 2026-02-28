@@ -186,7 +186,7 @@ const Index = () => {
               className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4"
             >
               <StatCard
-                title="Sectores Activos"
+                title="Socios Activos"
                 value={isLoading ? "..." : String(stats?.activeMembers || 0)}
                 changeType="neutral"
                 icon={Users}
