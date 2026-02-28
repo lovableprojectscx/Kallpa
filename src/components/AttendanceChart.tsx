@@ -73,12 +73,12 @@ export function AttendanceChart() {
               <motion.div
                 initial={{ height: 0 }}
                 animate={{ height: `${(val / maxVal) * 100}%` }}
-                transition={{ duration: 0.5, delay: 0.03 * i, ease: [0.4, 0, 0.2, 1] }}
-                className="w-full rounded-t-sm bg-primary/20 transition-smooth group-hover:bg-primary/40"
+                transition={{ duration: 0.8, delay: 0.02 * i, ease: [0.16, 1, 0.3, 1] }}
+                className="w-full rounded-t-lg bg-primary/10 transition-all duration-300 group-hover:bg-primary/20 relative"
               >
                 <div
-                  className="absolute bottom-0 w-full rounded-t-sm bg-primary/60"
-                  style={{ height: `${(val / maxVal) * 60}%` }}
+                  className="absolute bottom-0 w-full rounded-t-lg bg-primary/40 group-hover:bg-primary transition-colors shadow-[0_-4px_12px_rgba(var(--primary),0.2)]"
+                  style={{ height: `${(val / maxVal) * 80}%` }}
                 />
               </motion.div>
               {val > 0 && (

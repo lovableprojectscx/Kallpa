@@ -107,14 +107,21 @@ const Index = () => {
     <Layout>
       <div className="space-y-4 md:space-y-6">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          <h1 className="font-display text-2xl text-foreground">Dashboard</h1>
-          <p className="text-sm text-muted-foreground capitalize">Resumen operativo · {currentDate}</p>
-        </motion.div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Dashboard</h1>
+            <p className="text-sm text-muted-foreground capitalize font-medium opacity-70">Resumen operativo · {currentDate}</p>
+          </motion.div>
+
+          <div className="flex items-center gap-2 bg-secondary/30 p-1 rounded-xl w-fit">
+            <button className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest bg-card text-foreground rounded-lg shadow-sm">Mes Actual</button>
+            <button className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors">Ventas</button>
+          </div>
+        </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
@@ -123,37 +130,44 @@ const Index = () => {
             value={isLoading ? "..." : String(stats?.activeMembers || 0)}
             changeType="neutral"
             icon={Users}
-            subtitle={`de ${stats?.totalMembers || 0} registrados`}
+            subtitle="Socio con plan vigente hoy"
+            change={`${stats?.totalMembers || 0}`}
+            comparisonLabel="Totales"
           />
           <StatCard
             title="Check-ins Hoy"
             value={isLoading ? "..." : String(stats?.checkinsToday || 0)}
             changeType="neutral"
             icon={UserCheck}
+            subtitle="Asistencia en tiempo real"
+            change="Actividad"
+            comparisonLabel="Diaria"
           />
           <StatCard
             title="Ingresos del Mes"
             value={isLoading ? "..." : `S/${(stats?.monthlyRevenue || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
             change={
               stats?.revenueChange != null
-                ? `${stats.revenueChange >= 0 ? '+' : ''}${stats.revenueChange}% vs mes ant.`
-                : stats?.monthlyRevenue === 0
-                  ? 'Asigna planes a miembros'
-                  : 'vs mes anterior'
+                ? `${Math.abs(stats.revenueChange)}%`
+                : 'Sin datos'
             }
             changeType={
               stats?.revenueChange != null
                 ? stats.revenueChange >= 0 ? 'positive' : 'negative'
                 : 'neutral'
             }
+            comparisonLabel="vs. mes anterior"
             icon={TrendingUp}
+            subtitle="Recaudación proyectada"
           />
           <StatCard
             title="Vencimientos"
             value={isLoading ? "..." : String(stats?.expiredMembers || 0)}
-            change="histórico"
-            changeType={stats?.expiredMembers && stats.expiredMembers > 0 ? "negative" : "neutral"}
+            change={stats?.expiredMembers && stats.expiredMembers > 0 ? "Revisar" : "Al día"}
+            changeType={stats?.expiredMembers && stats.expiredMembers > 0 ? "negative" : "positive"}
+            comparisonLabel="Estado"
             icon={AlertCircle}
+            subtitle="Planes por renovar"
           />
         </div>
 
