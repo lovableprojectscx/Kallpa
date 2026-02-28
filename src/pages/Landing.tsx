@@ -143,62 +143,62 @@ export default function Landing() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true, margin: "-50px" }}
                         transition={{ duration: 0.7 }}
-                        className="mt-24 md:mt-40 grid grid-cols-1 md:grid-cols-3 gap-6"
+                        className="mt-24 md:mt-40 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6"
                     >
                         {/* Feature 1 - Gran impacto */}
-                        <div className="md:col-span-2 relative group overflow-hidden rounded-3xl bg-gradient-to-br from-white/5 to-white/[0.01] border border-white/10 p-10 hover:border-[#D3FF24]/30 transition-all duration-500">
-                            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <QrCode className="w-32 h-32 text-[#D3FF24]" />
+                        <div className="col-span-1 md:col-span-2 relative group overflow-hidden rounded-3xl bg-gradient-to-br from-white/5 to-white/[0.01] border border-white/10 p-5 sm:p-10 hover:border-[#D3FF24]/30 transition-all duration-500">
+                            <div className="absolute top-0 right-0 p-4 sm:p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <QrCode className="w-16 h-16 sm:w-32 sm:h-32 text-[#D3FF24]" />
                             </div>
                             <div className="relative z-10">
-                                <div className="w-12 h-12 rounded-2xl bg-[#D3FF24]/10 flex items-center justify-center mb-6">
-                                    <QrCode className="w-6 h-6 text-[#D3FF24]" />
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-[#D3FF24]/10 flex items-center justify-center mb-4 sm:mb-6">
+                                    <QrCode className="w-5 h-5 sm:w-6 sm:h-6 text-[#D3FF24]" />
                                 </div>
-                                <h3 className="text-2xl font-bold mb-3">Torno Virtual con QR</h3>
-                                <p className="text-gray-400 max-w-md leading-relaxed">
-                                    Recepción automatizada. Olvídate de los cuellos de botella; tus miembros ingresan mostrando su teléfono. Validación en menos de 1 segundo.
+                                <h3 className="text-lg sm:text-2xl font-bold mb-2 sm:mb-3">Torno Virtual</h3>
+                                <p className="text-xs sm:text-base text-gray-400 max-w-md leading-relaxed">
+                                    Recepción automatizada con QR. Validación en menos de 1 segundo sin esperas.
                                 </p>
                             </div>
                         </div>
 
                         {/* Feature 2 */}
-                        <div className="relative group overflow-hidden rounded-3xl bg-gradient-to-br from-white/5 to-white/[0.01] border border-white/10 p-10 hover:border-[#D3FF24]/30 transition-all duration-500">
+                        <div className="col-span-1 relative group overflow-hidden rounded-3xl bg-gradient-to-br from-white/5 to-white/[0.01] border border-white/10 p-5 sm:p-10 hover:border-[#D3FF24]/30 transition-all duration-500">
                             <div className="relative z-10">
-                                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6">
-                                    <TrendingUp className="w-6 h-6 text-blue-400" />
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4 sm:mb-6">
+                                    <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                                 </div>
-                                <h3 className="text-2xl font-bold mb-3">Caja Transparente</h3>
-                                <p className="text-gray-400 leading-relaxed">
-                                    Métricas financieras en vivo, pagos registrados y predicción de ingresos sin tocar una sola celda de Excel.
+                                <h3 className="text-lg sm:text-2xl font-bold mb-2 sm:mb-3">Caja</h3>
+                                <p className="text-xs sm:text-base text-gray-400 leading-relaxed">
+                                    Métricas financieras y predicción de ingresos en vivo.
                                 </p>
                             </div>
                         </div>
 
                         {/* Feature 3 */}
-                        <div className="relative group overflow-hidden rounded-3xl bg-gradient-to-br from-white/5 to-white/[0.01] border border-white/10 p-10 hover:border-[#D3FF24]/30 transition-all duration-500">
+                        <div className="col-span-1 relative group overflow-hidden rounded-3xl bg-gradient-to-br from-white/5 to-white/[0.01] border border-white/10 p-5 sm:p-10 hover:border-[#D3FF24]/30 transition-all duration-500">
                             <div className="relative z-10">
-                                <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-6">
-                                    <Brain className="w-6 h-6 text-purple-400" />
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-4 sm:mb-6">
+                                    <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-purple-400" />
                                 </div>
-                                <h3 className="text-2xl font-bold mb-3">Retención IA</h3>
-                                <p className="text-gray-400 leading-relaxed">
-                                    Sistema predictivo que te avisa exactamente quién está a punto de abandonar el gimnasio, permitiéndote recuperar mensualidades.
+                                <h3 className="text-lg sm:text-2xl font-bold mb-2 sm:mb-3">Fidelización</h3>
+                                <p className="text-xs sm:text-base text-gray-400 leading-relaxed">
+                                    Sistema predictivo para evitar que tus socios abandonen.
                                 </p>
                             </div>
                         </div>
 
                         {/* Feature 4 */}
-                        <div className="md:col-span-2 relative group overflow-hidden rounded-3xl bg-gradient-to-br from-white/5 to-white/[0.01] border border-white/10 p-10 hover:border-[#D3FF24]/30 transition-all duration-500">
+                        <div className="col-span-2 md:col-span-2 relative group overflow-hidden rounded-3xl bg-gradient-to-br from-white/5 to-white/[0.01] border border-white/10 p-5 sm:p-10 hover:border-[#D3FF24]/30 transition-all duration-500">
                             <div className="absolute bottom-0 right-10 opacity-10 group-hover:opacity-20 transition-opacity translate-y-1/4">
-                                <ShieldCheck className="w-48 h-48 text-[#D3FF24]" />
+                                <ShieldCheck className="w-24 h-24 sm:w-48 sm:h-48 text-[#D3FF24]" />
                             </div>
                             <div className="relative z-10">
-                                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-6">
-                                    <ShieldCheck className="w-6 h-6 text-emerald-400" />
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4 sm:mb-6">
+                                    <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400" />
                                 </div>
-                                <h3 className="text-2xl font-bold mb-3">Seguridad y Empleados</h3>
-                                <p className="text-gray-400 max-w-md leading-relaxed">
-                                    Crea y controla múltiples cajeros y recepcionistas. Ellos operan la terminal, tú monitoreas los billetes desde tu casa. Evita robos de caja con bitácoras inmutables.
+                                <h3 className="text-lg sm:text-2xl font-bold mb-2 sm:mb-3">Multi-empleado</h3>
+                                <p className="text-xs sm:text-base text-gray-400 max-w-md leading-relaxed">
+                                    Controla cajeros y recepcionistas. Evita robos con bitácoras inmutables.
                                 </p>
                             </div>
                         </div>
