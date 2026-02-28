@@ -275,9 +275,6 @@ const Settings = () => {
             <TabsTrigger value="license" className="flex-1 sm:flex-none rounded-lg py-2 px-2 sm:px-4 text-[10px] sm:text-xs font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
               <Shield className="h-3.5 w-3.5 mr-1 sm:mr-2" /> Licencia
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="hidden sm:flex flex-none rounded-lg py-2 px-2 sm:px-4 text-[10px] sm:text-xs font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
-              <Bell className="h-3.5 w-3.5 mr-1 sm:mr-2" /> Alertas
-            </TabsTrigger>
             <TabsTrigger value="security" className="flex-1 sm:flex-none rounded-lg py-2 px-2 sm:px-4 text-[10px] sm:text-xs font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
               <Key className="h-3.5 w-3.5 mr-1 sm:mr-2" /> Seguridad
             </TabsTrigger>
@@ -366,7 +363,7 @@ const Settings = () => {
                     </CardContent>
                   </Card>
 
-                  <Card className="border-border/50 bg-card/50 shadow-sm">
+                  <Card className="border-border/50 bg-card/50 shadow-sm hidden">
                     <CardHeader>
                       <div className="flex items-center gap-2 text-primary">
                         <Globe className="h-4 w-4" />
@@ -392,7 +389,7 @@ const Settings = () => {
                   </Card>
                 </div>
 
-                <Card className="border-border/50 bg-card/50 shadow-sm h-fit">
+                <Card className="border-border/50 bg-card/50 shadow-sm h-fit hidden">
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <Clock className="h-4 w-4 text-primary" />
@@ -615,16 +612,7 @@ const Settings = () => {
               </div>
             </motion.div>
           </TabsContent>
-
-          {/* NOTIFICATIONS */}
-          <TabsContent value="notifications">
-            <div className="p-12 text-center text-muted-foreground border border-border/50 rounded-2xl bg-card/50 border-dashed">
-              <Bell className="h-8 w-8 mx-auto mb-4 opacity-50" />
-              Centro de Notificaciones en las Rutas de Próximas Actualizaciones.
-            </div>
-          </TabsContent>
-
-
+          {/* REST OF TABS HIDDEN TEMPORARILY AWAITING FUTURE UPDATES */}
         </Tabs>
       </div>
     </Layout>

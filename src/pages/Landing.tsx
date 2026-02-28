@@ -1,9 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { QrCode, TrendingUp, Brain, Users, ArrowRight, ShieldCheck, Zap, Activity } from 'lucide-react';
+import { QrCode, TrendingUp, Brain, Users, ArrowRight, ShieldCheck, Zap, Activity, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 export default function Landing() {
     const { isAuthenticated, hasTenant, isLoading } = useAuth();
@@ -348,6 +349,84 @@ export default function Landing() {
                             </div>
                         </div>
                     </div>
+
+                    {/* FAQ Section */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: "-50px" }}
+                        transition={{ duration: 0.5 }}
+                        className="mt-20 md:mt-32 max-w-3xl mx-auto px-4"
+                    >
+                        <div className="text-center mb-10 md:mb-16">
+                            <h2 className="text-2xl md:text-4xl font-black mb-3">Preguntas Frecuentes</h2>
+                            <p className="text-sm md:text-base text-gray-400">Todo lo que necesitas saber antes de empezar.</p>
+                        </div>
+
+                        <Accordion type="single" collapsible className="w-full space-y-4">
+                            <AccordionItem value="item-1" className="border border-white/10 bg-white/[0.02] rounded-2xl px-6 data-[state=open]:border-[#D3FF24]/30 transition-colors">
+                                <AccordionTrigger className="text-left py-6 hover:no-underline font-bold text-base md:text-lg">
+                                    1. ¿Qué es KALLPA y cómo puede ayudar a mi gimnasio?
+                                </AccordionTrigger>
+                                <AccordionContent className="text-gray-400 leading-relaxed text-sm md:text-base pb-6">
+                                    KALLPA es un sistema Todo-en-Uno diseñado específicamente para modernizar gimnasios. Te permite gestionar miembros, controlar el acceso físico de manera instantánea vía código QR, procesar pagos y, lo más importante, usar algoritmos predictivos para saber qué clientes están por abandonar y enviarles mensajes automáticos de retención por WhatsApp.
+                                </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="item-2" className="border border-white/10 bg-white/[0.02] rounded-2xl px-6 data-[state=open]:border-[#D3FF24]/30 transition-colors">
+                                <AccordionTrigger className="text-left py-6 hover:no-underline font-bold text-base md:text-lg">
+                                    2. ¿Necesito conocimientos técnicos para instalarlo?
+                                </AccordionTrigger>
+                                <AccordionContent className="text-gray-400 leading-relaxed text-sm md:text-base pb-6">
+                                    En absoluto. KALLPA funciona 100% en la nube (tu navegador). No hay que instalar servidores, ni software pesado, ni usar cables. Para el control de acceso biométrico/QR ("El Torno Virtual"), solo necesitas una tablet económica o una pantalla conectada a internet en tu recepción.
+                                </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="item-3" className="border border-white/10 bg-white/[0.02] rounded-2xl px-6 data-[state=open]:border-[#D3FF24]/30 transition-colors">
+                                <AccordionTrigger className="text-left py-6 hover:no-underline font-bold text-base md:text-lg">
+                                    3. ¿Cómo funciona exactamente el control de acceso con QR?
+                                </AccordionTrigger>
+                                <AccordionContent className="text-gray-400 leading-relaxed text-sm md:text-base pb-6">
+                                    Cada miembro obtiene un Carnet Digital en su celular con un código QR único. Al llegar a tu local, acercan su celular a la tablet o pantalla de recepción (donde tendrás abierta la sección "Monitor de Acceso" de Kalppa) y el sistema valida su entrada en menos de un segundo, mostrando si están al día o si tienen deudas.
+                                </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="item-4" className="border border-white/10 bg-white/[0.02] rounded-2xl px-6 data-[state=open]:border-[#D3FF24]/30 transition-colors">
+                                <AccordionTrigger className="text-left py-6 hover:no-underline font-bold text-base md:text-lg">
+                                    4. ¿Puedo usar KALLPA desde mi teléfono celular?
+                                </AccordionTrigger>
+                                <AccordionContent className="text-gray-400 leading-relaxed text-sm md:text-base pb-6">
+                                    Sí. La aplicación está totalmente optimizada para dispositivos móviles. Puedes revisar la asistencia, congelar membresías, cuadrar caja o registrar nuevos pagos desde cualquier lugar del mundo usando tu celular, tablet o computadora portátil.
+                                </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="item-5" className="border border-white/10 bg-white/[0.02] rounded-2xl px-6 data-[state=open]:border-[#D3FF24]/30 transition-colors">
+                                <AccordionTrigger className="text-left py-6 hover:no-underline font-bold text-base md:text-lg">
+                                    5. ¿Es difícil migrar desde Excel u otro sistema antiguo?
+                                </AccordionTrigger>
+                                <AccordionContent className="text-gray-400 leading-relaxed text-sm md:text-base pb-6">
+                                    Es un proceso muy rápido. La plataforma está diseñada para que puedas registrar a tus miembros o importar sus datos de manera fluida. El proceso de Onboarding de tu gimnasio toma menos de 10 minutos. Además, nuestro equipo de soporte técnico está disponible para asistirte en cada paso si te atascas.
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
+
+                        {/* Support WhatsApp CTA */}
+                        <div className="mt-12 p-8 rounded-3xl bg-gradient-to-r from-white/[0.05] to-transparent border border-white/10 text-center flex flex-col items-center justify-center">
+                            <h4 className="text-lg md:text-xl font-bold mb-2">¿Tienes alguna pregunta muy técnica o específica?</h4>
+                            <p className="text-sm md:text-base text-gray-400 mb-6 max-w-lg">
+                                No te quedes con la duda. Escríbenos directamente a Soporte y un ingeniero te ayudará a evaluar si KALLPA es el ajuste perfecto para el tamaño y tipo de tu centro deportivo.
+                            </p>
+                            <a
+                                href="https://wa.me/51921585977?text=Hola,%20me%20gustar%C3%ADa%20hacer%20unas%20consultas%20sobre%20el%20sistema%20KALLPA%20antes%20de%20adquirirlo."
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold h-12 px-8 rounded-xl transition-all shadow-[0_0_20px_rgba(37,211,102,0.3)] hover:scale-105"
+                            >
+                                <MessageCircle className="w-5 h-5" />
+                                Chatear con Soporte KALLPA
+                            </a>
+                        </div>
+                    </motion.div>
 
                     {/* Bottom CTA */}
                     <div className="mt-20 md:mt-32 mb-16 md:mb-20 text-center relative px-4">
