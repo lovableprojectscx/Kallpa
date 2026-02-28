@@ -254,15 +254,16 @@ export default function Landing() {
                 </div>
                 <p>© {new Date().getFullYear()} Kallpa Systems. El software de control para gimnasios dominantes.</p>
 
-                <div className="mt-8 flex items-center justify-center gap-2 text-[10px] uppercase tracking-[0.3em] font-medium text-gray-600">
-                    <span>Hecho por</span>
+                <div className="mt-10 flex flex-col items-center gap-2">
+                    <span className="text-[10px] uppercase tracking-[0.4em] font-bold text-gray-500 opacity-60">desarrollado por</span>
                     <a
                         href="https://www.facebook.com/profile.php?id=61586273853555"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[#D3FF24] hover:text-white transition-colors duration-300 font-bold"
+                        className="group flex items-center gap-2 transition-transform duration-300 hover:scale-105"
                     >
-                        IDENZA
+                        <span className="text-sm font-black tracking-tight text-white group-hover:text-[#D3FF24] transition-colors">IDENZA</span>
+                        <div className="h-px w-8 bg-gradient-to-r from-[#D3FF24] to-transparent opacity-50" />
                     </a>
                 </div>
             </footer>
