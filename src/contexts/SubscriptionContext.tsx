@@ -177,8 +177,8 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
             'Suscripción requerida — Adquiere un Plan PRO para tu gimnasio.',
             {
                 action: {
-                    label: 'Ver Planes',
-                    onClick: () => { window.location.href = '/plans'; },
+                    label: 'Ver Planes PRO',
+                    onClick: () => { window.location.href = '/subscription'; },
                 },
                 duration: 6000,
             }
