@@ -7,16 +7,20 @@
 @layer base {
   :root {
     /* Kinetic Precision - Dark Performance Theme */
-    --background: 220 15% 7%;        /* Deep Onyx #0F1115 */
+    --background: 220 15% 7%;
+    /* Deep Onyx #0F1115 */
     --foreground: 220 10% 90%;
 
-    --card: 216 12% 14%;              /* Slate Grey #2C3036 */
+    --card: 216 12% 14%;
+    /* Slate Grey #2C3036 */
     --card-foreground: 220 10% 90%;
 
     --popover: 216 12% 14%;
     --popover-foreground: 220 10% 90%;
 
-    --primary: 72 100% 50%;           /* Electric Volt #D7FF00 */
+    /* Kallpa Original Volt Brand */
+    --primary: 71 100% 57%;
+    /* Volt Green #D3FF24 */
     --primary-foreground: 220 15% 7%;
 
     --secondary: 216 10% 20%;
@@ -25,21 +29,22 @@
     --muted: 216 10% 18%;
     --muted-foreground: 220 8% 55%;
 
-    --accent: 72 100% 50%;
+    --accent: 71 100% 57%;
     --accent-foreground: 220 15% 7%;
 
-    --destructive: 0 85% 60%;        /* Critical Coral #FF4B4B */
+    --destructive: 0 85% 60%;
+    /* Critical Coral #FF4B4B */
     --destructive-foreground: 0 0% 100%;
 
     --border: 216 10% 22%;
     --input: 216 10% 22%;
-    --ring: 72 100% 50%;
+    --ring: 71 100% 57%;
 
     --radius: 0.625rem;
 
     /* Custom tokens */
-    --volt: 72 100% 50%;
-    --volt-glow: 72 100% 50%;
+    --volt: 71 100% 57%;
+    --volt-glow: 71 100% 57%;
     --coral: 0 100% 65%;
     --onyx: 220 15% 7%;
     --slate: 216 12% 14%;
@@ -49,12 +54,12 @@
 
     --sidebar-background: 220 15% 5%;
     --sidebar-foreground: 220 10% 75%;
-    --sidebar-primary: 72 100% 50%;
+    --sidebar-primary: 71 100% 57%;
     --sidebar-primary-foreground: 220 15% 7%;
     --sidebar-accent: 216 12% 14%;
     --sidebar-accent-foreground: 220 10% 90%;
     --sidebar-border: 216 10% 15%;
-    --sidebar-ring: 72 100% 50%;
+    --sidebar-ring: 71 100% 57%;
   }
 }
 
@@ -69,7 +74,10 @@
     letter-spacing: -0.01em;
   }
 
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     letter-spacing: -0.02em;
   }
 }
@@ -81,13 +89,13 @@
   }
 
   .glow-volt {
-    box-shadow: 0 0 20px hsl(72 100% 50% / 0.15),
-                0 0 40px hsl(72 100% 50% / 0.05);
+    box-shadow: 0 0 20px hsl(71 100% 57% / 0.15),
+      0 0 40px hsl(71 100% 57% / 0.05);
   }
 
   .glow-coral {
     box-shadow: 0 0 20px hsl(0 100% 65% / 0.15),
-                0 0 40px hsl(0 100% 65% / 0.05);
+      0 0 40px hsl(0 100% 65% / 0.05);
   }
 
   .glass {
@@ -97,14 +105,14 @@
   }
 
   .border-glow-green {
-    box-shadow: inset 0 0 60px hsl(142 70% 50% / 0.08),
-                0 0 40px hsl(142 70% 50% / 0.05);
-    border-color: hsl(142 70% 50% / 0.3);
+    box-shadow: inset 0 0 60px hsl(71 100% 57% / 0.08),
+      0 0 40px hsl(71 100% 57% / 0.05);
+    border-color: hsl(71 100% 57% / 0.3);
   }
 
   .border-glow-red {
     box-shadow: inset 0 0 60px hsl(0 100% 65% / 0.08),
-                0 0 40px hsl(0 100% 65% / 0.05);
+      0 0 40px hsl(0 100% 65% / 0.05);
     border-color: hsl(0 100% 65% / 0.3);
   }
 

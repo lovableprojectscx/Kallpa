@@ -32,7 +32,8 @@ const Settings = () => {
   const [gymName, setGymName] = useState("");
   const [gymEmail, setGymEmail] = useState("");
   const [gymPhone, setGymPhone] = useState("");
-  const [gymWhatsApp, setGymWhatsApp] = useState("");
+  const [waCountryCode, setWaCountryCode] = useState("51");
+  const [waNumber, setWaNumber] = useState("");
   const [gymAddress, setGymAddress] = useState("");
   const [gymTimeZone, setGymTimeZone] = useState("America/Bogota");
   const [gymInstagram, setGymInstagram] = useState("");
@@ -104,7 +105,22 @@ const Settings = () => {
       setGymName(tenantData.tenant?.name || "");
       setGymEmail(tenantData.settings?.contact_email || "");
       setGymPhone(tenantData.settings?.contact_phone || "");
-      setGymWhatsApp(tenantData.settings?.whatsapp_number || "");
+
+      const wa = tenantData.settings?.whatsapp_number || "";
+      if (wa) {
+        if (wa.startsWith("51")) { setWaCountryCode("51"); setWaNumber(wa.substring(2)); }
+        else if (wa.startsWith("52")) { setWaCountryCode("52"); setWaNumber(wa.substring(2)); }
+        else if (wa.startsWith("54")) { setWaCountryCode("54"); setWaNumber(wa.substring(2)); }
+        else if (wa.startsWith("56")) { setWaCountryCode("56"); setWaNumber(wa.substring(2)); }
+        else if (wa.startsWith("57")) { setWaCountryCode("57"); setWaNumber(wa.substring(2)); }
+        else if (wa.startsWith("34")) { setWaCountryCode("34"); setWaNumber(wa.substring(2)); }
+        else if (wa.startsWith("1")) { setWaCountryCode("1"); setWaNumber(wa.substring(1)); }
+        else { setWaCountryCode("51"); setWaNumber(wa); }
+      } else {
+        setWaCountryCode("51");
+        setWaNumber("");
+      }
+
       setGymAddress(tenantData.settings?.address || "");
       setGymTimeZone(tenantData.settings?.timezone || "America/Bogota");
 
@@ -127,7 +143,7 @@ const Settings = () => {
       const { error } = await supabase.from('gym_settings').update({
         contact_email: gymEmail,
         contact_phone: gymPhone,
-        whatsapp_number: gymWhatsApp,
+        whatsapp_number: waNumber ? `${waCountryCode}${waNumber.replace(/\D/g, '')}` : "",
         address: gymAddress,
         timezone: gymTimeZone,
         social_media: { instagram: gymInstagram, facebook: gymFacebook, website: gymWeb },
@@ -166,7 +182,7 @@ const Settings = () => {
     setIsRedeeming(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('create-mp-preference-v3', {
+      const { data, error } = await supabase.functions.invoke('create-mp-preference', {
         body: {
           planDuration: months,
           pricePen: price,
@@ -298,16 +314,31 @@ const Settings = () => {
                         <Label htmlFor="g-wa" className="flex items-center gap-2">
                           <MessageCircle className="h-3.5 w-3.5 text-[#25D366]" />
                           WhatsApp del Gimnasio
-                          <span className="text-[10px] text-muted-foreground font-normal ml-1">(con código de país, ej: 51987654321)</span>
                         </Label>
-                        <Input
-                          id="g-wa"
-                          value={gymWhatsApp}
-                          onChange={e => setGymWhatsApp(e.target.value)}
-                          placeholder="51987654321"
-                          className="bg-secondary/20 font-mono"
-                        />
-                        <p className="text-xs text-muted-foreground">Este número aparece en el Portal del Miembro para que puedan contactarte y renovar.</p>
+                        <div className="flex gap-2">
+                          <Select value={waCountryCode} onValueChange={setWaCountryCode}>
+                            <SelectTrigger className="w-[110px] bg-secondary/20">
+                              <SelectValue placeholder="País" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[300px]">
+                              <SelectItem value="51">🇵🇪 +51</SelectItem>
+                              <SelectItem value="52">🇲🇽 +52</SelectItem>
+                              <SelectItem value="54">🇦🇷 +54</SelectItem>
+                              <SelectItem value="56">🇨🇱 +56</SelectItem>
+                              <SelectItem value="57">🇨🇴 +57</SelectItem>
+                              <SelectItem value="34">🇪🇸 +34</SelectItem>
+                              <SelectItem value="1">🇺🇸 +1</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            id="g-wa"
+                            value={waNumber}
+                            onChange={e => setWaNumber(e.target.value)}
+                            placeholder="987654321"
+                            className="bg-secondary/20 font-mono flex-1"
+                          />
+                        </div>
+                        <p className="text-xs text-amber-500 font-medium">Este número aparece en el Portal del Miembro para que puedan contactarte y renovar.</p>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="g-addr">Dirección Exacta</Label>
@@ -520,7 +551,7 @@ const Settings = () => {
                       <Label className="text-base font-semibold mb-4 block">Comprar o Renovar Licencia</Label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <Button
-                          onClick={() => handleBuyLicense(1, 49)} // 1 Mes = S/ 49
+                          onClick={() => handleBuyLicense(1, 35)} // 1 Mes = S/ 35
                           disabled={isRedeeming}
                           className="w-full bg-[#009EE3] text-white hover:bg-[#0089C5] shadow-lg flex items-center justify-between px-4 py-8 h-auto"
                         >
@@ -529,7 +560,7 @@ const Settings = () => {
                             <p className="text-xs text-white/80">{hasActiveSubscription ? "Renovación mensual" : "Suscripción mensual"}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-display font-bold text-xl">S/ 49</p>
+                            <p className="font-display font-bold text-xl">S/ 35</p>
                             <p className="text-[10px] text-white/70 uppercase">
                               {hasActiveSubscription ? "Renovar ahora" : "Comprar ahora"}
                             </p>
@@ -537,7 +568,7 @@ const Settings = () => {
                         </Button>
 
                         <Button
-                          onClick={() => handleBuyLicense(12, 490)} // 1 Año = S/ 490 (Ahorro)
+                          onClick={() => handleBuyLicense(12, 279)} // 1 Año = S/ 279
                           disabled={isRedeeming}
                           className="w-full bg-[#009EE3] text-white hover:bg-[#0089C5] shadow-lg flex items-center justify-between px-4 py-8 h-auto relative overflow-hidden"
                         >
@@ -547,7 +578,7 @@ const Settings = () => {
                             <p className="text-xs text-white/80">{hasActiveSubscription ? "Renovación anual" : "Suscripción anual"}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-display font-bold text-xl">S/ 490</p>
+                            <p className="font-display font-bold text-xl">S/ 279</p>
                             <p className="text-[10px] text-white/70 uppercase">
                               {hasActiveSubscription ? "Renovar ahora" : "Comprar ahora"}
                             </p>

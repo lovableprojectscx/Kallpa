@@ -91,8 +91,8 @@ export default {
           "100%": { transform: "scale(1)", opacity: "1" },
         },
         "pulse-volt": {
-          "0%, 100%": { boxShadow: "0 0 20px hsl(72 100% 50% / 0.1)" },
-          "50%": { boxShadow: "0 0 40px hsl(72 100% 50% / 0.25)" },
+          "0%, 100%": { boxShadow: "0 0 20px hsl(71 100% 57% / 0.1)" },
+          "50%": { boxShadow: "0 0 40px hsl(71 100% 57% / 0.25)" },
         },
         "pulse-coral": {
           "0%, 100%": { boxShadow: "0 0 20px hsl(0 100% 65% / 0.1)" },
