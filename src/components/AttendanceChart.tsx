@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
@@ -30,24 +30,19 @@ export function AttendanceChart() {
       return data || [];
     },
     enabled: !!user?.tenantId,
-    refetchInterval: 10000 // Refrescar cada 10 segundos para sincronizar con la lista
+    refetchInterval: 10000
   });
 
-  // Agrupar asistencias por hora (índices 0-15 representan 6am a 9pm)
   const values = new Array(16).fill(0);
-
   attendanceData.forEach((record: any) => {
     const time = new Date(record.check_in_time);
     const hour = time.getHours();
-
     if (hour >= 6 && hour <= 21) {
       values[hour - 6] += 1;
     }
   });
 
-  // Prevenir división por 0 en la gráfica
-  // Prevenir división por 0. Si hay pocos socios, el máximo es 3 para que las barras se vean altas.
-  const maxVal = Math.max(...values, 3);
+  const maxVal = Math.max(...values, 2);
 
   return (
     <motion.div
@@ -63,33 +58,41 @@ export function AttendanceChart() {
         </h3>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
-            <div className="h-2 w-2 rounded-full bg-primary" />
-            <span className="text-[10px] text-muted-foreground">Hoy</span>
+            <div className="h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(182,255,0,0.6)]" />
+            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Hoy</span>
           </div>
         </div>
       </div>
-      <div className="flex h-40 items-end gap-1.5 relative border-b border-border/20 pb-1">
+
+      <div className="flex h-44 items-end gap-2.5 relative border-b border-border/20 pb-1 px-1">
         {values.map((val, i) => (
-          <div key={i} className="group relative flex flex-1 flex-col items-center">
+          <div key={i} className="group relative flex flex-1 flex-col items-center h-full justify-end">
+            {/* Carril de fondo para profundidad */}
+            <div className="absolute inset-0 w-full bg-secondary/10 rounded-t-md opacity-20 group-hover:opacity-40 transition-opacity" />
+
             <motion.div
               initial={{ height: 0 }}
               animate={{ height: `${(val / maxVal) * 100}%` }}
               transition={{ duration: 0.8, delay: 0.02 * i, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full rounded-t-md bg-primary/20 transition-all duration-300 group-hover:bg-primary/30 relative"
+              className="w-full rounded-t-lg bg-primary/20 transition-all duration-300 relative z-10"
             >
               {val > 0 && (
                 <div
-                  className="absolute bottom-0 w-full rounded-t-md bg-primary shadow-[0_0_15px_rgba(182,255,0,0.3)] transition-all duration-300 group-hover:shadow-[0_0_25px_rgba(182,255,0,0.5)]"
+                  className="absolute bottom-0 w-full rounded-t-lg bg-primary shadow-[0_0_25px_rgba(182,255,0,0.6)] transition-all duration-300 group-hover:shadow-[0_0_40px_rgba(182,255,0,0.9)]"
                   style={{ height: '100%' }}
                 />
               )}
             </motion.div>
+
             {val > 0 && (
-              <div className="absolute -top-7 text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity bg-secondary/80 px-1.5 py-0.5 rounded shadow-sm">
+              <div className="absolute -top-10 z-20 text-[12px] font-black text-primary bg-background/95 border-2 border-primary/30 px-2 py-0.5 rounded-md shadow-[0_4px_20px_rgba(0,0,0,0.4)] backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-300 scale-75 group-hover:scale-100">
                 {val}
               </div>
             )}
-            <span className="mt-2 text-[8px] text-muted-foreground/60 font-medium">{hours[i]}</span>
+
+            <span className="mt-3 text-[9px] text-muted-foreground/50 font-black uppercase tracking-tighter group-hover:text-primary/70 transition-colors">
+              {hours[i]}
+            </span>
           </div>
         ))}
       </div>
