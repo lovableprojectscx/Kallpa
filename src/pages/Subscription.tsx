@@ -4,14 +4,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { CreditCard, Loader2, ShieldCheck, Crown, Check } from "lucide-react";
+import { CreditCard, Loader2, ShieldCheck, Crown, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 
 export default function Subscription() {
     const { user } = useAuth();
-    const { hasActiveSubscription, expirationDate, checkSubscription } = useSubscription();
+    const { hasActiveSubscription, expirationDate, checkSubscription, hasUsedTrial, activateTrial } = useSubscription();
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
     useEffect(() => {
@@ -68,6 +68,15 @@ export default function Subscription() {
         }
     };
 
+    const handleActivateTrial = async () => {
+        setIsProcessingPayment(true);
+        const success = await activateTrial();
+        setIsProcessingPayment(false);
+        if (success) {
+            toast.success("¡Tu prueba gratuita de 3 días ha comenzado!");
+        }
+    };
+
     return (
         <Layout>
             <div className="space-y-6 max-w-5xl mx-auto py-4 sm:py-6 px-3 sm:px-6">
@@ -115,6 +124,35 @@ export default function Subscription() {
                     </div>
                     <div className={`absolute top-0 right-0 w-32 h-32 blur-[50px] -mr-10 -mt-10 ${hasActiveSubscription ? 'bg-success/20' : 'bg-destructive/20'}`} />
                 </motion.div>
+
+                {/* Trial Activation Banner */}
+                {!hasActiveSubscription && user?.role !== 'superadmin' && !hasUsedTrial && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.15 }}
+                        className="relative overflow-hidden rounded-2xl p-6 sm:p-8 border border-[#D3FF24]/30 bg-gradient-to-br from-[#D3FF24]/10 to-transparent shadow-[0_0_30px_rgba(211,255,36,0.1)] mt-6"
+                    >
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
+                            <div className="text-center sm:text-left">
+                                <h3 className="text-xl sm:text-2xl font-black text-[#D3FF24] mb-2 flex items-center justify-center sm:justify-start gap-2">
+                                    <Sparkles className="h-5 w-5" />
+                                    Prueba Gratuita de 3 Días
+                                </h3>
+                                <p className="text-sm sm:text-base text-gray-300">
+                                    Desbloquea todas las funciones PRO sin compromiso. Ideal para probar todo el potencial de Kallpa.
+                                </p>
+                            </div>
+                            <Button
+                                onClick={handleActivateTrial}
+                                disabled={isProcessingPayment}
+                                className="w-full sm:w-auto h-12 px-8 bg-[#D3FF24] hover:bg-[#b8e61b] text-black font-bold whitespace-nowrap glow-volt shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
+                            >
+                                {isProcessingPayment ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : "Activar Prueba VIP"}
+                            </Button>
+                        </div>
+                    </motion.div>
+                )}
 
                 {/* Planes de Suscripción Automática */}
                 <motion.div
