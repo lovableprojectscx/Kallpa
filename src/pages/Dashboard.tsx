@@ -3,7 +3,7 @@ import { StatCard } from "@/components/StatCard";
 import { RetentionPanel } from "@/components/RetentionPanel";
 import { RecentActivity } from "@/components/RecentActivity";
 import { AttendanceChart } from "@/components/AttendanceChart";
-import { Users, UserCheck, TrendingUp, AlertCircle, Loader2, BarChart3, DollarSign, PieChart, ArrowUpRight, ArrowDownRight, Activity } from "lucide-react";
+import { Users, UserCheck, TrendingUp, AlertCircle, Loader2, BarChart3, DollarSign, PieChart, ArrowUpRight, ArrowDownRight, Activity, TrendingDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
@@ -15,6 +15,9 @@ import { cn } from "@/lib/utils";
 const Index = () => {
   const { user } = useAuth();
   const [viewMode, setViewMode] = useState<'operational' | 'sales'>('operational');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   // Redirigir la cuenta maestra a su panel global
   if (user?.role === 'superadmin') {
@@ -23,7 +26,7 @@ const Index = () => {
 
   // Cargar métricas principales
   const { data: stats, isLoading } = useQuery({
-    queryKey: ['dashboard-stats-v2', user?.tenantId, new Date().toLocaleDateString('sv-SE')],
+    queryKey: ['dashboard-stats-v2', user?.tenantId, viewMode, selectedDate, selectedMonth, selectedYear],
     queryFn: async () => {
       if (!user?.tenantId) return null;
 
@@ -31,7 +34,15 @@ const Index = () => {
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const todayStr = startOfToday.toLocaleDateString('sv-SE');
 
-      // Inicio del mes actual
+      // Fecha seleccionada (Día)
+      const dayStart = new Date(selectedDate + 'T00:00:00');
+      const dayEnd = new Date(selectedDate + 'T23:59:59');
+
+      // Mes seleccionado
+      const startOfSelectedMonth = new Date(selectedYear, selectedMonth, 1, 0, 0, 0);
+      const endOfSelectedMonth = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59);
+
+      // Inicio del mes actual (para comparativas internas si se desea)
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
       // Inicio del mes anterior
@@ -39,84 +50,81 @@ const Index = () => {
       startOfLastMonth.setMonth(startOfLastMonth.getMonth() - 1);
 
       const [activeMembersRes, checkinsTodayRes, inactiveMembersRes, expiredActiveRes, allMembersRes,
-        activeMembersData, plansData, lastMonthActiveRes] = await Promise.all([
-          // Conteos básicos
+        salesDayRes, salesMonthlyRes, plansRes, activeMembersData] = await Promise.all([
+          // 0. Active
           supabase.from('members').select('*', { count: 'exact', head: true })
             .eq('tenant_id', user.tenantId).eq('status', 'active'),
+          // 1. Checkins
           supabase.from('attendance').select('*', { count: 'exact', head: true })
             .eq('tenant_id', user.tenantId).gte('check_in_time', startOfToday.toISOString()),
-          // Miembros inactivos
+          // 2. Inactive (Desertores)
           supabase.from('members').select('*', { count: 'exact', head: true })
             .eq('tenant_id', user.tenantId).eq('status', 'inactive'),
-          // Miembros activos pero con plan vencido
+          // 3. Expired (Active but past end_date)
           supabase.from('members').select('*', { count: 'exact', head: true })
             .eq('tenant_id', user.tenantId).eq('status', 'active')
             .lt('end_date', todayStr),
+          // 4. All
           supabase.from('members').select('*', { count: 'exact', head: true })
             .eq('tenant_id', user.tenantId),
-          // Miembros activos con su plan para calcular ingresos
-          supabase.from('members').select('plan')
-            .eq('tenant_id', user.tenantId).eq('status', 'active'),
-          // Planes del tenant
-          supabase.from('membership_plans').select('id, price')
-            .eq('tenant_id', user.tenantId),
-          // Miembros activos el mes pasado (registrados antes de inicio de mes actual)
+          // 5. Sales Day Selected
           supabase.from('members').select('*', { count: 'exact', head: true })
-            .eq('tenant_id', user.tenantId).eq('status', 'active')
-            .lt('created_at', startOfMonth.toISOString()),
+            .eq('tenant_id', user.tenantId)
+            .gte('created_at', dayStart.toISOString())
+            .lte('created_at', dayEnd.toISOString()),
+          // 6. Sales Month selected
+          supabase.from('members').select('*', { count: 'exact', head: true })
+            .eq('tenant_id', user.tenantId)
+            .gte('created_at', startOfSelectedMonth.toISOString())
+            .lte('created_at', endOfSelectedMonth.toISOString()),
+          // 7. Plans info
+          supabase.from('membership_plans').select('id, name, price').eq('tenant_id', user.tenantId),
+          // 8. Members for revenue calculation (Active plans)
+          supabase.from('members').select('plan').eq('tenant_id', user.tenantId).eq('status', 'active')
         ]).catch(err => {
           console.error("Error fetching dashboard counts:", err);
           return [];
         });
 
-      // Asegurarse de tener `expiredMembers` sumando los resultados
-      const expiredMembersCount = (inactiveMembersRes?.count || 0) + (expiredActiveRes?.count || 0);
+      // Map plans for quick lookup
+      const planMap: Record<string, { name: string, price: number }> = {};
+      (plansRes.data || []).forEach((p: any) => {
+        planMap[p.id] = { name: p.name, price: p.price };
+      });
 
-      // Calcular ingresos mensuales: suma del precio del plan de cada miembro activo
-      const planPriceMap: Record<string, number> = {};
-      (plansData.data || []).forEach((p: any) => { planPriceMap[p.id] = p.price; });
-
+      // Calculate monthly revenue from active members
       const monthlyRevenue = (activeMembersData.data || []).reduce((sum: number, m: any) => {
-        return sum + (planPriceMap[m.plan] || 0);
+        return sum + (planMap[m.plan]?.price || 0);
       }, 0);
 
-      // Ingresos mes anterior (misma lógica con conteo del mes pasado × precio promedio)
-      const lastMonthCount = lastMonthActiveRes.count || 0;
-      const avgPrice = monthlyRevenue / Math.max((activeMembersRes.count || 1), 1);
-      const lastMonthRevenue = lastMonthCount * avgPrice;
-
-      const revenueChange = lastMonthRevenue > 0
-        ? ((monthlyRevenue - lastMonthRevenue) / lastMonthRevenue * 100).toFixed(0)
-        : null;
-
-      // Plan con más miembros
-      const planDistribution: Record<string, number> = {};
+      // Top Plan (Plan Estrella)
+      const planCounts: Record<string, number> = {};
       (activeMembersData.data || []).forEach((m: any) => {
-        planDistribution[m.plan] = (planDistribution[m.plan] || 0) + 1;
+        planCounts[m.plan] = (planCounts[m.plan] || 0) + 1;
       });
 
       let topPlanId = null;
-      let maxMembers = 0;
-      Object.entries(planDistribution).forEach(([id, count]) => {
-        if (count > maxMembers) {
-          maxMembers = count;
+      let maxCount = 0;
+      Object.entries(planCounts).forEach(([id, count]) => {
+        if (count > maxCount) {
+          maxCount = count;
           topPlanId = id;
         }
       });
 
-      const topPlanName = topPlanId ? planPriceMap[topPlanId] ? (plansData.data || []).find((p: any) => p.id === topPlanId)?.name : "Personalizado" : "N/A";
-      const avgTicket = activeMembersRes.count ? monthlyRevenue / activeMembersRes.count : 0;
+      const topPlanName = topPlanId ? planMap[topPlanId]?.name || "Personalizado" : "Sin Datos";
 
       return {
         activeMembers: activeMembersRes.count || 0,
         totalMembers: allMembersRes.count || 0,
         checkinsToday: checkinsTodayRes.count || 0,
-        expiredMembers: expiredMembersCount,
+        expiredMembers: expiredActiveRes.count || 0,
+        desertores: inactiveMembersRes.count || 0,
+        salesDay: salesDayRes.count || 0,
+        salesMonthly: salesMonthlyRes.count || 0,
         monthlyRevenue,
-        revenueChange: revenueChange ? Number(revenueChange) : null,
-        lastMonthRevenue,
         topPlan: topPlanName,
-        avgTicket,
+        avgTicket: activeMembersRes.count ? monthlyRevenue / activeMembersRes.count : 0,
         retentionRate: allMembersRes.count ? ((activeMembersRes.count / allMembersRes.count) * 100).toFixed(1) : "0"
       };
     },
@@ -137,40 +145,66 @@ const Index = () => {
             transition={{ duration: 0.3 }}
           >
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Panel de Control</h1>
-            <p className="text-sm text-muted-foreground capitalize font-medium opacity-70">
-              {viewMode === 'operational' ? 'Gestión Operativa' : 'Analítica de Ventas'} · {currentDate}
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-sm text-muted-foreground capitalize font-medium opacity-70">
+                {viewMode === 'operational' ? 'Gestión Operativa' : 'Analítica de Ventas'}
+              </p>
+              <span className="h-1 w-1 rounded-full bg-muted-foreground/30" />
+              <p className="text-sm text-muted-foreground/60 font-medium">{currentDate}</p>
+            </div>
           </motion.div>
 
-          <div className="flex items-center gap-2 bg-secondary/30 p-1.5 rounded-2xl w-fit border border-border/50 shadow-inner">
-            <button
-              onClick={() => setViewMode('operational')}
-              className={cn(
-                "px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all duration-300",
-                viewMode === 'operational'
-                  ? "bg-card text-foreground shadow-lg border border-border/50"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
-              )}
-            >
+          <div className="flex flex-wrap items-center gap-3">
+            {viewMode === 'sales' && (
               <div className="flex items-center gap-2">
-                <Activity className="h-3 w-3" />
-                Operativo
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="bg-secondary/40 border border-border/50 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:ring-1 focus:ring-primary/30 transition-all text-foreground"
+                />
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                  className="bg-secondary/40 border border-border/50 text-xs font-bold rounded-xl px-3 py-2 outline-none focus:ring-1 focus:ring-primary/30 transition-all"
+                >
+                  {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map((m, i) => (
+                    <option key={m} value={i}>{m}</option>
+                  ))}
+                </select>
               </div>
-            </button>
-            <button
-              onClick={() => setViewMode('sales')}
-              className={cn(
-                "px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all duration-300",
-                viewMode === 'sales'
-                  ? "bg-card text-foreground shadow-lg border border-border/50"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
-              )}
-            >
-              <div className="flex items-center gap-2">
-                <BarChart3 className="h-3 w-3" />
-                Ventas
-              </div>
-            </button>
+            )}
+
+            <div className="flex items-center gap-2 bg-secondary/30 p-1 rounded-2xl border border-border/50 shadow-inner">
+              <button
+                onClick={() => setViewMode('operational')}
+                className={cn(
+                  "px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all duration-300",
+                  viewMode === 'operational'
+                    ? "bg-card text-foreground shadow-lg border border-border/50"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <Activity className="h-3 w-3" />
+                  Operativo
+                </div>
+              </button>
+              <button
+                onClick={() => setViewMode('sales')}
+                className={cn(
+                  "px-4 py-2 text-[10px] font-bold uppercase tracking-widest rounded-xl transition-all duration-300",
+                  viewMode === 'sales'
+                    ? "bg-card text-foreground shadow-lg border border-border/50"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-3 w-3" />
+                  Ventas
+                </div>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -183,43 +217,43 @@ const Index = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4"
+              className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4"
             >
               <StatCard
-                title="Socios Activos"
-                value={isLoading ? "..." : String(stats?.activeMembers || 0)}
+                title="Usuarios"
+                value={isLoading ? "..." : String(stats?.totalMembers || 0)}
                 changeType="neutral"
                 icon={Users}
-                subtitle="Membresías vigentes"
-                change={`${stats?.activeMembers || 0} de ${stats?.totalMembers || 0}`}
-                comparisonLabel="registrados"
+                subtitle="Total registrados"
+                change="Activos"
+                comparisonLabel={`${stats?.activeMembers || 0} suscritos`}
               />
               <StatCard
-                title="Check-ins Hoy"
-                value={isLoading ? "..." : String(stats?.checkinsToday || 0)}
-                changeType="neutral"
-                icon={UserCheck}
-                subtitle="Asistencias de hoy"
-                change="Hoy"
-                comparisonLabel="en vivo"
-              />
-              <StatCard
-                title="Tasa Retención"
-                value={isLoading ? "..." : `${stats?.retentionRate}%`}
-                changeType={Number(stats?.retentionRate) > 80 ? "positive" : "neutral"}
-                icon={TrendingUp}
-                subtitle="Fidelidad de socios"
-                change="Score"
-                comparisonLabel="mensual"
-              />
-              <StatCard
-                title="Alertas"
+                title="Vencimientos"
                 value={isLoading ? "..." : String(stats?.expiredMembers || 0)}
                 changeType={Number(stats?.expiredMembers) > 0 ? "negative" : "positive"}
                 icon={AlertCircle}
-                subtitle="Planes vencidos"
-                change={stats?.expiredMembers > 0 ? "Revisar" : "Limpio"}
-                comparisonLabel={stats?.expiredMembers > 0 ? "vencidos" : "sin deuda"}
+                subtitle="Ya no renovaron"
+                change={stats?.expiredMembers > 0 ? "⚠️" : "Limpio"}
+                comparisonLabel="pendientes"
+              />
+              <StatCard
+                title="Desertores"
+                value={isLoading ? "..." : String(stats?.desertores || 0)}
+                changeType="neutral"
+                icon={TrendingDown}
+                subtitle="Ya no regresan"
+                change="Fuga"
+                comparisonLabel="histórica"
+              />
+              <StatCard
+                title="Presencia"
+                value={isLoading ? "..." : String(stats?.checkinsToday || 0)}
+                changeType="neutral"
+                icon={UserCheck}
+                subtitle="Hoy entraron"
+                change="Hoy"
+                comparisonLabel="en vivo"
               />
             </motion.div>
           ) : (
@@ -229,43 +263,52 @@ const Index = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4"
+              className="grid grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-4"
             >
               <StatCard
-                title="Recaudación Mes"
-                value={isLoading ? "..." : `S/${(stats?.monthlyRevenue || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                change={stats?.revenueChange != null ? `${Math.abs(stats.revenueChange)}%` : '0%'}
-                changeType={stats?.revenueChange != null ? (stats.revenueChange >= 0 ? 'positive' : 'negative') : 'neutral'}
-                comparisonLabel="vs mes ant."
-                icon={DollarSign}
-                subtitle="Ingreso total proyectado"
+                title="Ventas del Día"
+                value={isLoading ? "..." : String(stats?.salesDay || 0)}
+                change="Inscritos"
+                changeType="positive"
+                comparisonLabel="en fecha"
+                icon={Activity}
+                subtitle="Registros seleccionados"
               />
               <StatCard
-                title="Ticket Promedio"
-                value={isLoading ? "..." : `S/${(stats?.avgTicket || 0).toFixed(2)}`}
-                change="Valor"
+                title="Ventas del Mes"
+                value={isLoading ? "..." : String(stats?.salesMonthly || 0)}
+                change="Total"
                 changeType="neutral"
-                comparisonLabel="Por Socio"
+                comparisonLabel="mes elegido"
+                icon={BarChart3}
+                subtitle="Acumulado mensual"
+              />
+              <StatCard
+                title="Recaudación"
+                value={isLoading ? "..." : `S/${(stats?.monthlyRevenue || 0).toLocaleString('es-PE', { maximumFractionDigits: 0 })}`}
+                change="Ingreso"
+                changeType="positive"
+                comparisonLabel="estimado"
+                icon={DollarSign}
+                subtitle="Basado en planes"
+              />
+              <StatCard
+                title="Plan Líder"
+                value={isLoading ? "..." : stats?.topPlan || "N/A"}
+                change="Popular"
+                changeType="positive"
+                comparisonLabel="preferencia"
                 icon={PieChart}
-                subtitle="Gasto medio membresía"
+                subtitle="Plan estrella"
               />
               <StatCard
-                title="Plan Estrella"
-                value={isLoading ? "..." : String(stats?.topPlan || "N/A")}
-                change="Líder"
-                changeType="positive"
-                comparisonLabel="Preferencia"
+                title="Ticket Medio"
+                value={isLoading ? "..." : `S/${(stats?.avgTicket || 0).toFixed(0)}`}
+                change="Promedio"
+                changeType="neutral"
+                comparisonLabel="por socio"
                 icon={TrendingUp}
-                subtitle="Plan con más inscritos"
-              />
-              <StatCard
-                title="Potencial"
-                value={isLoading ? "..." : `S/${((stats?.totalMembers || 0) * (stats?.avgTicket || 0)).toLocaleString('es-PE', { maximumFractionDigits: 0 })}`}
-                change="Crecimiento"
-                changeType="positive"
-                comparisonLabel="Máximo"
-                icon={TrendingUp}
-                subtitle="Si todos renovaran"
+                subtitle="Valor membresía"
               />
             </motion.div>
           )}
