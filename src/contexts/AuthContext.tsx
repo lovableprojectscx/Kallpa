@@ -15,6 +15,7 @@ interface AuthContextType {
     isAuthenticated: boolean;
     hasTenant: boolean;
     login: (email: string, password: string) => Promise<boolean>;
+    loginWithGoogle: () => Promise<void>;
     logout: () => Promise<void>;
     isLoading: boolean;
     setTenantId: (id: string) => Promise<void>;
@@ -118,6 +119,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const loginWithGoogle = async () => {
+        try {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: `${window.location.origin}/dashboard`
+                }
+            });
+            if (error) {
+                console.error("Google login error:", error);
+                throw error;
+            }
+        } catch (error) {
+            console.error("Unexpected Google login error", error);
+            throw error;
+        }
+    };
+
     const setTenantId = async (id: string) => {
         if (!user) return;
 
@@ -160,6 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             isAuthenticated: !!user,
             hasTenant: !!user?.tenantId,
             login,
+            loginWithGoogle,
             logout,
             isLoading,
             setTenantId
