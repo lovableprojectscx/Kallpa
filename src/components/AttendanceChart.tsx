@@ -29,68 +29,71 @@ export function AttendanceChart() {
       }
       return data || [];
     },
-    enabled: !!user?.tenantId
+  },
+    enabled: !!user?.tenantId,
+    refetchInterval: 10000 // Refrescar cada 10 segundos para sincronizar con la lista
   });
 
-  // Agrupar asistencias por hora (índices 0-15 representan 6am a 9pm)
-  const values = new Array(16).fill(0);
+// Agrupar asistencias por hora (índices 0-15 representan 6am a 9pm)
+const values = new Array(16).fill(0);
 
-  attendanceData.forEach((record: any) => {
-    const time = new Date(record.check_in_time);
-    const hour = time.getHours();
+attendanceData.forEach((record: any) => {
+  const time = new Date(record.check_in_time);
+  const hour = time.getHours();
 
-    if (hour >= 6 && hour <= 21) {
-      values[hour - 6] += 1;
-    }
-  });
+  if (hour >= 6 && hour <= 21) {
+    values[hour - 6] += 1;
+  }
+});
 
-  // Prevenir división por 0 en la gráfica
-  const maxVal = Math.max(...values, 5);
+// Prevenir división por 0 en la gráfica
+// Prevenir división por 0. Si hay pocos socios, el máximo es 3 para que las barras se vean altas.
+const maxVal = Math.max(...values, 3);
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}
-      className="rounded-xl border border-border/50 bg-card p-5 relative"
-    >
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-          Flujo del Día
-          {isLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-        </h3>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5">
-            <div className="h-2 w-2 rounded-full bg-primary" />
-            <span className="text-[10px] text-muted-foreground">Hoy</span>
-          </div>
+return (
+  <motion.div
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.4, delay: 0.1, ease: [0.4, 0, 0.2, 1] }}
+    className="rounded-xl border border-border/50 bg-card p-5 relative"
+  >
+    <div className="mb-4 flex items-center justify-between">
+      <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+        Flujo del Día
+        {isLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+      </h3>
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1.5">
+          <div className="h-2 w-2 rounded-full bg-primary" />
+          <span className="text-[10px] text-muted-foreground">Hoy</span>
         </div>
       </div>
-      <div className="flex h-40 items-end gap-1.5 relative border-b border-border/20 pb-1">
-        {values.map((val, i) => (
-          <div key={i} className="group relative flex flex-1 flex-col items-center">
-            <motion.div
-              initial={{ height: 0 }}
-              animate={{ height: `${(val / maxVal) * 100}%` }}
-              transition={{ duration: 0.8, delay: 0.02 * i, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full rounded-t-md bg-primary/20 transition-all duration-300 group-hover:bg-primary/30 relative"
-            >
-              {val > 0 && (
-                <div
-                  className="absolute bottom-0 w-full rounded-t-md bg-primary shadow-[0_0_15px_rgba(182,255,0,0.3)] transition-all duration-300 group-hover:shadow-[0_0_25px_rgba(182,255,0,0.5)]"
-                  style={{ height: '100%' }}
-                />
-              )}
-            </motion.div>
+    </div>
+    <div className="flex h-40 items-end gap-1.5 relative border-b border-border/20 pb-1">
+      {values.map((val, i) => (
+        <div key={i} className="group relative flex flex-1 flex-col items-center">
+          <motion.div
+            initial={{ height: 0 }}
+            animate={{ height: `${(val / maxVal) * 100}%` }}
+            transition={{ duration: 0.8, delay: 0.02 * i, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full rounded-t-md bg-primary/20 transition-all duration-300 group-hover:bg-primary/30 relative"
+          >
             {val > 0 && (
-              <div className="absolute -top-7 text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity bg-secondary/80 px-1.5 py-0.5 rounded shadow-sm">
-                {val}
-              </div>
+              <div
+                className="absolute bottom-0 w-full rounded-t-md bg-primary shadow-[0_0_15px_rgba(182,255,0,0.3)] transition-all duration-300 group-hover:shadow-[0_0_25px_rgba(182,255,0,0.5)]"
+                style={{ height: '100%' }}
+              />
             )}
-            <span className="mt-2 text-[8px] text-muted-foreground/60 font-medium">{hours[i]}</span>
-          </div>
-        ))}
-      </div>
-    </motion.div>
-  );
+          </motion.div>
+          {val > 0 && (
+            <div className="absolute -top-7 text-[10px] font-bold text-primary opacity-0 group-hover:opacity-100 transition-opacity bg-secondary/80 px-1.5 py-0.5 rounded shadow-sm">
+              {val}
+            </div>
+          )}
+          <span className="mt-2 text-[8px] text-muted-foreground/60 font-medium">{hours[i]}</span>
+        </div>
+      ))}
+    </div>
+  </motion.div>
+);
 }

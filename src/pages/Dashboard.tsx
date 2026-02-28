@@ -121,7 +121,8 @@ const Index = () => {
         retentionRate: allMembersRes.count ? ((activeMembersRes.count / allMembersRes.count) * 100).toFixed(1) : "0"
       };
     },
-    enabled: !!user?.tenantId
+    enabled: !!user?.tenantId,
+    refetchInterval: 10000 // Sincronizar estadísticas en tiempo real
   });
 
   const currentDate = new Intl.DateTimeFormat('es-ES', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' }).format(new Date());
