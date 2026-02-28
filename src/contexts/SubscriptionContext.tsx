@@ -228,16 +228,41 @@ const redeemMembershipCode = async (code: string): Promise<boolean> => {
 
 const requireSubscription = (): boolean => {
     if (hasActiveSubscription || user?.role === 'superadmin') return true;
-    toast.error(
-        'Suscripción requerida — Adquiere un Plan PRO para tu gimnasio.',
-        {
-            action: {
-                label: 'Ver Planes PRO',
-                onClick: () => { window.location.href = '/subscription'; },
-            },
-            duration: 6000,
-        }
-    );
+
+    if (!hasUsedTrial && user?.role !== 'superadmin') {
+        toast.error(
+            'Suscripción requerida — Tienes una prueba gratis disponible.',
+            {
+                description: "Activa tu prueba de 3 días para continuar, o elige un plan PRO.",
+                action: {
+                    label: 'Activar Prueba',
+                    onClick: async () => {
+                        const success = await activateTrial();
+                        if (success) {
+                            toast.success("¡Tu prueba gratuita ha comenzado!");
+                            window.location.reload();
+                        }
+                    },
+                },
+                cancel: {
+                    label: 'Ver Planes',
+                    onClick: () => { window.location.href = '/subscription'; }
+                },
+                duration: 8000,
+            }
+        );
+    } else {
+        toast.error(
+            'Suscripción requerida — Adquiere un Plan PRO para tu gimnasio.',
+            {
+                action: {
+                    label: 'Ver Planes PRO',
+                    onClick: () => { window.location.href = '/subscription'; },
+                },
+                duration: 6000,
+            }
+        );
+    }
     return false;
 };
 

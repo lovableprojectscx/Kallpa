@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { CreditCard, Loader2, ShieldCheck, Crown, Sparkles } from "lucide-react";
+import { CreditCard, Loader2, ShieldCheck, Crown, Sparkles, Check } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
