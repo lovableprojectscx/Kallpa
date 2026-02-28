@@ -191,36 +191,36 @@ const Index = () => {
                 value={isLoading ? "..." : String(stats?.activeMembers || 0)}
                 changeType="neutral"
                 icon={Users}
-                subtitle="Socio con plan vigente hoy"
-                change="Total"
-                comparisonLabel={`de ${stats?.totalMembers || 0}`}
+                subtitle="Membresías vigentes"
+                change={`${stats?.activeMembers || 0} de ${stats?.totalMembers || 0}`}
+                comparisonLabel="registrados"
               />
               <StatCard
                 title="Check-ins Hoy"
                 value={isLoading ? "..." : String(stats?.checkinsToday || 0)}
                 changeType="neutral"
                 icon={UserCheck}
-                subtitle="Accesos registrados hoy"
-                change="Actividad"
-                comparisonLabel="del día"
+                subtitle="Asistencias de hoy"
+                change="Hoy"
+                comparisonLabel="en vivo"
               />
               <StatCard
                 title="Tasa Retención"
                 value={isLoading ? "..." : `${stats?.retentionRate}%`}
-                change="Salud"
-                changeType={(Number(stats?.retentionRate) || 0) > 80 ? "positive" : "neutral"}
-                comparisonLabel="Del Gym"
+                changeType={Number(stats?.retentionRate) > 80 ? "positive" : "neutral"}
                 icon={TrendingUp}
-                subtitle="Fidelidad de miembros"
+                subtitle="Fidelidad de socios"
+                change="Score"
+                comparisonLabel="mensual"
               />
               <StatCard
                 title="Alertas"
                 value={isLoading ? "..." : String(stats?.expiredMembers || 0)}
-                change={stats?.expiredMembers && stats.expiredMembers > 0 ? "Revisar" : "Limpio"}
-                changeType={stats?.expiredMembers && stats.expiredMembers > 0 ? "negative" : "positive"}
-                comparisonLabel="Inactivos"
+                changeType={Number(stats?.expiredMembers) > 0 ? "negative" : "positive"}
                 icon={AlertCircle}
-                subtitle="Planes vencidos hoy"
+                subtitle="Planes vencidos"
+                change={stats?.expiredMembers > 0 ? "Revisar" : "Limpio"}
+                comparisonLabel={stats?.expiredMembers > 0 ? "vencidos" : "sin deuda"}
               />
             </motion.div>
           ) : (
