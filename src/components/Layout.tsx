@@ -9,9 +9,9 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
+      <div className="flex min-h-screen w-full bg-background overflow-x-hidden">
         <AppSidebar />
-        <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
+        <div className="flex flex-1 flex-col min-w-0 max-w-full">
           <header className="flex h-14 items-center justify-between border-b border-border/50 px-4">
             <div className="flex items-center gap-3">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground" />

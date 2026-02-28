@@ -18,22 +18,22 @@ export function StatCard({ title, value, change, changeType = "neutral", icon: I
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-      className="group rounded-2xl border border-border/40 bg-card p-4 sm:p-6 transition-smooth hover:border-border hover:shadow-xl hover:shadow-primary/5"
+      className="group rounded-2xl border border-border/40 bg-card p-4 sm:p-5 transition-smooth hover:border-border hover:shadow-xl hover:shadow-primary/5"
     >
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-2">
         <div className="flex flex-col gap-1 w-full overflow-hidden">
-          <span className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground/70" title={title}>{title}</span>
+          <span className="text-[9px] sm:text-[10px] md:text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground/70" title={title}>{title}</span>
           <div className="flex items-baseline gap-2">
-            <span className="stat-number text-2xl sm:text-4xl font-bold text-foreground tracking-tight" title={value}>{value}</span>
+            <span className="stat-number text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-foreground tracking-tight" title={value}>{value}</span>
           </div>
           {subtitle && (
-            <span className="text-[10px] md:text-xs text-muted-foreground/60 font-medium mt-0.5" title={subtitle}>
+            <span className="text-[9px] sm:text-[10px] md:text-xs text-muted-foreground/60 font-medium mt-0.5" title={subtitle}>
               {subtitle}
             </span>
           )}
         </div>
-        <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-secondary/50 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all duration-300">
-          <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
+        <div className="flex h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-secondary/50 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all duration-300">
+          <Icon className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6" />
         </div>
       </div>
 

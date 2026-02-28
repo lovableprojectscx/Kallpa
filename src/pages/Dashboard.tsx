@@ -183,7 +183,7 @@ const Index = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
-              className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4"
             >
               <StatCard
                 title="Socios Activos"
@@ -229,7 +229,7 @@ const Index = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
-              className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4"
             >
               <StatCard
                 title="Recaudación Mes"

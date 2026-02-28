@@ -64,37 +64,39 @@ export function AttendanceChart() {
         </div>
       </div>
 
-      <div className="flex h-44 items-end gap-2.5 relative border-b border-border/20 pb-1 px-1">
-        {values.map((val, i) => (
-          <div key={i} className="group relative flex flex-1 flex-col items-center h-full justify-end">
-            {/* Carril de fondo para profundidad */}
-            <div className="absolute inset-0 w-full bg-secondary/10 rounded-t-md opacity-20 group-hover:opacity-40 transition-opacity" />
+      <div className="overflow-x-auto custom-scrollbar pb-2 -mx-2 px-2">
+        <div className="flex h-44 items-end gap-2.5 relative border-b border-border/20 pb-1 px-1 min-w-[600px] sm:min-w-0">
+          {values.map((val, i) => (
+            <div key={i} className="group relative flex flex-1 flex-col items-center h-full justify-end">
+              {/* Carril de fondo para profundidad */}
+              <div className="absolute inset-0 w-full bg-secondary/10 rounded-t-md opacity-20 group-hover:opacity-40 transition-opacity" />
 
-            <motion.div
-              initial={{ height: 0 }}
-              animate={{ height: `${(val / maxVal) * 100}%` }}
-              transition={{ duration: 0.8, delay: 0.02 * i, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full rounded-t-lg bg-primary/20 transition-all duration-300 relative z-10"
-            >
+              <motion.div
+                initial={{ height: 0 }}
+                animate={{ height: `${(val / maxVal) * 100}%` }}
+                transition={{ duration: 0.8, delay: 0.02 * i, ease: [0.16, 1, 0.3, 1] }}
+                className="w-full rounded-t-lg bg-primary/20 transition-all duration-300 relative z-10"
+              >
+                {val > 0 && (
+                  <div
+                    className="absolute bottom-0 w-full rounded-t-lg bg-primary shadow-[0_0_25px_rgba(182,255,0,0.6)] transition-all duration-300 group-hover:shadow-[0_0_40px_rgba(182,255,0,0.9)]"
+                    style={{ height: '100%' }}
+                  />
+                )}
+              </motion.div>
+
               {val > 0 && (
-                <div
-                  className="absolute bottom-0 w-full rounded-t-lg bg-primary shadow-[0_0_25px_rgba(182,255,0,0.6)] transition-all duration-300 group-hover:shadow-[0_0_40px_rgba(182,255,0,0.9)]"
-                  style={{ height: '100%' }}
-                />
+                <div className="absolute -top-10 z-20 text-[12px] font-black text-primary bg-background/95 border-2 border-primary/30 px-2 py-0.5 rounded-md shadow-[0_4px_20px_rgba(0,0,0,0.4)] backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-300 scale-75 group-hover:scale-100">
+                  {val}
+                </div>
               )}
-            </motion.div>
 
-            {val > 0 && (
-              <div className="absolute -top-10 z-20 text-[12px] font-black text-primary bg-background/95 border-2 border-primary/30 px-2 py-0.5 rounded-md shadow-[0_4px_20px_rgba(0,0,0,0.4)] backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-300 scale-75 group-hover:scale-100">
-                {val}
-              </div>
-            )}
-
-            <span className="mt-3 text-[9px] text-muted-foreground/50 font-black uppercase tracking-tighter group-hover:text-primary/70 transition-colors">
-              {hours[i]}
-            </span>
-          </div>
-        ))}
+              <span className="mt-3 text-[9px] text-muted-foreground/50 font-black uppercase tracking-tighter group-hover:text-primary/70 transition-colors">
+                {hours[i]}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </motion.div>
   );
