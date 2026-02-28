@@ -102,31 +102,31 @@ export default function Landing() {
             </nav>
 
             {/* Hero Section */}
-            <main className="relative z-10 pt-24 pb-12 md:pt-32 md:pb-20 px-4 md:px-6">
+            <main className="relative z-10 pt-24 pb-12 md:pt-32 md:pb-20 px-6 sm:px-8">
                 <div className="max-w-7xl mx-auto">
                     <motion.div
                         initial="hidden"
                         animate="visible"
                         variants={containerVariants}
-                        className="text-center max-w-4xl mx-auto mt-14 md:mt-20"
+                        className="text-center max-w-4xl mx-auto mt-8 md:mt-20"
                     >
                         <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-3 py-1 mb-6 md:mb-8 rounded-full border border-[#D3FF24]/30 bg-[#D3FF24]/10 backdrop-blur-md">
                             <Zap className="w-3 h-3 md:w-4 md:h-4 text-[#D3FF24]" />
                             <span className="text-[10px] md:text-xs font-medium text-[#D3FF24] uppercase tracking-wider">Sistema Operativo para Gimnasios</span>
                         </motion.div>
 
-                        <motion.h1 variants={itemVariants} className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight mb-4 md:mb-6 leading-[1.1]">
+                        <motion.h1 variants={itemVariants} className="text-3xl sm:text-5xl md:text-7xl font-black tracking-tight mb-4 md:mb-6 leading-[1.2] md:leading-[1.1] px-2 sm:px-0">
                             El Software que hace <br className="hidden sm:block" />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D3FF24] to-lime-400">
                                 Crecer tu Gimnasio.
                             </span>
                         </motion.h1>
 
-                        <motion.p variants={itemVariants} className="text-sm sm:text-base md:text-xl text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed px-4">
+                        <motion.p variants={itemVariants} className="text-sm sm:text-base md:text-xl text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed px-4 md:px-0">
                             Automatiza accesos, predice abandonos y recupera socios por WhatsApp. Kallpa es tu gerente virtual 24/7.
                         </motion.p>
 
-                        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full px-4">
+                        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full px-4 sm:px-0">
                             <Button
                                 onClick={handleCTA}
                                 size="lg"
@@ -143,10 +143,10 @@ export default function Landing() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true, margin: "-50px" }}
                         transition={{ duration: 0.5 }}
-                        className="mt-20 md:mt-32 max-w-5xl mx-auto"
+                        className="mt-20 md:mt-32 max-w-5xl mx-auto px-4 sm:px-0"
                     >
                         <div className="text-center mb-10 md:mb-16">
-                            <h2 className="text-2xl md:text-4xl font-black mb-2 md:mb-4">¿Cómo funciona Kallpa?</h2>
+                            <h2 className="text-3xl md:text-4xl font-black mb-3 md:mb-4 px-2">¿Cómo funciona Kallpa?</h2>
                             <p className="text-sm md:text-base text-gray-400">Implementación en menos de 10 minutos.</p>
                         </div>
 
@@ -181,7 +181,7 @@ export default function Landing() {
                     </motion.div>
 
                     {/* Features Deep Dive */}
-                    <div className="mt-24 md:mt-40 space-y-20 md:space-y-32 max-w-6xl mx-auto">
+                    <div className="mt-24 md:mt-40 space-y-24 md:space-y-32 max-w-6xl mx-auto px-2 sm:px-0">
                         {/* Feature: Retention */}
                         <motion.div
                             initial={{ opacity: 0, y: 30 }}
