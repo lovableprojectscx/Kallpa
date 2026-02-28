@@ -249,6 +249,9 @@ export default function Subscription() {
                                         <div className="mt-5 sm:mt-6 mb-2 flex items-baseline justify-center gap-1">
                                             <span className="text-sm font-semibold text-gray-400">S/</span>
                                             <span className="text-4xl sm:text-6xl font-black text-white leading-none tracking-tighter">{plan.price}</span>
+                                            <span className="text-xs sm:text-sm font-medium text-gray-500 ml-1">
+                                                / {plan.months} {plan.months === 1 ? 'mes' : 'meses'}
+                                            </span>
                                         </div>
                                         {plan.oldPrice ? (
                                             <div className="text-xs font-medium text-gray-500 mb-6 bg-white/5 rounded-full px-3 py-1 inline-block">
