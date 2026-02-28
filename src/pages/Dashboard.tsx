@@ -3,25 +3,13 @@ import { StatCard } from "@/components/StatCard";
 import { RetentionPanel } from "@/components/RetentionPanel";
 import { RecentActivity } from "@/components/RecentActivity";
 import { AttendanceChart } from "@/components/AttendanceChart";
-import { Users, UserCheck, TrendingUp, AlertCircle, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { Users, UserCheck, TrendingUp, AlertCircle, Loader2, BarChart3, DollarSign, PieChart, ArrowUpRight, ArrowDownRight, Activity } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
-import {
-  BarChart3,
-  DollarSign,
-  TrendingUp,
-  Users,
-  UserCheck,
-  AlertCircle,
-  PieChart,
-  ArrowUpRight,
-  ArrowDownRight,
-  Activity
-} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const Index = () => {
