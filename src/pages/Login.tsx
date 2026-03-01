@@ -93,7 +93,7 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen w-full bg-background flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="min-h-[100dvh] w-full bg-background flex items-center justify-center p-4 relative overflow-hidden">
             {/* Bio-Luminescente decorativos */}
             <div className="absolute top-0 left-0 w-full h-full pointer-events-none -z-10 overflow-hidden">
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
@@ -104,37 +104,37 @@ const Login = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full max-w-[400px] space-y-8"
+                className="w-full max-w-[400px] space-y-4 sm:space-y-8"
             >
                 <div className="text-center space-y-2">
-                    <div className="flex justify-center mb-6">
+                    <div className="flex justify-center mb-4 sm:mb-6">
                         <motion.div
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className="h-16 w-16 overflow-hidden flex items-center justify-center p-1"
+                            className="h-12 w-12 sm:h-16 sm:w-16 overflow-hidden flex items-center justify-center p-1"
                         >
                             <img src="/logo.png" alt="Kallpa Logo" className="h-full w-full object-contain drop-shadow-sm glow-volt" />
                         </motion.div>
                     </div>
-                    <h1 className="text-3xl font-display tracking-tight text-foreground">KALLPA</h1>
-                    <p className="text-sm text-muted-foreground uppercase tracking-[0.2em] font-medium">Pro Suite Admin</p>
+                    <h1 className="text-2xl sm:text-3xl font-display tracking-tight text-foreground">KALLPA</h1>
+                    <p className="text-[10px] sm:text-sm text-muted-foreground uppercase tracking-[0.2em] font-medium">Pro Suite Admin</p>
                 </div>
 
                 <Tabs defaultValue="owner" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 mb-6 bg-secondary/50 p-1 rounded-xl">
-                        <TabsTrigger value="owner" className="rounded-lg py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all font-semibold tracking-wide">
-                            <UserCog className="w-4 h-4 mr-2" />
+                    <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6 bg-secondary/50 p-1 rounded-xl">
+                        <TabsTrigger value="owner" className="rounded-lg py-2 sm:py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all text-xs sm:text-sm font-semibold tracking-wide">
+                            <UserCog className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                             Propietario
                         </TabsTrigger>
-                        <TabsTrigger value="staff" className="rounded-lg py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all font-semibold tracking-wide">
-                            <Users className="w-4 h-4 mr-2" />
+                        <TabsTrigger value="staff" className="rounded-lg py-2 sm:py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all text-xs sm:text-sm font-semibold tracking-wide">
+                            <Users className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                             Recepción
                         </TabsTrigger>
                     </TabsList>
 
-                    <Card className="border-border/50 bg-card/40 backdrop-blur-xl shadow-2xl p-6 sm:p-8">
-                        <TabsContent value="owner" className="mt-0 outline-none space-y-6">
-                            <form onSubmit={handleSubmitOwner} className="space-y-6">
+                    <Card className="border-border/50 bg-card/40 backdrop-blur-xl shadow-2xl p-5 sm:p-8">
+                        <TabsContent value="owner" className="mt-0 outline-none space-y-4 sm:space-y-6">
+                            <form onSubmit={handleSubmitOwner} className="space-y-4 sm:space-y-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="email">Email del Propietario</Label>
                                     <div className="relative group">
@@ -223,8 +223,8 @@ const Login = () => {
                             </div>
                         </TabsContent>
 
-                        <TabsContent value="staff" className="mt-0 outline-none space-y-6">
-                            <form onSubmit={handleSubmitStaff} className="space-y-6">
+                        <TabsContent value="staff" className="mt-0 outline-none space-y-4 sm:space-y-6">
+                            <form onSubmit={handleSubmitStaff} className="space-y-4 sm:space-y-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="username">Usuario de Staff</Label>
                                     <div className="relative group">
