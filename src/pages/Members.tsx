@@ -300,7 +300,7 @@ const Members = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['members'] });
+      queryClient.invalidateQueries({ queryKey: ['members', user?.tenantId] });
       toast.success("Miembro eliminado correctamente");
       setDeletingMember(null);
     },
