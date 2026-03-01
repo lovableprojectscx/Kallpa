@@ -185,24 +185,32 @@ const Settings = () => {
     setIsRedeeming(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('create-mp-preference', {
-        body: {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+
+      if (!token) {
+        throw new Error("Sesión inválida. Vuelve a iniciar sesión.");
+      }
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
+      const response = await fetch(`${supabaseUrl}/functions/v1/create-mp-preference-v3`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
           planDuration: months,
           pricePen: price,
-          tenantId: user.tenantId,
-          bypassAuth: "confirm_bypass_kallpa_2024"
-        }
+          tenantId: user.tenantId
+        })
       });
 
-      if (error) {
-        let detail = "";
-        try {
-          const errorData = await error.context?.json();
-          detail = errorData?.detail || errorData?.error || "";
-        } catch (e) {
-          // Ignore JSON parse error
-        }
-        throw new Error(detail || error.message || "Error desconocido");
+      const data = await response.json();
+
+      if (!response.ok) {
+        let detail = data?.detail || data?.error || "";
+        throw new Error(detail || "Error desconocido al procesar pago");
       }
 
       if (data?.init_point) {
