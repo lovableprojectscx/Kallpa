@@ -61,36 +61,55 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
             setHasUsedTrial(!!trialData);
 
-            // Buscar si el tenant tiene una licencia activa
-            const { data, error } = await supabase
+            // Buscar todas las licencias del tenant para reconstruir la línea de tiempo (Stacking)
+            const { data: licenses, error } = await supabase
                 .from('licenses')
                 .select('*')
                 .eq('redeemed_by', user.tenantId)
                 .eq('status', 'redeemed')
-                .order('redeemed_at', { ascending: false })
-                .limit(1)
-                .maybeSingle();
+                .order('redeemed_at', { ascending: true }); // ASCENDING para procesar de más antigua a más reciente
 
             if (error) {
                 console.error("Error al verificar suscripción:", error);
             }
 
-            if (data && data.redeemed_at) {
-                const redeemedDate = new Date(data.redeemed_at);
-                let expiry: Date;
+            if (licenses && licenses.length > 0) {
+                let currentExpiry: Date | null = null;
 
-                if (data.duration_months === 0 || data.code?.startsWith('TRIAL-')) {
-                    // Trial mode: 3 days
-                    expiry = new Date(redeemedDate.getTime() + 3 * 24 * 60 * 60 * 1000);
-                } else {
-                    // Standard subscription — clonar la fecha antes de mutar para evitar side effects
-                    const expiryDate = new Date(redeemedDate);
-                    expiryDate.setMonth(expiryDate.getMonth() + data.duration_months);
-                    expiry = expiryDate;
+                for (const license of licenses) {
+                    if (!license.redeemed_at) continue;
+
+                    const redeemedDate = new Date(license.redeemed_at);
+                    const isTrial = license.duration_months === 0 || license.code?.startsWith('TRIAL-');
+
+                    // Base del apilamiento (Stacking)
+                    let startDate = new Date();
+
+                    if (!currentExpiry || currentExpiry < redeemedDate) {
+                        // Compró después de un hueco sin suscripción (o es su primer plan)
+                        startDate = new Date(redeemedDate);
+                    } else {
+                        // Renovación temprana: el plan anterior aún estaba vigente. Apilamos.
+                        startDate = new Date(currentExpiry);
+                    }
+
+                    if (isTrial) {
+                        startDate.setDate(startDate.getDate() + 3);
+                    } else {
+                        // Apilar meses
+                        startDate.setMonth(startDate.getMonth() + (license.duration_months || 0));
+                    }
+
+                    currentExpiry = startDate;
                 }
 
-                setExpirationDate(expiry);
-                setHasActiveSubscription(expiry > new Date());
+                if (currentExpiry) {
+                    setExpirationDate(currentExpiry);
+                    setHasActiveSubscription(currentExpiry > new Date());
+                } else {
+                    setHasActiveSubscription(false);
+                    setExpirationDate(null);
+                }
             } else {
                 setHasActiveSubscription(false);
                 setExpirationDate(null);
