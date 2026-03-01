@@ -53,13 +53,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
 
                 if (mounted) {
-                    setUser({
+                    const newUser = {
                         id: sessionUser.id,
                         email: sessionUser.email,
                         name: profile?.full_name || sessionUser.user_metadata?.name || 'Administrador',
                         tenantId: profile?.tenant_id || null,
                         role: profile?.role || 'admin',
                         created_at: sessionUser.created_at
+                    };
+
+                    // Only update if something actually changed to avoid re-triggering dependents
+                    setUser(prev => {
+                        if (JSON.stringify(prev) === JSON.stringify(newUser)) return prev;
+                        return newUser;
                     });
                 }
             } catch (err) {

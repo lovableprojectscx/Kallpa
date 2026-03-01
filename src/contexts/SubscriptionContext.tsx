@@ -105,7 +105,10 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     };
 
     useEffect(() => {
-        setIsLoading(true);
+        // Solo marcar cargando si es la primera vez o si el usuario cambió realmente
+        if (!expirationDate) {
+            setIsLoading(true);
+        }
         checkSubscription();
     }, [user, hasTenant]);
 

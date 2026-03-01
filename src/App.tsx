@@ -9,6 +9,18 @@ import AuthGuard from "./components/AuthGuard";
 import SubscriptionGuard from "./components/SubscriptionGuard";
 import AdminGuard from "./components/AdminGuard";
 import { Layout } from "./components/Layout";
+// Create a wrapper component for the authenticated layout area
+const AuthenticatedLayoutArea = () => {
+  return (
+    <AuthGuard>
+      <SubscriptionGuard>
+        <Layout>
+          <Outlet />
+        </Layout>
+      </SubscriptionGuard>
+    </AuthGuard>
+  );
+};
 import Dashboard from "./pages/Dashboard";
 import Landing from "./pages/Landing";
 import Terminal from "./pages/Terminal";
@@ -36,7 +48,14 @@ import Recepcion from "./pages/Recepcion";
 import LoginRecepcion from "./pages/LoginRecepcion";
 import AceptarInvitacion from "./pages/AceptarInvitacion";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -63,33 +82,22 @@ const App = () => (
               <Route path="/carnet/:memberId" element={<CarnetPublico />} />
               <Route path="/portal" element={<PortalBusqueda />} />
               <Route path="/portal/:memberId" element={<PortalMiembro />} />
-              <Route
-                path="*"
-                element={
-                  <AuthGuard>
-                    <SubscriptionGuard>
-                      <Layout>
-                        <Routes>
-                          <Route path="/dashboard" element={<Dashboard />} />
-                          <Route path="/terminal" element={<Terminal />} />
-                          <Route path="/members" element={<Members />} />
-                          <Route path="/subscription" element={<Subscription />} />
-                          <Route path="/affiliate" element={<Affiliate />} />
-                          <Route path="/retention" element={<Retention />} />
-                          <Route path="/settings" element={<Settings />} />
-                          <Route path="/plans" element={<Plans />} />
-                          <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
-                          <Route path="/admin/licenses" element={<AdminGuard><AdminLicenses /></AdminGuard>} />
-                          <Route path="/admin/clients" element={<AdminGuard><AdminClients /></AdminGuard>} />
-                          <Route path="/admin/affiliates" element={<AdminGuard><AdminAffiliates /></AdminGuard>} />
-                          <Route path="/admin/settings" element={<AdminGuard><AdminSettings /></AdminGuard>} />
-                          <Route path="*" element={<NotFound />} />
-                        </Routes>
-                      </Layout>
-                    </SubscriptionGuard>
-                  </AuthGuard>
-                }
-              />
+              <Route element={<AuthenticatedLayoutArea />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/terminal" element={<Terminal />} />
+                <Route path="/members" element={<Members />} />
+                <Route path="/subscription" element={<Subscription />} />
+                <Route path="/affiliate" element={<Affiliate />} />
+                <Route path="/retention" element={<Retention />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/plans" element={<Plans />} />
+                <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
+                <Route path="/admin/licenses" element={<AdminGuard><AdminLicenses /></AdminGuard>} />
+                <Route path="/admin/clients" element={<AdminGuard><AdminClients /></AdminGuard>} />
+                <Route path="/admin/affiliates" element={<AdminGuard><AdminAffiliates /></AdminGuard>} />
+                <Route path="/admin/settings" element={<AdminGuard><AdminSettings /></AdminGuard>} />
+                <Route path="*" element={<NotFound />} />
+              </Route>
             </Routes>
           </TooltipProvider>
         </SubscriptionProvider>
