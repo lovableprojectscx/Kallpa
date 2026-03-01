@@ -11,8 +11,10 @@ import { motion } from "framer-motion";
 
 export default function Subscription() {
     const { user } = useAuth();
-    const { hasActiveSubscription, expirationDate, checkSubscription, hasUsedTrial, activateTrial } = useSubscription();
+    const { hasActiveSubscription, expirationDate, checkSubscription, hasUsedTrial, activateTrial, redeemMembershipCode } = useSubscription();
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+    const [activationCode, setActivationCode] = useState("");
+    const [isRedeeming, setIsRedeeming] = useState(false);
 
     useEffect(() => {
         // Check URL parameters for Mercado Pago redirect status
@@ -76,6 +78,25 @@ export default function Subscription() {
         setIsProcessingPayment(false);
         if (success) {
             toast.success("¡Tu prueba gratuita de 3 días ha comenzado!");
+        }
+    };
+
+    const handleRedeemCode = async () => {
+        if (!activationCode.trim()) {
+            toast.error("Ingresa un código válido");
+            return;
+        }
+
+        setIsRedeeming(true);
+        const success = await redeemMembershipCode(activationCode.trim());
+        setIsRedeeming(false);
+
+        if (success) {
+            toast.success("¡Código canjeado con éxito! Tu gimnasio ha sido activado.");
+            setActivationCode("");
+            checkSubscription();
+        } else {
+            toast.error("Código inválido, expirado o ya utilizado.");
         }
     };
 
@@ -155,6 +176,41 @@ export default function Subscription() {
                         </div>
                     </motion.div>
                 )}
+
+                {/* Redeem Code Section */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.18 }}
+                    className="relative overflow-hidden rounded-2xl p-6 sm:p-8 bg-card border shadow-sm mt-6"
+                >
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
+                        <div className="text-center sm:text-left flex-1 w-full">
+                            <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2 flex items-center justify-center sm:justify-start gap-2">
+                                ¿Tienes un código de activación?
+                            </h3>
+                            <p className="text-sm sm:text-base text-muted-foreground mb-4">
+                                Ingresa tu código de licencia para activar tu sistema de inmediato.
+                            </p>
+                            <div className="flex gap-2 max-w-md mx-auto sm:mx-0">
+                                <input
+                                    type="text"
+                                    placeholder="Ej: KALLPA-1234-ABCD"
+                                    value={activationCode}
+                                    onChange={(e) => setActivationCode(e.target.value.toUpperCase())}
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex-1"
+                                />
+                                <Button
+                                    onClick={handleRedeemCode}
+                                    disabled={isRedeeming || !activationCode.trim()}
+                                    className="whitespace-nowrap"
+                                >
+                                    {isRedeeming ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : "Activar Código"}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
 
                 {/* Planes de Suscripción Automática */}
                 <motion.div
