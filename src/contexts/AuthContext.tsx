@@ -88,9 +88,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
                     // Solo activar la pantalla de carga (bloqueante) si el usuario realmente cerró sesión
                     // o si la app acaba de montar (lo cual ya está controlado por el isLoading inicial).
-                    // Para SIGNED_IN o TOKEN_REFRESHED, actualizamos el perfil en segundo plano (silenciosamente)
-                    // para no destruir el estado local actual de los formularios en pantalla.
-                    if (event === 'SIGNED_OUT') {
+                    // Para SIGNED_IN, bloqueamos temporalmente la UI (isLoading = true) 
+                    // para evitar que los AuthGuards expulsen al usuario al login
+                    // porque el perfil local ('user') todavía estaba en 'null'.
+                    if (event === 'SIGNED_OUT' || event === 'SIGNED_IN') {
                         setIsLoading(true);
                     }
                     loadUserAndProfile(session?.user || null);
