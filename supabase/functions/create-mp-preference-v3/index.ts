@@ -32,7 +32,12 @@ serve(async (req) => {
             { global: { headers: { Authorization: authHeader } } }
         )
 
-        const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+        // Extract the raw JWT from the header
+        const jwt = authHeader.replace('Bearer ', '').trim();
+
+        // Very important: in Deno, we MUST pass the JWT explicitly to getUser()
+        // otherwise it looks in local storage (which is empty) and throws "Auth session missing!"
+        const { data: { user }, error: userError } = await supabaseClient.auth.getUser(jwt)
 
         if (userError || !user) {
             console.error("Auth check failed:", userError);
