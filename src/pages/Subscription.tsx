@@ -39,11 +39,22 @@ export default function Subscription() {
         if (!user?.tenantId) return;
         setIsProcessingPayment(true);
         try {
+            const { data: sessionData } = await supabase.auth.getSession();
+            const token = sessionData?.session?.access_token;
+
+            if (!token) {
+                // Forzar recarga o alertar al usuario si realmente no hay token
+                throw new Error("Sesión expirada o inválida. Por favor inicia sesión nuevamente.");
+            }
+
             const { data, error } = await supabase.functions.invoke('create-mp-preference-v3', {
                 body: {
                     planDuration: months,
                     pricePen: pricePen,
                     tenantId: user.tenantId
+                },
+                headers: {
+                    Authorization: `Bearer ${token}`
                 }
             });
 
