@@ -46,7 +46,9 @@ const AdminClients = () => {
         let expirationDate = null;
         if (currentLicense && currentLicense.redeemed_at) {
           const redeemedDate = new Date(currentLicense.redeemed_at);
-          expirationDate = new Date(redeemedDate.setMonth(redeemedDate.getMonth() + currentLicense.duration_months));
+          const expiryDate = new Date(redeemedDate);
+          expiryDate.setMonth(expiryDate.getMonth() + currentLicense.duration_months);
+          expirationDate = expiryDate;
           if (expirationDate > new Date()) {
             status = "active";
           }

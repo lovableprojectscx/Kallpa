@@ -60,7 +60,6 @@ export function RetentionPanel() {
           lastVisit: lastVisitText,
           daysAway,
           avatar: member.full_name.substring(0, 2).toUpperCase(),
-          plan: "Básico" // TODO: Enlazar a suscripciones reales cuando exista el módulo
         };
       }) || [];
 
@@ -127,7 +126,6 @@ export function RetentionPanel() {
                   <div className="flex items-center gap-1 sm:gap-2 flex-wrap sm:flex-nowrap mt-0.5">
                     <Clock className="h-3 w-3 text-muted-foreground/60" />
                     <span className={cn("text-[10px] sm:text-[11px] font-medium truncate", member.daysAway > 14 ? "text-coral" : "text-muted-foreground")}>{member.lastVisit}</span>
-                    <span className="rounded bg-secondary/50 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground hidden sm:inline-block">{member.plan}</span>
                   </div>
                 </div>
               </div>

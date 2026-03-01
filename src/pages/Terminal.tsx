@@ -42,7 +42,14 @@ const Terminal = () => {
         .from('members').select('*')
         .eq('id', qrData).eq('tenant_id', user.tenantId).single();
       if (memberError || !member) throw new Error("Miembro no encontrado o código inválido");
-      if (member.status !== 'active') return { success: false, member, reason: "Membresía Inactiva o Vencida" };
+      if (member.status !== 'active') return { success: false, member, reason: "Membresía Inactiva" };
+      if (member.end_date) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const end = new Date(member.end_date);
+        end.setHours(0, 0, 0, 0);
+        if (end < today) return { success: false, member, reason: "Membresía Vencida" };
+      }
       const { error: attError } = await supabase.from('attendance').insert({
         member_id: member.id, tenant_id: user.tenantId, device_id: 'Principal-Terminal-1'
       });

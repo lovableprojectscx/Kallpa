@@ -233,7 +233,7 @@ export default function Subscription() {
                                     </defs>
                                 </svg>
                             ),
-                            description: "La opción intelingente.",
+                            description: "La opción inteligente.",
                             features: ["Acceso completo al sistema", "Soporte prioritario", "Ahorra S/ 51"]
                         },
                         {

@@ -12,12 +12,14 @@ interface SubscriptionContextType {
     requireSubscription: () => boolean;
     hasUsedTrial: boolean;
     activateTrial: () => Promise<boolean>;
+    isLoading: boolean;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
 export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user, hasTenant } = useAuth();
+    const navigate = useNavigate();
     const [hasActiveSubscription, setHasActiveSubscription] = useState<boolean>(false);
     const [expirationDate, setExpirationDate] = useState<Date | null>(null);
     const [hasUsedTrial, setHasUsedTrial] = useState<boolean>(false);
@@ -81,8 +83,10 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                     // Trial mode: 3 days
                     expiry = new Date(redeemedDate.getTime() + 3 * 24 * 60 * 60 * 1000);
                 } else {
-                    // Standard subscription
-                    expiry = new Date(redeemedDate.setMonth(redeemedDate.getMonth() + data.duration_months));
+                    // Standard subscription — clonar la fecha antes de mutar para evitar side effects
+                    const expiryDate = new Date(redeemedDate);
+                    expiryDate.setMonth(expiryDate.getMonth() + data.duration_months);
+                    expiry = expiryDate;
                 }
 
                 setExpirationDate(expiry);
@@ -112,7 +116,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
 
         if (hasUsedTrial) {
-            toast.error("Ya has utilizado la prueba gratuita anteriormentte.");
+            toast.error("Ya has utilizado la prueba gratuita anteriormente.");
             return false;
         }
 
@@ -239,13 +243,12 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                             const success = await activateTrial();
                             if (success) {
                                 toast.success("¡Tu prueba gratuita ha comenzado!");
-                                window.location.reload();
                             }
                         },
                     },
                     cancel: {
                         label: 'Ver Planes',
-                        onClick: () => { window.location.href = '/subscription'; }
+                        onClick: () => { navigate('/subscription'); }
                     },
                     duration: 8000,
                 }
@@ -256,7 +259,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 {
                     action: {
                         label: 'Ver Planes PRO',
-                        onClick: () => { window.location.href = '/subscription'; },
+                        onClick: () => { navigate('/subscription'); },
                     },
                     duration: 6000,
                 }
@@ -273,7 +276,8 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
             redeemMembershipCode,
             requireSubscription,
             hasUsedTrial,
-            activateTrial
+            activateTrial,
+            isLoading
         }}>
             {children}
         </SubscriptionContext.Provider>

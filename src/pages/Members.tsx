@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Search, Filter, Plus, QrCode, Smartphone, CheckCircle2, UserPlus, Flame, Pencil, Tag, Loader2, CreditCard, Trash2, MessageCircle, FileDown } from "lucide-react";
+import { Search, Plus, QrCode, Smartphone, CheckCircle2, UserPlus, Flame, Pencil, Tag, Loader2, CreditCard, Trash2, MessageCircle, FileDown, RefreshCw, CalendarPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/lib/supabase";
@@ -281,7 +281,7 @@ const Members = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['members'] });
+      queryClient.invalidateQueries({ queryKey: ['members', user?.tenantId] });
       toast.success('Miembro actualizado');
       setEditingMember(null);
       setPhotoFile(null);
@@ -326,19 +326,70 @@ const Members = () => {
     const selectedPlan = (membershipPlans as any[]).find(p => p.id === newPlanId);
     const durationDays = selectedPlan?.duration_days || 30;
 
-    // Si ya hay una fecha de inicio seleccionada, usamos esa, sino hoy
+    // Si ya hay una fecha de inicio, la respetamos; si no, usamos hoy
     const startDate = editForm.start_date ? new Date(editForm.start_date) : new Date();
-    // Ajustamos la zona horaria para que no retroceda un día al parsear YYYY-MM-DD
     startDate.setMinutes(startDate.getMinutes() + startDate.getTimezoneOffset());
 
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + durationDays);
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     setEditForm(prev => ({
       ...prev,
       plan: newPlanId,
       start_date: startDate.toISOString().split('T')[0],
-      end_date: endDate.toISOString().split('T')[0]
+      end_date: endDate.toISOString().split('T')[0],
+      // Si la nueva fecha de vencimiento es futura, activar automáticamente
+      status: endDate > today ? 'active' : prev.status,
+    }));
+  };
+
+  // Renueva el plan contando desde hoy
+  const handleRenewFromToday = () => {
+    if (!editForm.plan) return;
+    const selectedPlan = (membershipPlans as any[]).find(p => p.id === editForm.plan);
+    const durationDays = selectedPlan?.duration_days || 30;
+
+    const today = new Date();
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() + durationDays);
+
+    setEditForm(prev => ({
+      ...prev,
+      start_date: today.toISOString().split('T')[0],
+      end_date: endDate.toISOString().split('T')[0],
+      status: 'active',
+    }));
+  };
+
+  // Extiende el plan sumando la duración desde la fecha de vencimiento actual
+  // (si el plan ya venció, extiende desde hoy)
+  const handleExtendFromExpiry = () => {
+    if (!editForm.plan) return;
+    const selectedPlan = (membershipPlans as any[]).find(p => p.id === editForm.plan);
+    const durationDays = selectedPlan?.duration_days || 30;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let baseDate = new Date(today);
+    if (editForm.end_date) {
+      const currentEnd = new Date(editForm.end_date);
+      currentEnd.setMinutes(currentEnd.getMinutes() + currentEnd.getTimezoneOffset());
+      currentEnd.setHours(0, 0, 0, 0);
+      if (currentEnd > today) baseDate = new Date(currentEnd);
+    }
+
+    const endDate = new Date(baseDate);
+    endDate.setDate(baseDate.getDate() + durationDays);
+
+    setEditForm(prev => ({
+      ...prev,
+      start_date: baseDate.toISOString().split('T')[0],
+      end_date: endDate.toISOString().split('T')[0],
+      status: 'active',
     }));
   };
 
@@ -421,24 +472,6 @@ const Members = () => {
               />
             </div>
           </div>
-        </div>
-
-        {/* Filtros */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Buscar por nombre o documento..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 h-11 bg-card border-border/50 text-foreground focus:border-primary/50 transition-colors"
-            />
-          </div>
-          <Button variant="outline" className="h-11 border-border/50 bg-card gap-2 text-muted-foreground hover:text-foreground">
-            <Filter className="h-4 w-4" />
-            <span className="hidden sm:inline">Filtros</span>
-          </Button>
         </div>
 
         {/* Lista de Miembros */}
@@ -849,6 +882,33 @@ const Members = () => {
                   )}
                 </SelectContent>
               </Select>
+
+              {/* Acciones rápidas de renovación */}
+              {editForm.plan && (
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleRenewFromToday}
+                    className="flex items-center justify-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/10 active:scale-95"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                    Renovar desde hoy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleExtendFromExpiry}
+                    className="flex items-center justify-center gap-1.5 rounded-lg border border-border/50 bg-secondary/30 px-3 py-2 text-[11px] font-semibold text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground active:scale-95"
+                    title={
+                      editForm.end_date && new Date(editForm.end_date) > new Date()
+                        ? `Suma desde ${format(new Date(editForm.end_date + 'T00:00:00'), "d MMM", { locale: es })}`
+                        : 'Extiende desde hoy (ya venció)'
+                    }
+                  >
+                    <CalendarPlus className="h-3 w-3" />
+                    Extender plan
+                  </button>
+                </div>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Estado</Label>
@@ -873,7 +933,6 @@ const Members = () => {
                     setEditForm({ ...editForm, start_date: newStartDate });
                     return;
                   }
-                  // Recalcular el endDate automáticamente al cambiar el startDate
                   const selectedPlan = (membershipPlans as any[]).find(p => p.id === editForm.plan);
                   const durationDays = selectedPlan?.duration_days || 30;
 
@@ -883,10 +942,14 @@ const Members = () => {
                   const endDate = new Date(startDate);
                   endDate.setDate(startDate.getDate() + durationDays);
 
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+
                   setEditForm({
                     ...editForm,
                     start_date: newStartDate,
-                    end_date: endDate.toISOString().split('T')[0]
+                    end_date: endDate.toISOString().split('T')[0],
+                    status: endDate > today ? 'active' : editForm.status,
                   });
                 }} className="bg-secondary/30 min-h-11" />
               </div>

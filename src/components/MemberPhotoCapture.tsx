@@ -3,6 +3,9 @@ import { Upload, Check, RefreshCw, User, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+const MAX_PHOTO_SIZE_MB = 5;
 
 interface MemberPhotoCaptureProps {
     onPhotoCaptured: (file: File | null) => void;
@@ -16,14 +19,23 @@ const MemberPhotoCapture = ({ onPhotoCaptured, existingPhotoUrl, className }: Me
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreviewUrl(reader.result as string);
-                onPhotoCaptured(file);
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+
+        if (file.size > MAX_PHOTO_SIZE_MB * 1024 * 1024) {
+            toast.error(`La foto no puede superar los ${MAX_PHOTO_SIZE_MB} MB`);
+            e.target.value = "";
+            return;
         }
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setPreviewUrl(reader.result as string);
+            onPhotoCaptured(file);
+        };
+        reader.onerror = () => {
+            toast.error("No se pudo leer la imagen. Intenta con otro archivo.");
+        };
+        reader.readAsDataURL(file);
     };
 
     const clearPhoto = () => {
