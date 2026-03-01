@@ -16,7 +16,7 @@ serve(async (req) => {
         const authHeader = req.headers.get('Authorization')
         if (!authHeader) {
             return new Response(JSON.stringify({ error: 'Missing Authorization header' }), {
-                status: 401,
+                status: 400,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             })
         }
@@ -40,7 +40,7 @@ serve(async (req) => {
                 error: 'Unauthorized',
                 detail: userError?.message || "Sesión inválida"
             }), {
-                status: 401,
+                status: 400,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             })
         }

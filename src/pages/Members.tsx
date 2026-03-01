@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Layout } from "@/components/Layout";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Search, Plus, QrCode, Smartphone, CheckCircle2, UserPlus, Flame, Pencil, Tag, Loader2, CreditCard, Trash2, MessageCircle, FileDown, RefreshCw, CalendarPlus } from "lucide-react";
@@ -427,7 +427,7 @@ const Members = () => {
   };
 
   return (
-    <Layout>
+    <>
       <div className="space-y-6 max-w-7xl mx-auto">
         {/* Encabezado */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -1010,7 +1010,7 @@ const Members = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-    </Layout>
+    </>
 
   );
 };

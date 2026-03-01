@@ -1,4 +1,4 @@
-import { Layout } from "@/components/Layout";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -220,18 +220,18 @@ const Settings = () => {
 
   if (isLoading) {
     return (
-      <Layout>
+      <>
         <div className="flex h-[60vh] flex-col items-center justify-center gap-4 text-muted-foreground">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p>Cargando configuraciones...</p>
         </div>
-      </Layout>
+      </>
     );
   }
 
   if (isError) {
     return (
-      <Layout>
+      <>
         <div className="flex h-[60vh] flex-col items-center justify-center gap-4 text-coral">
           <p className="text-xl font-bold">Error cargando configuraciones</p>
           <p className="text-sm border border-coral/30 bg-coral/10 p-4 rounded-xl max-w-lg text-center">
@@ -241,12 +241,12 @@ const Settings = () => {
             Reintentar
           </Button>
         </div>
-      </Layout>
+      </>
     );
   }
 
   return (
-    <Layout>
+    <>
       <div className="space-y-6 max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -620,7 +620,7 @@ const Settings = () => {
           {/* REST OF TABS HIDDEN TEMPORARILY AWAITING FUTURE UPDATES */}
         </Tabs>
       </div>
-    </Layout>
+    </>
   );
 };
 

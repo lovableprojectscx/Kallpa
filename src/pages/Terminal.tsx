@@ -1,4 +1,4 @@
-import { Layout } from "@/components/Layout";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -86,7 +86,7 @@ const Terminal = () => {
   };
 
   return (
-    <Layout>
+    <>
       <div className="flex h-full flex-col items-center justify-center p-4">
         {/* Ambient Status Glow */}
         <AnimatePresence>
@@ -220,7 +220,7 @@ const Terminal = () => {
           </div>
         </motion.div>
       </div>
-    </Layout>
+    </>
   );
 };
 

@@ -1,4 +1,4 @@
-import { Layout } from "@/components/Layout";
+
 import { motion } from "framer-motion";
 import { useState } from "react";
 import {
@@ -177,11 +177,11 @@ const Affiliate = () => {
 
     if (isLoading) {
         return (
-            <Layout>
+            <>
                 <div className="flex items-center justify-center h-64">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-            </Layout>
+            </>
         );
     }
 
@@ -223,7 +223,7 @@ const Affiliate = () => {
     // === NOT AN AFFILIATE YET ===
     if (!affiliateData?.isAffiliate) {
         return (
-            <Layout>
+            <>
                 <div className="max-w-2xl mx-auto space-y-6 sm:space-y-8">
                     <div>
                         <h1 className="font-display text-2xl sm:text-3xl text-foreground">Programa de Afiliados</h1>
@@ -277,14 +277,14 @@ const Affiliate = () => {
                         )}
                     </motion.div>
                 </div>
-            </Layout>
+            </>
         );
     }
 
     // === PENDING APPROVAL ===
     if (affiliateData?.status === 'pending') {
         return (
-            <Layout>
+            <>
                 <div className="max-w-2xl mx-auto space-y-6 sm:space-y-8">
                     <div>
                         <h1 className="font-display text-2xl sm:text-3xl text-foreground">Programa de Afiliados</h1>
@@ -300,7 +300,7 @@ const Affiliate = () => {
                         <p className="text-sm text-muted-foreground">El administrador evaluará tu postulación. Recibirás tu código de embajador pronto.</p>
                     </motion.div>
                 </div>
-            </Layout>
+            </>
         );
     }
 
@@ -308,7 +308,7 @@ const Affiliate = () => {
     const credits = affiliateData.credits || 0;
 
     return (
-        <Layout>
+        <>
             <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
                 <div>
                     <h1 className="font-display text-2xl sm:text-3xl text-foreground">Panel de Embajador</h1>
@@ -479,7 +479,7 @@ const Affiliate = () => {
                     </motion.div>
                 )}
             </div>
-        </Layout>
+        </>
     );
 };
 

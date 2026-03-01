@@ -1,4 +1,4 @@
-import { Layout } from "@/components/Layout";
+
 import { RetentionPanel } from "@/components/RetentionPanel";
 import { motion } from "framer-motion";
 import { TrendingDown, UserMinus, RefreshCw, Target, Loader2 } from "lucide-react";
@@ -63,7 +63,7 @@ const Retention = () => {
   });
 
   return (
-    <Layout>
+    <>
       <div className="space-y-6">
         <div>
           <h1 className="font-display text-2xl sm:text-3xl text-foreground flex items-center gap-2">
@@ -130,7 +130,7 @@ const Retention = () => {
           </div>
         </motion.div>
       </div>
-    </Layout>
+    </>
   );
 };
 

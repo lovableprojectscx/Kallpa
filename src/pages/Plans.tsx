@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Layout } from "@/components/Layout";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -170,7 +170,7 @@ const Plans = () => {
     const inactivePlans = plans.filter(p => !p.is_active);
 
     return (
-        <Layout>
+        <>
             <div className="space-y-6 max-w-5xl mx-auto">
                 {/* Header */}
                 <motion.div
@@ -416,7 +416,7 @@ const Plans = () => {
                     </div>
                 </DialogContent>
             </Dialog>
-        </Layout>
+        </>
     );
 };
 

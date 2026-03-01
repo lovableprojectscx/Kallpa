@@ -1,4 +1,4 @@
-import { Layout } from "@/components/Layout";
+
 import { StatCard } from "@/components/StatCard";
 import { RetentionPanel } from "@/components/RetentionPanel";
 import { RecentActivity } from "@/components/RecentActivity";
@@ -135,7 +135,7 @@ const Index = () => {
   const currentDate = new Intl.DateTimeFormat('es-ES', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' }).format(new Date());
 
   return (
-    <Layout>
+    <>
       <div className="space-y-4 md:space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -327,7 +327,7 @@ const Index = () => {
         {/* Retention */}
         <RetentionPanel />
       </div>
-    </Layout>
+    </>
   );
 };
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Layout } from "@/components/Layout";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/lib/supabase";
@@ -101,7 +101,7 @@ export default function Subscription() {
     };
 
     return (
-        <Layout>
+        <>
             <div className="space-y-6 max-w-5xl mx-auto py-4 sm:py-6 px-3 sm:px-6">
                 <motion.div
                     initial={{ opacity: 0, y: -10 }}
@@ -396,6 +396,6 @@ export default function Subscription() {
                     <p>Los pagos son procesados de forma segura por Mercado Pago. KALLPA no almacena información de tarjetas de crédito.</p>
                 </div>
             </div>
-        </Layout>
+        </>
     );
 }

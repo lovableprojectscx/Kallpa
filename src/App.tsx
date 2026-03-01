@@ -2,12 +2,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import AuthGuard from "./components/AuthGuard";
 import SubscriptionGuard from "./components/SubscriptionGuard";
 import AdminGuard from "./components/AdminGuard";
+import { Layout } from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Landing from "./pages/Landing";
 import Terminal from "./pages/Terminal";
@@ -67,22 +68,24 @@ const App = () => (
                 element={
                   <AuthGuard>
                     <SubscriptionGuard>
-                      <Routes>
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/terminal" element={<Terminal />} />
-                        <Route path="/members" element={<Members />} />
-                        <Route path="/subscription" element={<Subscription />} />
-                        <Route path="/affiliate" element={<Affiliate />} />
-                        <Route path="/retention" element={<Retention />} />
-                        <Route path="/settings" element={<Settings />} />
-                        <Route path="/plans" element={<Plans />} />
-                        <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
-                        <Route path="/admin/licenses" element={<AdminGuard><AdminLicenses /></AdminGuard>} />
-                        <Route path="/admin/clients" element={<AdminGuard><AdminClients /></AdminGuard>} />
-                        <Route path="/admin/affiliates" element={<AdminGuard><AdminAffiliates /></AdminGuard>} />
-                        <Route path="/admin/settings" element={<AdminGuard><AdminSettings /></AdminGuard>} />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
+                      <Layout>
+                        <Routes>
+                          <Route path="/dashboard" element={<Dashboard />} />
+                          <Route path="/terminal" element={<Terminal />} />
+                          <Route path="/members" element={<Members />} />
+                          <Route path="/subscription" element={<Subscription />} />
+                          <Route path="/affiliate" element={<Affiliate />} />
+                          <Route path="/retention" element={<Retention />} />
+                          <Route path="/settings" element={<Settings />} />
+                          <Route path="/plans" element={<Plans />} />
+                          <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
+                          <Route path="/admin/licenses" element={<AdminGuard><AdminLicenses /></AdminGuard>} />
+                          <Route path="/admin/clients" element={<AdminGuard><AdminClients /></AdminGuard>} />
+                          <Route path="/admin/affiliates" element={<AdminGuard><AdminAffiliates /></AdminGuard>} />
+                          <Route path="/admin/settings" element={<AdminGuard><AdminSettings /></AdminGuard>} />
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </Layout>
                     </SubscriptionGuard>
                   </AuthGuard>
                 }
