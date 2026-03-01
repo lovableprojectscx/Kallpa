@@ -15,6 +15,7 @@ serve(async (req) => {
     try {
         const authHeader = req.headers.get('Authorization')
         if (!authHeader) {
+            console.error("Missing Authorization header in request");
             return new Response(JSON.stringify({ error: 'Missing Authorization header' }), {
                 status: 400,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -22,23 +23,29 @@ serve(async (req) => {
         }
 
         const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-        // Usar ANON_KEY para verificar al usuario correctamente
-        const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? ''
 
+        // Create user client with the provided Authorization header
         const supabaseClient = createClient(
             supabaseUrl,
-            supabaseAnonKey,
+            supabaseKey,
             { global: { headers: { Authorization: authHeader } } }
         )
 
-        // Verificamos al usuario
         const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
 
         if (userError || !user) {
-            console.error("Auth check failed:", userError?.message || "No user found")
+            console.error("Auth check failed:", userError);
+            console.error("Auth Header snippet:", authHeader.substring(0, 20) + "...");
             return new Response(JSON.stringify({
                 error: 'Unauthorized',
-                detail: userError?.message || "Sesión inválida"
+                detail: userError?.message || "Sesión inválida",
+                debug_info: {
+                    userError: userError,
+                    headerStart: authHeader.substring(0, 15),
+                    hasAnonKey: !!supabaseAnonKey,
+                    hasServiceKey: !!supabaseKey
+                }
             }), {
                 status: 400,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
