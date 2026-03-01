@@ -277,7 +277,8 @@ const Members = () => {
           start_date: editForm.start_date || null,
           end_date: editForm.end_date || null
         })
-        .eq('id', editingMember!.id);
+        .eq('id', editingMember!.id)
+        .eq('tenant_id', user?.tenantId); // Seguridad extra: solo el propio tenant
       if (error) throw error;
     },
     onSuccess: () => {
@@ -296,7 +297,8 @@ const Members = () => {
       const { error } = await supabase
         .from('members')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('tenant_id', user?.tenantId); // Seguridad extra: solo el propio tenant
       if (error) throw error;
     },
     onSuccess: () => {

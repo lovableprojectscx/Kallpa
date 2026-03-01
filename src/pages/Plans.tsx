@@ -97,7 +97,8 @@ const Plans = () => {
                 const { error } = await supabase
                     .from("membership_plans")
                     .update({ ...payload })
-                    .eq("id", editingPlan.id);
+                    .eq("id", editingPlan.id)
+                    .eq("tenant_id", user.tenantId);
                 if (error) throw error;
             } else {
                 const { error } = await supabase
@@ -120,7 +121,8 @@ const Plans = () => {
             const { error } = await supabase
                 .from("membership_plans")
                 .update({ is_active: !is_active })
-                .eq("id", id);
+                .eq("id", id)
+                .eq("tenant_id", user?.tenantId);
             if (error) throw error;
         },
         onSuccess: () => {
@@ -132,10 +134,12 @@ const Plans = () => {
 
     const deletePlan = useMutation({
         mutationFn: async (id: string) => {
+            if (!requireSubscription()) throw new Error('sin_licencia');
             const { error } = await supabase
                 .from("membership_plans")
                 .delete()
-                .eq("id", id);
+                .eq("id", id)
+                .eq("tenant_id", user?.tenantId);
             if (error) throw error;
         },
         onSuccess: () => {

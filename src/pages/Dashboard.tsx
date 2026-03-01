@@ -129,7 +129,7 @@ const Index = () => {
       };
     },
     enabled: !!user?.tenantId,
-    refetchInterval: 10000 // Sincronizar estadísticas en tiempo real
+    refetchInterval: 60000 // Sincronizar cada minuto para evitar sobrecarga y parpadeo
   });
 
   const currentDate = new Intl.DateTimeFormat('es-ES', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' }).format(new Date());
@@ -221,7 +221,7 @@ const Index = () => {
             >
               <StatCard
                 title="Usuarios"
-                value={isLoading ? "..." : String(stats?.totalMembers || 0)}
+                value={!stats ? "..." : String(stats?.totalMembers || 0)}
                 changeType="neutral"
                 icon={Users}
                 subtitle="Total registrados"
@@ -230,7 +230,7 @@ const Index = () => {
               />
               <StatCard
                 title="Vencimientos"
-                value={isLoading ? "..." : String(stats?.expiredMembers || 0)}
+                value={!stats ? "..." : String(stats?.expiredMembers || 0)}
                 changeType={Number(stats?.expiredMembers) > 0 ? "negative" : "positive"}
                 icon={AlertCircle}
                 subtitle="Ya no renovaron"
@@ -239,7 +239,7 @@ const Index = () => {
               />
               <StatCard
                 title="Desertores"
-                value={isLoading ? "..." : String(stats?.desertores || 0)}
+                value={!stats ? "..." : String(stats?.desertores || 0)}
                 changeType="neutral"
                 icon={TrendingDown}
                 subtitle="Ya no regresan"
@@ -248,7 +248,7 @@ const Index = () => {
               />
               <StatCard
                 title="Presencia"
-                value={isLoading ? "..." : String(stats?.checkinsToday || 0)}
+                value={!stats ? "..." : String(stats?.checkinsToday || 0)}
                 changeType="neutral"
                 icon={UserCheck}
                 subtitle="Hoy entraron"
@@ -267,7 +267,7 @@ const Index = () => {
             >
               <StatCard
                 title="Ventas del Día"
-                value={isLoading ? "..." : String(stats?.salesDay || 0)}
+                value={!stats ? "..." : String(stats?.salesDay || 0)}
                 change="Inscritos"
                 changeType="positive"
                 comparisonLabel="en fecha"
@@ -276,7 +276,7 @@ const Index = () => {
               />
               <StatCard
                 title="Ventas del Mes"
-                value={isLoading ? "..." : String(stats?.salesMonthly || 0)}
+                value={!stats ? "..." : String(stats?.salesMonthly || 0)}
                 change="Total"
                 changeType="neutral"
                 comparisonLabel="mes elegido"
@@ -285,7 +285,7 @@ const Index = () => {
               />
               <StatCard
                 title="Recaudación"
-                value={isLoading ? "..." : `S/${(stats?.monthlyRevenue || 0).toLocaleString('es-PE', { maximumFractionDigits: 0 })}`}
+                value={!stats ? "..." : `S/${(stats?.monthlyRevenue || 0).toLocaleString('es-PE', { maximumFractionDigits: 0 })}`}
                 change="Ingreso"
                 changeType="positive"
                 comparisonLabel="estimado"
@@ -294,7 +294,7 @@ const Index = () => {
               />
               <StatCard
                 title="Plan Líder"
-                value={isLoading ? "..." : stats?.topPlan || "N/A"}
+                value={!stats ? "..." : stats?.topPlan || "N/A"}
                 change="Popular"
                 changeType="positive"
                 comparisonLabel="preferencia"
@@ -303,7 +303,7 @@ const Index = () => {
               />
               <StatCard
                 title="Ticket Medio"
-                value={isLoading ? "..." : `S/${(stats?.avgTicket || 0).toFixed(0)}`}
+                value={!stats ? "..." : `S/${(stats?.avgTicket || 0).toFixed(0)}`}
                 change="Promedio"
                 changeType="neutral"
                 comparisonLabel="por socio"

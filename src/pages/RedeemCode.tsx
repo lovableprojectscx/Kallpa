@@ -67,7 +67,8 @@ const RedeemCode = () => {
             const { error } = await supabase
                 .from('affiliates')
                 .update({ credits_balance: balance - CREDITS_PER_MONTH })
-                .eq('id', affiliateData.id);
+                .eq('id', affiliateData.id)
+                .eq('profile_id', user!.id); // Seguridad: solo el dueño de los créditos
             if (error) throw error;
 
             // Registrar el canje
@@ -77,33 +78,20 @@ const RedeemCode = () => {
                 months_added: 1
             });
 
-            // Extender la licencia activa o crear una nueva si no existe
+            // SIEMPRE insertar una nueva licencia ya canjeada.
+            // Esto permite que el motor de stacking en SubscriptionContext.tsx
+            // sume este mes extra de forma cronológica sin pisar otros planes.
             if (user?.tenantId) {
-                const { data: lic } = await supabase
-                    .from('licenses')
-                    .select('*')
-                    .eq('redeemed_by', user.tenantId)
-                    .eq('status', 'redeemed')
-                    .order('redeemed_at', { ascending: false })
-                    .limit(1)
-                    .maybeSingle();
+                const { error: insertError } = await supabase.from('licenses').insert({
+                    code: `CREDIT-REDEEM-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+                    duration_months: 1,
+                    status: 'redeemed',
+                    redeemed_by: user.tenantId,
+                    redeemed_at: new Date().toISOString(),
+                    label: 'Canje de Créditos de Afiliado (Auto)'
+                });
 
-                if (lic) {
-                    // Extender existente
-                    await supabase.from('licenses').update({
-                        duration_months: (lic.duration_months || 1) + 1
-                    }).eq('id', lic.id);
-                } else {
-                    // Crear nueva ya canjeada
-                    await supabase.from('licenses').insert({
-                        code: `AFF-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-                        duration_months: 1,
-                        status: 'redeemed',
-                        redeemed_by: user.tenantId,
-                        redeemed_at: new Date().toISOString(),
-                        label: 'Canje de Créditos de Afiliado'
-                    });
-                }
+                if (insertError) throw insertError;
             }
             return 1;
         },
