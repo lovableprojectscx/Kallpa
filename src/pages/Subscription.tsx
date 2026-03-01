@@ -43,37 +43,32 @@ export default function Subscription() {
             const token = sessionData?.session?.access_token;
 
             if (!token) {
-                // Forzar recarga o alertar al usuario si realmente no hay token
                 throw new Error("Sesión expirada o inválida. Por favor inicia sesión nuevamente.");
             }
 
-            const { data, error } = await supabase.functions.invoke('create-mp-preference-v3', {
-                body: {
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
+            const response = await fetch(`${supabaseUrl}/functions/v1/create-mp-preference-v3`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
                     planDuration: months,
                     pricePen: pricePen,
                     tenantId: user.tenantId
-                },
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
+                })
             });
 
-            if (error) {
-                // Tentar extraer detalle del error si viene en JSON
-                let detail = "";
-                try {
-                    const errorData = await error.context?.json();
-                    detail = errorData?.detail || errorData?.error || "";
-                } catch (e) {
-                    // Fallback to error message
-                }
+            const data = await response.json();
 
-                throw new Error(detail || error.message || "Error desconocido en el servidor");
+            if (!response.ok) {
+                let detail = data?.detail || data?.error || "";
+                throw new Error(detail || "Error desconocido al procesar pago");
             }
 
             if (!data || !data.init_point) throw new Error("No se recibió link de pago");
 
-            // Redirigir a Mercado Pago
             window.location.href = data.init_point;
 
         } catch (err: any) {
