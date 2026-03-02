@@ -1,0 +1,55 @@
+# REGLAS MAESTRAS DE KALLPA SAAS (SISTEMA DE GIMNASIOS)
+# ==========================================================
+# IMPORTANTE PARA CUALQUIER IA (Claude, Copilot, Gemini, etc.):
+# ANTES DE PROPONER CUALQUIER CAMBIO DE CÓDIGO O BASE DE DATOS, LEE ESTAS REGLAS Y CÚMPLELAS ESTRICTAMENTE.
+# NUNCA MODIFIQUES ESTAS REGLAS SIN AUTORIZACIÓN DEL USUARIO DUEÑO.
+
+## 1. NATURALEZA DEL NEGOCIO (MULTI-TENANT SAAS B2B)
+- **Kallpa** es un software SaaS B2B. Cada cliente principal se registra como una **Empresa / Gimnasio**.
+- Cada Gimnasio funciona como un **Tenant** aislado y completamente independiente.
+- Los Gimnasios personalizan su entorno (nombre, logo, configuración) y manejan a sus **Propios Clientes (Miembros)** y **Personal (Staff/Recepcionistas)**.
+
+## 2. AISLAMIENTO DE DATOS (TENANT ISOLATION) - REGLA DE SEGURIDAD MÁXIMA
+- Ningún miembro, pago, asistencia o configuración de un Gimnasio "A" puede ser visto por un Gimnasio "B".
+- **Sistema RLS (Row Level Security):** La seguridad en Postgres (Supabase) depende estrictamente de la función `auth_tenant_id()` que consulta de forma asíncrona la tabla `profiles`. 
+- **PROHIBIDO:** No intentar usar `app_metadata` del JWT ni desactivar el RLS de Supabase bajo ninguna circunstancia ("disable RLS" está estrictamente prohibido).
+
+## 3. FLUJO DE ONBOARDING E INSCRIPCIÓN (INTOCABLE)
+- Cuando una Empresa nueva se registra (en `Register.tsx` y `Onboarding.tsx`), el flujo exacto debe respetarse:
+  1. Se crea la cuenta Auth (Supabase).
+  2. El usuario llena los datos de su gimnasio.
+  3. Se crea el `tenant` (Gimnasio).
+  4. INMEDIATAMENTE se debe actualizar el `profile` del usuario para atarlo a ese `tenant_id` (para que el RLS lo deje pasar).
+  5. Recién después se insertan las configuraciones por defecto (`gym_settings`) y los planes iniciales (`membership_plans`).
+- **Peligro:** Si se altera este orden, el sistema RLS bloqueará la creación del gimnasio.
+
+## 4. SISTEMA DE SUSCRIPCIÓN PARA QUE EL GIMNASIO OPERE
+- Una Empresa nueva no tiene acceso libre al sistema de inmediato tras configurar.
+- Debe pasar por la pasarela de suscripción (`Subscription.tsx` / `SubscriptionGuard.tsx`), donde tiene 3 opciones:
+  - Activar una prueba gratuita (Trial de 3 días).
+  - Pagar una mensualidad (Mercado Pago).
+  - Activar mediante un código secreto de licencia.
+- Si el tenant está inactivo o vencido, el sistema bloquea el acceso en el Frontend con el Componente `SubscriptionGuard` (redirigiendo a pagar).
+
+## 5. SISTEMA DE STAFF (RECEPCIONISTAS)
+- Los "dueños" (Rol: `admin`) pueden invitar a su personal (Rol: `staff` o recepcionista) en Ajustes.
+- El envío de la invitación solo registra el correo temporalmente y envía un link.
+- El empleado hace click en el enlace, completa sus datos en `AceptarInvitacion.tsx` y se le asigna el *mismo* `tenant_id` que su jefe.
+- El staff/recepcionista "hereda" el estado de suscripción del dueño. Si el gimnasio no ha pagado, la recepcionista no puede operar el sistema.
+- Existe un login y vista especial y simplificada solo para Recepcionistas (`LoginRecepcion.tsx`).
+
+## 6. SISTEMA DE MIEMBROS PUBLICO (CLIENTES FINALES) Y CARNETS
+- Cada gimnasio inscribe a sus clientes o atletas (Members).
+- Se genera un portal o carnet público único para que cada atleta del gimnasio pueda ver su plan y fechas de pago.
+- **Validación del QR:** Las asistencias a través de escaneo QR están capadas criptográficamente. Un QR generado para el Miembro del Gimnasio A, arrojará error y será rechazado si es escaneado por el Gimnasio B. No tocar las validaciones de negocio en `Attendance` ni en la lectura del QR.
+
+## 7. OPTIMIZACIÓN DEL RENDIMIENTO (CACHÉ Y RPCS)
+- Gran parte del sistema (especialmente el `Dashboard.tsx` y retenciones) utiliza funciones RPC (Procedimientos Almacenados en PostgreSQL) para cálculos pesados, en lugar de descargar todo al navegador.
+- Se utiliza **React Query** exhaustivamente. 
+- **Regla UI/UX:** Está configurado el caché en frontend (`staleTime: 5 mins`, `placeholderData: keepPreviousData`, `refetchOnWindowFocus: false`).
+- **PROHIBIDO:** Eliminar estas configuraciones de caché en React Query. El sistema NO DEBE PARPADEAR NI RECARGAR DATOS DESDE 0 al cambiar de pestañas porque molesta a los administradores del gimnasio. El sistema debe sentirse inmediato.
+
+## 8. INTEGRIDAD Y EXPERIENCIA PROFESIONAL
+- **Experiencia de usuario (UX):** El sistema debe ser altamente intuitivo, premium y "no molestoso". No pedir excesivos clics en vistas principales, no descargar listados innecesariamente grandes en celulares, optimizar componentes para mobile de ser necesario.
+- **Cero roturas (Zero Regressions):** Si como Asistente IA sugieres un cambio de código para "limpiar o refactorizar", tu obligación primordial es ASEGURARTE primero de no romper la continuidad de la suscripción, los cobros o el acceso a datos.
+- **Pregunta primero:** Ante la duda con funciones como pasarelas de pago, confirmación de correo o RLS de base de datos, siempre expón tus dudas y pide permiso antes de intervenir.
