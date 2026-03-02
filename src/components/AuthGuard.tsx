@@ -11,7 +11,12 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     const { user, isAuthenticated, hasTenant, isLoading } = useAuth();
     const location = useLocation();
 
-    if (isLoading) {
+    // CRITICAL: Only show the blocking spinner on the VERY FIRST load when we have
+    // absolutely no user data yet. If we show the spinner on every isLoading=true
+    // (including background token refreshes), AuthGuard will UNMOUNT its children,
+    // causing Framer Motion to re-run initial animations — creating the "page reload" flash.
+    // If `user` is already known (cached), skip the spinner entirely.
+    if (isLoading && !user) {
         return (
             <div className="min-h-screen w-full flex items-center justify-center bg-background">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
