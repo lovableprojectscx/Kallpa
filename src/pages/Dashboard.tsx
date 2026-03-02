@@ -7,7 +7,7 @@ import { Users, UserCheck, TrendingUp, AlertCircle, Loader2, BarChart3, DollarSi
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -62,7 +62,11 @@ const Index = () => {
       return data;
     },
     enabled: !!user?.tenantId && user?.role !== 'superadmin',
-    refetchInterval: 60000 // Sincronizar cada minuto para evitar sobrecarga y parpadeo
+    refetchInterval: 60000, // Sincronizar cada minuto silenciosamente sin vaciar la UI
+    staleTime: 1000 * 60 * 5, // Mantener los datos frescos por 5 minutos al cambiar de vistas
+    placeholderData: keepPreviousData, // Evitar "parpadeo" y estado "..." al cambiar entre "Operativo" y "Ventas"
+    refetchOnMount: false, // Evitar recarga compulsiva al volver a entrar a la pestaña si la data sigue fresca
+    refetchOnWindowFocus: false, // Por si acaso asegurarnos de no recargar el foco de la ventana
   });
 
   // Redirigir la cuenta maestra a su panel global (después de todos los hooks)

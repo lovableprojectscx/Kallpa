@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, Clock, MessageSquare, Loader2, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { differenceInDays, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -27,7 +27,11 @@ export function RetentionPanel() {
 
       return data || [];
     },
-    enabled: !!user?.tenantId
+    enabled: !!user?.tenantId,
+    staleTime: 1000 * 60 * 5, // 5 minutos de caché para evitar recargas constantes al navegar
+    placeholderData: keepPreviousData,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   return (
