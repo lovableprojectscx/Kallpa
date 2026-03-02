@@ -33,18 +33,19 @@ const Onboarding = () => {
 
             if (tenantError) throw tenantError;
 
-            // 2. Pre-crear la fila de settings para evitar 404 en Settings
+            // 2. Vincular Tenant al perfil INMEDIATAMENTE
+            // Esto es crucial para que las siguientes inserciones pasen la política RLS (SaaS Tenant Isolation)
+            await setTenantId(tenantData.id);
+
+            // 3. Pre-crear la fila de settings para evitar 404 en Settings
             await supabase.from('gym_settings').insert({ tenant_id: tenantData.id });
 
-            // 3. Crear planes predeterminados
+            // 4. Crear planes predeterminados
             await supabase.from('membership_plans').insert([
                 { tenant_id: tenantData.id, name: 'Básico', description: 'Acceso general guiado', price: 100, duration_days: 30, color: '#3b82f6', is_active: true },
                 { tenant_id: tenantData.id, name: 'Estándar', description: 'Acceso general + clases grupales', price: 150, duration_days: 30, color: '#8b5cf6', is_active: true },
                 { tenant_id: tenantData.id, name: 'Premium', description: 'Acceso total VIP y nutrición', price: 200, duration_days: 30, color: '#f59e0b', is_active: true }
             ]);
-
-            // 4. Vincular Tenant al perfil
-            await setTenantId(tenantData.id);
 
             toast.success("¡Espacio de trabajo creado!");
             navigate("/dashboard", { replace: true });
