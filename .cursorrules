@@ -53,3 +53,24 @@
 - **Experiencia de usuario (UX):** El sistema debe ser altamente intuitivo, premium y "no molestoso". No pedir excesivos clics en vistas principales, no descargar listados innecesariamente grandes en celulares, optimizar componentes para mobile de ser necesario.
 - **Cero roturas (Zero Regressions):** Si como Asistente IA sugieres un cambio de código para "limpiar o refactorizar", tu obligación primordial es ASEGURARTE primero de no romper la continuidad de la suscripción, los cobros o el acceso a datos.
 - **Pregunta primero:** Ante la duda con funciones como pasarelas de pago, confirmación de correo o RLS de base de datos, siempre expón tus dudas y pide permiso antes de intervenir.
+
+## 9. REGLAS CRÍTICAS ANTI-PARPADEO (NO TOCAR — BUGS HISTÓRICOS RESUELTOS)
+
+### 9.1 AuthGuard.tsx — REGLA DE ORO
+- **PROHIBIDO:** Volver a cambiar `if (isLoading && !user)` por `if (isLoading)`.
+- **Razón:** Supabase refresca el token JWT automáticamente al volver a una pestaña del navegador, lo cual pone `isLoading = true` brevemente. Si `AuthGuard` muestra la pantalla de carga en ese momento, **desmonta el componente hijo** (Dashboard, Onboarding, etc.). Al volver a montar, Framer Motion re-ejecuta la animación `opacity: 0 → 1`, causando el molesto "parpadeo/recarga" visible.
+- **Regla:** El spinner bloqueante de `AuthGuard` SOLO debe aparecer cuando `isLoading === true && user === null` (primera carga en blanco). Si el usuario ya está en memoria, los refrescos de token son **invisibles**.
+
+### 9.2 SubscriptionContext.tsx — FLAG isInitialized
+- **PROHIBIDO:** Usar `if (expirationDate === null) setIsLoading(true)` para detectar la primera carga.
+- **Razón:** `checkSubscription()` resetea `expirationDate` a `null` cada vez que el usuario no tiene tenant. Esto creaba un ciclo vicioso: `expirationDate=null → isLoading=true → SubscriptionGuard muestra pantalla negra → checkSubscription → expirationDate=null → ...`
+- **Regla:** Usar el flag `isInitialized` para distinguir la primera carga de los refrescos posteriores. Solo `if (!isInitialized) setIsLoading(true)`.
+
+### 9.3 AuthContext.tsx — Eventos de Supabase Auth
+- **PROHIBIDO:** Volver a añadir `TOKEN_REFRESHED` o `INITIAL_SESSION` al listener `onAuthStateChange`.
+- **Razón:** `TOKEN_REFRESHED` se dispara automáticamente cuando el usuario vuelve a la pestaña. Llamar a `loadUserAndProfile()` en ese evento causa una cadena de re-renders innecesarios que producen el parpadeo.
+- **Regla:** El listener solo debe reaccionar a `SIGNED_IN` y `SIGNED_OUT`. La sesión inicial se maneja con `getSession()` al montar.
+
+### 9.4 React Query — Configuración de Caché
+- **PROHIBIDO:** Eliminar o reducir `staleTime`, `placeholderData: keepPreviousData`, `refetchOnMount: false`, o `refetchOnWindowFocus: false` de los queries del Dashboard y RetentionPanel.
+- **Razón:** Sin estas opciones, React Query recarga los datos desde cero cada vez que el componente se monta o la ventana recibe foco, mostrando estados de carga vacíos ("...") que el usuario percibe como "recarga".
