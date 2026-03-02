@@ -23,7 +23,10 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const [hasActiveSubscription, setHasActiveSubscription] = useState<boolean>(false);
     const [expirationDate, setExpirationDate] = useState<Date | null>(null);
     const [hasUsedTrial, setHasUsedTrial] = useState<boolean>(false);
+    // isLoading: true ONLY on the very first check (before any subscription data is known)
+    // After the first check, background re-checks are completely silent (no visible loading flash)
     const [isLoading, setIsLoading] = useState(true);
+    const [isInitialized, setIsInitialized] = useState(false);
 
     const checkSubscription = async () => {
         try {
@@ -31,6 +34,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 setHasActiveSubscription(true);
                 setExpirationDate(new Date(2099, 11, 31));
                 setIsLoading(false);
+                setIsInitialized(true);
                 return;
             }
 
@@ -39,6 +43,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 setHasActiveSubscription(true);
                 setExpirationDate(new Date(2099, 11, 31));
                 setIsLoading(false);
+                setIsInitialized(true);
                 return;
             }
 
@@ -47,6 +52,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 setExpirationDate(null);
                 setHasUsedTrial(false);
                 setIsLoading(false);
+                setIsInitialized(true);
                 return;
             }
 
@@ -119,19 +125,20 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
             setHasActiveSubscription(false);
             setExpirationDate(null);
         } finally {
+            // Always mark as done — first or subsequent checks
             setIsLoading(false);
+            setIsInitialized(true);
         }
     };
 
     useEffect(() => {
-        // Solo marcar cargando en la primera carga (expirationDate es null al inicio)
-        if (expirationDate === null) {
+        // Only show the blocking loader overlay on the VERY FIRST check.
+        // Subsequent re-checks (e.g. when user.tenantId changes after onboarding)
+        // run silently in the background without flashing a black screen.
+        if (!isInitialized) {
             setIsLoading(true);
         }
         checkSubscription();
-        // checkSubscription y expirationDate se excluyen intencionalmente:
-        // incluir expirationDate causaría un bucle infinito (se actualiza dentro de checkSubscription)
-        // incluir checkSubscription requeriría useCallback con todas sus dependencias internas
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id, user?.tenantId, user?.role, hasTenant]);
 
