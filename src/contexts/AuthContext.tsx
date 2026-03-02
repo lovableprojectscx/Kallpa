@@ -82,18 +82,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             loadUserAndProfile(session?.user || null);
         });
 
-        // 2. Listen for auth changes (login, logout, token refresh)
+        // 2. Listen for auth changes (login, logout only)
+        // TOKEN_REFRESHED is intentionally excluded: Supabase refreshes the JWT automatically
+        // when the user switches back to this browser tab, which would re-trigger loadUserAndProfile()
+        // and cause a visual reload/flash. The user data has NOT changed on a token refresh.
+        // INITIAL_SESSION is also excluded because getSession() above already handles the initial load.
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             (event, session) => {
-                if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
-                    // Solo activar la pantalla de carga (bloqueante) si el usuario realmente cerró sesión
-                    // o si la app acaba de montar (lo cual ya está controlado por el isLoading inicial).
-                    // Para SIGNED_IN, bloqueamos temporalmente la UI (isLoading = true) 
-                    // para evitar que los AuthGuards expulsen al usuario al login
-                    // porque el perfil local ('user') todavía estaba en 'null'.
-                    if (event === 'SIGNED_OUT' || event === 'SIGNED_IN') {
-                        setIsLoading(true);
-                    }
+                if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+                    setIsLoading(true);
                     loadUserAndProfile(session?.user || null);
                 }
             }
