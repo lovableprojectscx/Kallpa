@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { format, formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import {
@@ -13,6 +13,11 @@ import {
     LogOut, Dumbbell, ScanLine, AlertTriangle, Bell, Camera, UserMinus
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import {
+    AlertDialog, AlertDialogAction, AlertDialogCancel,
+    AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+    AlertDialogHeader, AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 
 type ScanStatus = "idle" | "processing" | "approved" | "denied";
 
@@ -24,6 +29,7 @@ export default function Recepcion() {
     const [scannedMember, setScannedMember] = useState<{ name: string; plan: string; info: string } | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [showSearch, setShowSearch] = useState(false);
+    const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
     const searchRef = useRef<HTMLInputElement>(null);
 
     // tenant efectivo: sessionStorage (cuando admin entra como staff de otro gym) o el propio
@@ -152,7 +158,6 @@ export default function Recepcion() {
     };
 
     const handleLeaveGym = async () => {
-        if (!confirm("¿Deseas retirarte de este gimnasio? Perderás el acceso a la recepción.")) return;
         const tid = sessionStorage.getItem("staff_tenant_id") || user?.tenantId;
         if (tid && user?.id) {
             await supabase.rpc('remove_staff_member', { p_user_id: user.id, p_tenant_id: tid });
@@ -183,7 +188,7 @@ export default function Recepcion() {
                 </div>
                 <div className="flex items-center gap-2">
                     {/* Botón para que el staff se retire del gimnasio */}
-                    <button onClick={handleLeaveGym}
+                    <button onClick={() => setConfirmLeaveOpen(true)}
                         title="Retirarme de este gimnasio"
                         className="hidden sm:flex h-8 px-3 rounded-lg bg-white/5 border border-white/10 items-center gap-1.5 text-[11px] text-white/30 hover:text-amber-400 hover:border-amber-400/30 transition-colors">
                         <UserMinus className="h-3.5 w-3.5" />
@@ -414,6 +419,24 @@ export default function Recepcion() {
                     ))}
                 </aside>
             </div>
+
+            {/* ── CONFIRM LEAVE DIALOG ── */}
+            <AlertDialog open={confirmLeaveOpen} onOpenChange={setConfirmLeaveOpen}>
+                <AlertDialogContent className="bg-[#1a1a2e] border border-white/10 text-white">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Salir del gimnasio?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-white/50">
+                            Perderás el acceso a la recepción de este gimnasio. Deberás ser invitado nuevamente para recuperarlo.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="bg-white/5 border-white/10 text-white hover:bg-white/10">Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleLeaveGym} className="bg-amber-600 hover:bg-amber-500 text-white">
+                            Confirmar salida
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* ── MOBILE ── */}
             <div className="lg:hidden border-t border-white/5">

@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 interface SubscriptionContextType {
     hasActiveSubscription: boolean;
     expirationDate: Date | null;
-    checkSubscription: () => void;
+    checkSubscription: () => Promise<void>;
     redeemMembershipCode: (code: string) => Promise<boolean>;
     requireSubscription: () => boolean;
     hasUsedTrial: boolean;
@@ -124,12 +124,16 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     };
 
     useEffect(() => {
-        // Solo marcar cargando si es la primera vez o si el usuario cambió realmente
-        if (!expirationDate) {
+        // Solo marcar cargando en la primera carga (expirationDate es null al inicio)
+        if (expirationDate === null) {
             setIsLoading(true);
         }
         checkSubscription();
-    }, [user, hasTenant]);
+        // checkSubscription y expirationDate se excluyen intencionalmente:
+        // incluir expirationDate causaría un bucle infinito (se actualiza dentro de checkSubscription)
+        // incluir checkSubscription requeriría useCallback con todas sus dependencias internas
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.id, user?.tenantId, user?.role, hasTenant]);
 
     const activateTrial = async (): Promise<boolean> => {
         if (!user || !user.tenantId) {
@@ -234,16 +238,8 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 console.warn("Could not award affiliate credit:", creditError);
             }
 
-            // 4. Update local state correctly
-            const expiry = new Date();
-            if (license.duration_months) {
-                expiry.setMonth(expiry.getMonth() + license.duration_months);
-            } else {
-                expiry.setMonth(expiry.getMonth() + 1);
-            }
-
-            setExpirationDate(expiry);
-            setHasActiveSubscription(true);
+            // 4. Recalcular la suscripción desde la BD para reflejar el stacking real
+            await checkSubscription();
             return true;
         } catch (error) {
             console.error("Error redeeming code:", error);

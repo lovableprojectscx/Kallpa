@@ -85,6 +85,7 @@ const Plans = () => {
         mutationFn: async () => {
             if (!requireSubscription()) throw new Error('sin_licencia');
             if (!user?.tenantId) throw new Error("Sin tenant");
+            if (!form.name.trim()) throw new Error("El nombre del plan es requerido");
             const payload = {
                 name: form.name.trim(),
                 description: form.description.trim() || null,
@@ -118,11 +119,12 @@ const Plans = () => {
     const toggleActive = useMutation({
         mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
             if (!requireSubscription()) throw new Error('sin_licencia');
+            if (!user?.tenantId) throw new Error("Sin tenant");
             const { error } = await supabase
                 .from("membership_plans")
                 .update({ is_active: !is_active })
                 .eq("id", id)
-                .eq("tenant_id", user?.tenantId);
+                .eq("tenant_id", user.tenantId);
             if (error) throw error;
         },
         onSuccess: () => {
@@ -135,11 +137,12 @@ const Plans = () => {
     const deletePlan = useMutation({
         mutationFn: async (id: string) => {
             if (!requireSubscription()) throw new Error('sin_licencia');
+            if (!user?.tenantId) throw new Error("Sin tenant");
             const { error } = await supabase
                 .from("membership_plans")
                 .delete()
                 .eq("id", id)
-                .eq("tenant_id", user?.tenantId);
+                .eq("tenant_id", user.tenantId);
             if (error) throw error;
         },
         onSuccess: () => {

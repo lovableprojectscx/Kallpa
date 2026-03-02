@@ -19,16 +19,11 @@ const Index = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
-  // Redirigir la cuenta maestra a su panel global
-  if (user?.role === 'superadmin') {
-    return <Navigate to="/admin" replace />;
-  }
-
-  // Cargar métricas principales
+  // Cargar métricas principales — siempre ejecutar el hook (Rules of Hooks)
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard-stats-v2', user?.tenantId, viewMode, selectedDate, selectedMonth, selectedYear],
     queryFn: async () => {
-      if (!user?.tenantId) return null;
+      if (!user?.tenantId || user?.role === 'superadmin') return null;
 
       const now = new Date();
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -49,88 +44,31 @@ const Index = () => {
       const startOfLastMonth = new Date(startOfMonth);
       startOfLastMonth.setMonth(startOfLastMonth.getMonth() - 1);
 
-      const [activeMembersRes, checkinsTodayRes, inactiveMembersRes, expiredActiveRes, allMembersRes,
-        salesDayRes, salesMonthlyRes, plansRes, activeMembersData] = await Promise.all([
-          // 0. Active
-          supabase.from('members').select('*', { count: 'exact', head: true })
-            .eq('tenant_id', user.tenantId).eq('status', 'active'),
-          // 1. Checkins
-          supabase.from('attendance').select('*', { count: 'exact', head: true })
-            .eq('tenant_id', user.tenantId).gte('check_in_time', startOfToday.toISOString()),
-          // 2. Inactive (Desertores)
-          supabase.from('members').select('*', { count: 'exact', head: true })
-            .eq('tenant_id', user.tenantId).eq('status', 'inactive'),
-          // 3. Expired (Active but past end_date)
-          supabase.from('members').select('*', { count: 'exact', head: true })
-            .eq('tenant_id', user.tenantId).eq('status', 'active')
-            .lt('end_date', todayStr),
-          // 4. All
-          supabase.from('members').select('*', { count: 'exact', head: true })
-            .eq('tenant_id', user.tenantId),
-          // 5. Sales Day Selected
-          supabase.from('members').select('*', { count: 'exact', head: true })
-            .eq('tenant_id', user.tenantId)
-            .gte('created_at', dayStart.toISOString())
-            .lte('created_at', dayEnd.toISOString()),
-          // 6. Sales Month selected
-          supabase.from('members').select('*', { count: 'exact', head: true })
-            .eq('tenant_id', user.tenantId)
-            .gte('created_at', startOfSelectedMonth.toISOString())
-            .lte('created_at', endOfSelectedMonth.toISOString()),
-          // 7. Plans info
-          supabase.from('membership_plans').select('id, name, price').eq('tenant_id', user.tenantId),
-          // 8. Members for revenue calculation (Active plans)
-          supabase.from('members').select('plan').eq('tenant_id', user.tenantId).eq('status', 'active')
-        ]).catch(err => {
-          console.error("Error fetching dashboard counts:", err);
-          return [];
-        });
-
-      // Map plans for quick lookup
-      const planMap: Record<string, { name: string, price: number }> = {};
-      (plansRes.data || []).forEach((p: any) => {
-        planMap[p.id] = { name: p.name, price: p.price };
+      const { data, error } = await supabase.rpc('get_dashboard_metrics', {
+        p_tenant_id: user.tenantId,
+        p_day_start: dayStart.toISOString(),
+        p_day_end: dayEnd.toISOString(),
+        p_month_start: startOfSelectedMonth.toISOString(),
+        p_month_end: endOfSelectedMonth.toISOString(),
+        p_today_start: startOfToday.toISOString(),
+        p_today_str: todayStr
       });
 
-      // Calculate monthly revenue from active members
-      const monthlyRevenue = (activeMembersData.data || []).reduce((sum: number, m: any) => {
-        return sum + (planMap[m.plan]?.price || 0);
-      }, 0);
+      if (error) {
+        console.error("RPC Error (Dashboard Metrics):", error);
+        return null;
+      }
 
-      // Top Plan (Plan Estrella)
-      const planCounts: Record<string, number> = {};
-      (activeMembersData.data || []).forEach((m: any) => {
-        planCounts[m.plan] = (planCounts[m.plan] || 0) + 1;
-      });
-
-      let topPlanId = null;
-      let maxCount = 0;
-      Object.entries(planCounts).forEach(([id, count]) => {
-        if (count > maxCount) {
-          maxCount = count;
-          topPlanId = id;
-        }
-      });
-
-      const topPlanName = topPlanId ? planMap[topPlanId]?.name || "Personalizado" : "Sin Datos";
-
-      return {
-        activeMembers: activeMembersRes.count || 0,
-        totalMembers: allMembersRes.count || 0,
-        checkinsToday: checkinsTodayRes.count || 0,
-        expiredMembers: expiredActiveRes.count || 0,
-        desertores: inactiveMembersRes.count || 0,
-        salesDay: salesDayRes.count || 0,
-        salesMonthly: salesMonthlyRes.count || 0,
-        monthlyRevenue,
-        topPlan: topPlanName,
-        avgTicket: activeMembersRes.count ? monthlyRevenue / activeMembersRes.count : 0,
-        retentionRate: allMembersRes.count ? ((activeMembersRes.count / allMembersRes.count) * 100).toFixed(1) : "0"
-      };
+      return data;
     },
-    enabled: !!user?.tenantId,
+    enabled: !!user?.tenantId && user?.role !== 'superadmin',
     refetchInterval: 60000 // Sincronizar cada minuto para evitar sobrecarga y parpadeo
   });
+
+  // Redirigir la cuenta maestra a su panel global (después de todos los hooks)
+  if (user?.role === 'superadmin') {
+    return <Navigate to="/admin" replace />;
+  }
 
   const currentDate = new Intl.DateTimeFormat('es-ES', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' }).format(new Date());
 

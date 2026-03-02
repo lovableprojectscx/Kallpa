@@ -12,7 +12,6 @@ export default function AceptarInvitacion() {
     const [showPw, setShowPw] = useState(false);
     const [loading, setLoading] = useState(false);
     const [done, setDone] = useState(false);
-    const [gymName, setGymName] = useState("");
 
     useEffect(() => {
         // Supabase redirige con #access_token en la URL al aceptar invitación

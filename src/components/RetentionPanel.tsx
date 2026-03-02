@@ -15,56 +15,17 @@ export function RetentionPanel() {
     queryFn: async () => {
       if (!user?.tenantId) return [];
 
-      // Obtenemos todos los miembros activos junto con su ÚLTIMO registro de asistencia
-      const { data, error } = await supabase
-        .from('members')
-        .select(`
-          id,
-          full_name,
-          phone,
-          status,
-          created_at,
-          attendance ( check_in_time )
-        `)
-        .eq('tenant_id', user.tenantId)
-        .eq('status', 'active')
-        .order('check_in_time', { foreignTable: 'attendance', ascending: false })
-        .limit(1, { foreignTable: 'attendance' });
+      const { data, error } = await supabase.rpc('get_retention_risk_members', {
+        p_tenant_id: user.tenantId,
+        p_days_threshold: 7
+      });
 
       if (error) {
-        console.error(error);
+        console.error("RPC Error (Retention Risk):", error);
         return [];
       }
 
-      const today = new Date();
-
-      const processed = data?.map((member: any) => {
-        const lastCheckIn = member.attendance?.[0]?.check_in_time;
-        // Si no tiene asistencias, calculamos desde su fecha de creación
-        const lastDate = lastCheckIn ? new Date(lastCheckIn) : new Date(member.created_at);
-        const daysAway = differenceInDays(today, lastDate);
-
-        let lastVisitText = "Nunca ha asistido";
-        if (lastCheckIn) {
-          lastVisitText = `Hace ${daysAway} días`;
-        } else if (daysAway > 0) {
-          lastVisitText = `Registrado hace ${daysAway} días`;
-        } else {
-          lastVisitText = "Registrado hoy";
-        }
-
-        return {
-          id: member.id,
-          name: member.full_name,
-          phone: member.phone,
-          lastVisit: lastVisitText,
-          daysAway,
-          avatar: member.full_name.substring(0, 2).toUpperCase(),
-        };
-      }) || [];
-
-      // Filtramos a los que tienen al menos 7 días sin venir
-      return processed.filter(m => m.daysAway >= 7).sort((a, b) => b.daysAway - a.daysAway);
+      return data || [];
     },
     enabled: !!user?.tenantId
   });

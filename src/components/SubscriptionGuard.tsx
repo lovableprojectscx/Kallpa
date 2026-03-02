@@ -4,7 +4,7 @@ import { Loader2 } from "lucide-react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useAuth } from "@/contexts/AuthContext";
 
-interface SubscriptionGuardProps {
+type SubscriptionGuardProps = {
     children: React.ReactNode;
 }
 

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Users, UserPlus, Shield, Search, Trash2, Mail, Clock } from "lucide-react";
 
 const Staff = () => {
@@ -15,6 +16,7 @@ const Staff = () => {
     const queryClient = useQueryClient();
     const [searchTerm, setSearchTerm] = useState("");
     const [isNewStaffOpen, setIsNewStaffOpen] = useState(false);
+    const [staffToDelete, setStaffToDelete] = useState<{ id: string; name: string } | null>(null);
 
     // Form State — solo nombre y email (sin contraseña)
     const [fullName, setFullName] = useState("");
@@ -147,7 +149,7 @@ const Staff = () => {
                             <tbody className="divide-y divide-border/30">
                                 {isLoading ? (
                                     <tr>
-                                        <td colSpan={4} className="px-6 py-12 text-center text-muted-foreground">
+                                        <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
                                             Cargando personal...
                                         </td>
                                     </tr>
@@ -163,7 +165,6 @@ const Staff = () => {
                                 ) : (
                                     filteredStaff.map((staff: any, i: number) => {
                                         const initials = staff.full_name?.substring(0, 2).toUpperCase() || 'ST';
-                                        const isLinked = !!staff.linked;
 
                                         return (
                                             <motion.tr
@@ -199,11 +200,7 @@ const Staff = () => {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <button
-                                                        onClick={() => {
-                                                            if (confirm(`¿Revocar acceso de ${staff.full_name}?`)) {
-                                                                deleteStaff.mutate(staff.id);
-                                                            }
-                                                        }}
+                                                        onClick={() => setStaffToDelete({ id: staff.id, name: staff.full_name })}
                                                         disabled={deleteStaff.isPending}
                                                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors disabled:opacity-50"
                                                     >
@@ -220,6 +217,27 @@ const Staff = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Confirmar eliminación de staff */}
+            <AlertDialog open={!!staffToDelete} onOpenChange={(open) => { if (!open) setStaffToDelete(null); }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Revocar acceso?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Se revocará el acceso de <span className="font-semibold">{staffToDelete?.name}</span> al sistema de recepción. Esta acción puede deshacerse invitándolo nuevamente.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={() => { if (staffToDelete) deleteStaff.mutate(staffToDelete.id); setStaffToDelete(null); }}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Revocar acceso
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Modal de Creación */}
             <Dialog open={isNewStaffOpen} onOpenChange={setIsNewStaffOpen}>

@@ -110,7 +110,8 @@ const Affiliate = () => {
 
     const redeemCredits = useMutation({
         mutationFn: async (months: number) => {
-            if (!affiliateData || affiliateData.credits < months)
+            const cost = months * 100;
+            if (!affiliateData || affiliateData.credits < cost)
                 throw new Error("No tienes suficientes créditos");
 
             if (!user?.tenantId) {
