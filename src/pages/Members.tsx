@@ -547,27 +547,7 @@ const Members = () => {
                 <span>Nuevo</span>
               </Button>
 
-              <Button
-                onClick={() => {
-                  if (requireSubscription()) setIsImportModalOpen(true);
-                }}
-                variant="outline"
-                className="flex-1 sm:flex-none border-border/40 bg-card hover:bg-secondary/50 text-foreground rounded-2xl px-5 py-6 flex items-center gap-2 transition-all"
-              >
-                <FileUp className="h-5 w-5 text-blue-500" />
-                <span className="hidden sm:inline">Importar</span>
-              </Button>
-
-              <Button
-                onClick={() => {
-                  if (requireSubscription()) setIsImportModalOpen(true);
-                }}
-                variant="outline"
-                className="flex-1 sm:flex-none border-border/40 bg-card hover:bg-secondary/50 text-foreground rounded-2xl px-5 py-6 flex items-center gap-2 transition-all"
-              >
-                <FileUp className="h-5 w-5 text-blue-500" />
-                <span className="hidden sm:inline">Importar</span>
-              </Button>
+              <Button onClick={() => { if (requireSubscription()) setIsImportModalOpen(true); }} variant="outline" className="flex-1 sm:flex-none border-border/40 bg-card hover:bg-secondary/50 text-foreground rounded-2xl px-5 py-6 flex items-center gap-2 transition-all"> <FileUp className="h-5 w-5 text-blue-500" /> <span className="hidden sm:inline">Importar</span> </Button>
 
               <Button
                 onClick={handleExportExcel}
@@ -1134,3 +1114,4 @@ const Members = () => {
 };
 
 export default Members;
+
