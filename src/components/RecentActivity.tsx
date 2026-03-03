@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Loader2, Activity } from "lucide-react";
 import { format } from "date-fns";
@@ -42,7 +42,9 @@ export function RecentActivity() {
       return data || [];
     },
     enabled: !!user?.tenantId,
-    refetchInterval: 5000 // Refrescar cada 5 segs para sensación de tiempo real
+    refetchInterval: 5000, // Refrescar cada 5s para sensación de tiempo real
+    placeholderData: keepPreviousData, // Mantener lista visible durante el refresco (sin parpadeo)
+    refetchOnWindowFocus: false,
   });
 
   return (

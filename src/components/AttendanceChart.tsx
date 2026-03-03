@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
 
@@ -30,7 +30,10 @@ export function AttendanceChart() {
       return data || [];
     },
     enabled: !!user?.tenantId,
-    refetchInterval: 10000
+    refetchInterval: 10000, // Refrescar cada 10s silenciosamente
+    staleTime: 1000 * 30,   // Considerar datos válidos por 30s — sin colapso de barras
+    placeholderData: keepPreviousData, // Mantener barras visibles durante el refresco
+    refetchOnWindowFocus: false,
   });
 
   const values = new Array(16).fill(0);

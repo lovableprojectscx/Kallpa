@@ -36,14 +36,24 @@ const Retention = () => {
       let totalActive = 0;
       let atRisk = 0;
       let droppedThisMonth = 0;
+      let neverAttended = 0;
 
       data?.forEach((member: any) => {
         if (member.status === 'active') {
           totalActive++;
           const lastCheckIn = member.attendance?.[0]?.check_in_time;
-          const lastDate = lastCheckIn ? new Date(lastCheckIn) : new Date(member.created_at);
-          if (differenceInDays(today, lastDate) >= 7) {
-            atRisk++;
+
+          if (!lastCheckIn) {
+            // Nunca asistió — si lleva 7+ días inscrito, está en riesgo
+            neverAttended++;
+            if (differenceInDays(today, new Date(member.created_at)) >= 7) {
+              atRisk++;
+            }
+          } else {
+            // Sí asistió — si lleva 7+ días sin volver, está en riesgo
+            if (differenceInDays(today, new Date(lastCheckIn)) >= 7) {
+              atRisk++;
+            }
           }
         } else if (member.status === 'expired' || member.status === 'suspended') {
           droppedThisMonth++;
@@ -56,7 +66,7 @@ const Retention = () => {
         retentionRate,
         atRisk,
         droppedThisMonth,
-        reengaged: 0 // Mock temporal hasta habilitar auditorías de status
+        neverAttended,
       };
     },
     enabled: !!user?.tenantId
@@ -96,10 +106,10 @@ const Retention = () => {
             icon={UserMinus}
           />
           <StatCard
-            title="Reenganchados"
-            value={isLoading ? "..." : `${stats?.reengaged || 0}`}
-            change="miembros recuperados"
-            changeType="neutral"
+            title="Nunca Asistieron"
+            value={isLoading ? "..." : `${stats?.neverAttended ?? 0}`}
+            change="inscritos sin check-in"
+            changeType={!isLoading && (stats?.neverAttended ?? 0) > 0 ? "negative" : "neutral"}
             icon={RefreshCw}
           />
         </div>
