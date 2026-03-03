@@ -153,3 +153,34 @@
 - La búsqueda del portal de miembros es pública (sin autenticación) por diseño.
 - El `access_code` debe ser único y suficientemente aleatorio para que no sea adivinable.
 - El botón de búsqueda solo se activa con 4+ caracteres (`code.trim().length < 4`).
+
+## 13. LÓGICA DE NEGOCIO — PANEL SUPERADMIN (NO ROMPER)
+
+### 13.1 AdminGuard.tsx — Única puerta de entrada al panel /admin
+- **REGLA:** Solo usuarios con `user.role === 'superadmin'` pueden acceder a rutas bajo `/admin/*`.
+- Si el rol no es `superadmin`, redirige a `/dashboard` (vista de gym normal).
+- **PROHIBIDO:** Añadir otro rol al `AdminGuard` sin revisión explícita. El panel superadmin tiene acceso a datos de TODOS los tenants.
+
+### 13.2 AdminDashboard — Estadísticas Globales del SaaS
+- Usa `Promise.all` para hacer 6 queries simultáneas (licencias, tenants, afiliados, etc.) — no cambiar a queries secuenciales.
+- **Créditos de Afiliados:** Se calculan en el frontend como `$50 por gimnasio activo referido`. Un gym se considera "activado" si tiene `tenant_id` y además tiene una licencia canjeada (`status = 'redeemed'`).
+- **PROHIBIDO:** Cambiar el valor de `$50 por gym activo` sin actualizar también la lógica del módulo de Afiliados completo.
+
+### 13.3 AdminLicenses — Licencias de Acceso al SaaS
+- **Estructura de una licencia:** `code` (XXXX-XXXX-XXXX-XXXX), `duration_months` (1/3/6/12), `status` (available/redeemed/expired), `price_pen`, `created_by` (id del superadmin).
+- **Generación de código:** 4 bloques de 4 chars aleatorios en base36 mayúsculas separados por `-`. Se genera en el frontend antes del insert.
+- **Precios base predeterminados (S/. Soles):**
+  - 1 mes → S/ 35
+  - 3 meses → S/ 89
+  - 6 meses → S/ 159
+  - 12 meses → S/ 279
+- **Máximo 100 licencias por generación** — validado con `qty > 100`.
+- **Solo licencias `available` pueden editarse o copiarse** — las `redeemed` son inmutables.
+- **PROHIBIDO:** Cambiar el formato del código de licencia (XXXX-XXXX-XXXX-XXXX). El flujo de canje en `Subscription.tsx` espera exactamente ese formato.
+
+### 13.4 AdminClients — Vista de Gimnasios en la Plataforma
+- Combina datos de `tenants` + `profiles` (perfil del admin) + `licenses` (licencia más reciente).
+- El **estado del gym** (`active` o `expired`) se calcula en el frontend: `fecha_canje + duration_months > hoy`.
+- **Filtro de seguridad:** Se excluyen perfiles `superadmin` y tenants sin email (`email = "Sin correo"`).
+- `referredBy` está pendiente de implementación (actualmente siempre es `null`).
+- **PROHIBIDO:** Mostrar datos de perfiles `superadmin` en la tabla de clientes.
