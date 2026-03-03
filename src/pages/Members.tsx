@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Search, Plus, QrCode, Smartphone, CheckCircle2, UserPlus, Flame, Pencil, Tag, Loader2, CreditCard, Trash2, MessageCircle, FileDown, RefreshCw, CalendarPlus } from "lucide-react";
+import { Search, Plus, QrCode, Smartphone, CheckCircle2, UserPlus, Flame, Pencil, Tag, Loader2, CreditCard, Trash2, MessageCircle, FileDown, FileUp, RefreshCw, CalendarPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/lib/supabase";
@@ -41,6 +41,11 @@ const Members = () => {
   const [plan, setPlan] = useState(""); // Auto-seleccionado por useEffect cuando cargan los planes
   const [phone, setPhone] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+
+  // Import Modal State
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   // QR Modal State
   const [generatedQRMember, setGeneratedQRMember] = useState<{ id: string, name: string, phone?: string } | null>(null);
@@ -158,6 +163,118 @@ const Members = () => {
     } catch (error) {
       console.error("Error al exportar Excel:", error);
       toast.error("Error al generar el archivo Excel");
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    // Generar formato de plantilla para facilitar la importación
+    const templateData = [
+      {
+        "Nombre Completo": "Ejemplo Juan Perez",
+        "Email": "juan@ejemplo.com",
+        "Teléfono": "987654321",
+        "Plan": membershipPlans[0]?.name || "Mensual",
+        "Días de Plan (Vigencia)": 30
+      }
+    ];
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Plantilla_Importacion");
+
+    // Configurar el ancho esperado de columnas
+    ws['!cols'] = [{ wch: 30 }, { wch: 30 }, { wch: 15 }, { wch: 20 }, { wch: 25 }];
+
+    XLSX.writeFile(wb, "Formato_Importar_Miembros.xlsx");
+    toast.success("Formato descargado");
+  };
+
+  const processImportFile = async () => {
+    if (!importFile) {
+      toast.error("Por favor, selecciona un archivo primero");
+      return;
+    }
+
+    if (!requireSubscription()) return;
+
+    setIsImporting(true);
+    try {
+      const data = await importFile.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+
+      const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+
+      if (jsonData.length === 0) {
+        toast.error("El archivo está vacío");
+        setIsImporting(false);
+        return;
+      }
+
+      // Mapear planes por nombre para fácil referencia  (Ignorando minúsculas)
+      const planMap = new Map<string, any>();
+      membershipPlans.forEach(p => {
+        planMap.set(p.name.toLowerCase(), p);
+      });
+
+      // Crear el array de inserción para Supabase
+      const insertData = jsonData.map(row => {
+        const nombre = row["Nombre Completo"] || row["nombre"] || row["Name"] || "";
+        const cEmail = row["Email"] || row["email"] || row["Correo"] || "";
+        const telefono = row["Teléfono"] || row["telefono"] || row["Phone"] || "";
+
+        let planBuscado = row["Plan"] || row["plan"] || "";
+        let days = parseInt(row["Días de Plan (Vigencia)"] || row["dias"] || "30") || 30;
+
+        // Encontrar plan (o fallback al primer plan creado)
+        let resolvedPlanId = membershipPlans[0]?.id || null;
+        if (planBuscado) {
+          const match = planMap.get(String(planBuscado).toLowerCase().trim());
+          if (match) {
+            resolvedPlanId = match.id;
+            days = match.duration_days || days;
+          }
+        }
+
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setDate(startDate.getDate() + days);
+
+        return {
+          tenant_id: user?.tenantId,
+          full_name: nombre.trim(),
+          email: cEmail.trim(),
+          phone: String(telefono).trim(),
+          plan: resolvedPlanId,
+          status: 'active',
+          start_date: startDate.toISOString().split('T')[0],
+          end_date: endDate.toISOString().split('T')[0]
+        };
+      }).filter(m => m.full_name); // Filtrar líneas vacías sin nombre
+
+      if (insertData.length === 0) {
+        toast.error("No se encontraron registros válidos en el archivo");
+        setIsImporting(false);
+        return;
+      }
+
+      const { error } = await supabase
+        .from('members')
+        .insert(insertData);
+
+      if (error) throw error;
+
+      toast.success(`¡Se importaron ${insertData.length} miembros exitosamente!`);
+      queryClient.invalidateQueries({ queryKey: ['members', user?.tenantId] });
+      setIsImportModalOpen(false);
+      setImportFile(null);
+    } catch (error: any) {
+      console.error("Error importando excel:", error);
+      toast.error("Hubo un error al procesar el archivo Excel. Verifica el formato.", {
+        description: error.message
+      });
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -431,12 +548,34 @@ const Members = () => {
               </Button>
 
               <Button
+                onClick={() => {
+                  if (requireSubscription()) setIsImportModalOpen(true);
+                }}
+                variant="outline"
+                className="flex-1 sm:flex-none border-border/40 bg-card hover:bg-secondary/50 text-foreground rounded-2xl px-5 py-6 flex items-center gap-2 transition-all"
+              >
+                <FileUp className="h-5 w-5 text-blue-500" />
+                <span className="hidden sm:inline">Importar</span>
+              </Button>
+
+              <Button
+                onClick={() => {
+                  if (requireSubscription()) setIsImportModalOpen(true);
+                }}
+                variant="outline"
+                className="flex-1 sm:flex-none border-border/40 bg-card hover:bg-secondary/50 text-foreground rounded-2xl px-5 py-6 flex items-center gap-2 transition-all"
+              >
+                <FileUp className="h-5 w-5 text-blue-500" />
+                <span className="hidden sm:inline">Importar</span>
+              </Button>
+
+              <Button
                 onClick={handleExportExcel}
                 variant="outline"
                 className="flex-1 sm:flex-none border-border/40 bg-card hover:bg-secondary/50 text-foreground rounded-2xl px-5 py-6 flex items-center gap-2 transition-all"
               >
                 <FileDown className="h-5 w-5 text-emerald-500" />
-                <span>Exportar</span>
+                <span className="hidden sm:inline">Exportar</span>
               </Button>
             </div>
 
