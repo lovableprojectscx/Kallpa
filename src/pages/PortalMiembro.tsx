@@ -1,5 +1,6 @@
 import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import QRCode from "react-qr-code";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
@@ -79,6 +80,9 @@ export default function PortalMiembro() {
             return { ...member, planName, planColor, planPrice, planDays, gymWhatsApp, gymName };
         },
         enabled: !!memberId,
+        staleTime: 1000 * 60 * 5,    // 5 min — evita 3 sub-queries en cada cambio de tab
+        placeholderData: keepPreviousData,
+        refetchOnWindowFocus: false,
     });
 
     const downloadCard = async () => {
@@ -110,8 +114,13 @@ export default function PortalMiembro() {
 
     const handleRenewal = () => {
         if (!data) return;
-        const msg = `¡Hola! Soy ${data.full_name}. Mi membresía "${data.planName}" está por vencer y me gustaría renovarla. \u{1F389}`;
         const phone = data.gymWhatsApp?.replace(/\D/g, "") || "";
+        // Fallback: si el gym no configuró WhatsApp, mostrar aviso en lugar de abrir WA sin número
+        if (!phone) {
+            toast.info("Contacta directamente a la recepción de tu gimnasio para renovar.");
+            return;
+        }
+        const msg = `¡Hola! Soy ${data.full_name}. Mi membresía "${data.planName}" está por vencer y me gustaría renovarla. 🎉`;
         window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
     };
 
@@ -154,8 +163,7 @@ export default function PortalMiembro() {
     let currentStatus = data.status ?? "active";
     if (isExpired && currentStatus === "active") currentStatus = "expired";
     const st = statusConfig[currentStatus] ?? statusConfig.active;
-    // Fix: Using black pixels (dark=000000) for contrast on white background
-    const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(data.id)}&size=300&margin=2&dark=000000&light=ffffff`;
+    // QR local con react-qr-code — sin dependencia de servicios externos
     const memberIdShort = data.id.toUpperCase().slice(-8);
 
     return (
@@ -361,8 +369,8 @@ export default function PortalMiembro() {
                                                 </div>
                                             </div>
                                         </div>
-                                        <div className="shrink-0 p-1.5 bg-white rounded-2xl shadow-[0_0_25px_rgba(255,255,255,0.15)] ring-1 ring-black/5">
-                                            <img src={qrUrl} alt="QR" className="h-16 w-16" crossOrigin="anonymous" />
+                                        <div className="shrink-0 p-1.5 bg-white rounded-2xl shadow-[0_0_25px_rgba(255,255,255,0.15)] ring-1 ring-black/5 flex items-center justify-center">
+                                            <QRCode value={data.id} size={64} level="M" />
                                         </div>
                                     </div>
                                 </div>
@@ -390,8 +398,8 @@ export default function PortalMiembro() {
                                 </div>
                                 <div className="relative group p-10">
                                     <div className="absolute inset-0 bg-primary/20 blur-[60px] rounded-full scale-75 group-hover:scale-110 transition-transform duration-700" />
-                                    <div className="relative bg-white p-8 rounded-[40px] shadow-2xl">
-                                        <img src={qrUrl} alt="QR Big" className="h-52 w-52" crossOrigin="anonymous" />
+                                    <div className="relative bg-white p-8 rounded-[40px] shadow-2xl flex items-center justify-center">
+                                        <QRCode value={data.id} size={208} level="M" />
                                         <div className="absolute inset-0 border-[2px] border-black/5 rounded-[40px]" />
                                     </div>
                                     {/* Scan lines decoration */}

@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import QRCode from "react-qr-code";
 import { supabase } from "@/lib/supabase";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, Dumbbell, Download, Loader2, AlertCircle } from "lucide-react";
@@ -49,6 +50,9 @@ export default function CarnetPublico() {
             return { ...member, planName, planColor };
         },
         enabled: !!memberId,
+        staleTime: 1000 * 60 * 5,
+        placeholderData: keepPreviousData,
+        refetchOnWindowFocus: false,
     });
 
     const downloadCard = async () => {
@@ -103,7 +107,7 @@ export default function CarnetPublico() {
         }
     }
     const st = statusConfig[currentStatus] ?? statusConfig.active;
-    const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(data.id)}&size=220&margin=1`;
+    // QR local — sin dependencia de quickchart.io ni servicios externos
     const memberId8 = data.id.toUpperCase().slice(-8);
 
     return (
@@ -186,15 +190,8 @@ export default function CarnetPublico() {
 
                         {/* QR */}
                         <div className="shrink-0 flex flex-col items-center gap-1">
-                            <div className="rounded-2xl overflow-hidden p-2 bg-white shadow-lg" style={{ width: 96, height: 96 }}>
-                                <img
-                                    src={qrUrl}
-                                    alt="QR de acceso"
-                                    width={88}
-                                    height={88}
-                                    className="w-full h-full object-contain"
-                                    crossOrigin="anonymous"
-                                />
+                            <div className="rounded-2xl overflow-hidden p-2 bg-white shadow-lg flex items-center justify-center" style={{ width: 96, height: 96 }}>
+                                <QRCode value={data.id} size={80} level="M" />
                             </div>
                             <p className="text-[9px] text-white/30 text-center font-medium">Escanear en Terminal</p>
                         </div>

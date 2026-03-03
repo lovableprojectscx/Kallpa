@@ -131,3 +131,25 @@
 - Cuando un admin entra al terminal de otro gym (para pruebas), usa `sessionStorage` para sobrescribir su propio tenantId.
 - Cuando un recepcionista normal entra, su `tenant_id` del profile se guarda en `sessionStorage` al hacer login.
 - **PROHIBIDO:** Cambiar esta lógica o eliminar el `sessionStorage`. Todo el sistema de check-in depende de `effectiveTenantId` para el aislamiento multitenant.
+
+## 12. LÓGICA DE NEGOCIO — PORTAL DE MIEMBROS (NO ROMPER)
+
+### 12.1 QR en el Portal — Usar react-qr-code (local, NO servicios externos)
+- **PROHIBIDO:** Volver a usar `quickchart.io` u otro servicio externo para generar QR en `PortalMiembro.tsx` o `CarnetPublico.tsx`.
+- **Razón:** Si el servicio externo cae o bloquea el dominio, los miembros no pueden mostrar su QR para entrar al gym. El acceso físico al gimnasio no puede depender de una API de terceros.
+- **Regla:** Usar `import QRCode from "react-qr-code"` (ya instalada) con `<QRCode value={memberId} size={X} level="M" />`.
+- El `value` siempre es `data.id` (el UUID del miembro) — es el mismo valor que el terminal de recepción valida.
+
+### 12.2 PortalMiembro.tsx y CarnetPublico.tsx — Caché
+- Ambas páginas tienen `staleTime: 5 min` + `placeholderData: keepPreviousData` + `refetchOnWindowFocus: false`.
+- **Razón:** Son páginas de solo lectura que un miembro consulta en su celular. Sin caché, cada cambio de app o bloqueo de pantalla relanzaría 3 sub-queries (miembro + plan + gym_settings).
+- **PROHIBIDO:** Quitarles la caché.
+
+### 12.3 handleRenewal — Fallback si el gym no tiene WhatsApp
+- Si `gymWhatsApp` está vacío (el admin no lo configuró en Ajustes), el botón "Hablar con Recepción" muestra un `toast.info()` en lugar de abrir `wa.me/?text=...` sin número.
+- **PROHIBIDO:** Eliminar esta validación. Un `wa.me/?text=...` sin número confunde al miembro — abre WhatsApp sin destinatario.
+
+### 12.4 PortalBusqueda — Búsqueda por access_code
+- La búsqueda del portal de miembros es pública (sin autenticación) por diseño.
+- El `access_code` debe ser único y suficientemente aleatorio para que no sea adivinable.
+- El botón de búsqueda solo se activa con 4+ caracteres (`code.trim().length < 4`).
