@@ -84,54 +84,19 @@ const Members = () => {
     queryKey: ['members', user?.tenantId],
     queryFn: async () => {
       if (!user?.tenantId) return [];
-      // Traer miembros
-      const { data: mems, error } = await supabase
-        .from('members')
-        .select('*')
-        .eq('tenant_id', user.tenantId)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
 
-      // Traer última visita de cada miembro
-      const { data: att } = await supabase
-        .from('attendance')
-        .select('member_id, check_in_time')
-        .eq('tenant_id', user.tenantId)
-        .order('check_in_time', { ascending: false });
+      // Delegar la carga y cálculo a la base de datos (Supabase RPC)
+      // para evitar descargar todo el historial de asistencias al navegador.
+      const { data: membersWithStats, error } = await supabase.rpc('get_members_with_stats', {
+        p_tenant_id: user.tenantId
+      });
 
-      // Calcular última visita y racha por miembro
-      const lastVisitMap: Record<string, string> = {};
-      const streakMap: Record<string, number> = {};
-
-      if (att) {
-        att.forEach(a => {
-          if (!lastVisitMap[a.member_id]) lastVisitMap[a.member_id] = a.check_in_time;
-        });
-        // Racha: días únicos consecutivos hasta hoy
-        const byMember: Record<string, Set<string>> = {};
-        att.forEach(a => {
-          if (!byMember[a.member_id]) byMember[a.member_id] = new Set();
-          byMember[a.member_id].add(a.check_in_time.slice(0, 10));
-        });
-        Object.entries(byMember).forEach(([memberId, days]) => {
-          const sorted = Array.from(days).sort().reverse();
-          let streak = 0;
-          let prev = new Date();
-          prev.setHours(0, 0, 0, 0);
-          for (const d of sorted) {
-            const curr = new Date(d);
-            const diff = Math.floor((prev.getTime() - curr.getTime()) / 86400000);
-            if (diff <= 1) { streak++; prev = curr; } else break;
-          }
-          streakMap[memberId] = streak;
-        });
+      if (error) {
+        console.error("Error al obtener los miembros con estadísticas (RPC):", error);
+        throw error;
       }
 
-      return (mems || []).map(m => ({
-        ...m,
-        last_visit: lastVisitMap[m.id] || null,
-        streak: streakMap[m.id] || 0,
-      }));
+      return membersWithStats || [];
     },
     enabled: !!user?.tenantId,
     staleTime: 1000 * 60 * 2, // 2 min de caché — evita recarga en cada visita a la página
