@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Search, Plus, QrCode, Smartphone, CheckCircle2, UserPlus, Flame, Pencil, Tag, Loader2, CreditCard, Trash2, MessageCircle, FileDown, FileUp, RefreshCw, CalendarPlus } from "lucide-react";
+import { Search, Plus, QrCode, Smartphone, CheckCircle2, UserPlus, Flame, Pencil, Tag, Loader2, CreditCard, Trash2, MessageCircle, FileDown, FileUp, RefreshCw, CalendarPlus, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/lib/supabase";
@@ -1069,6 +1069,107 @@ const Members = () => {
           </div>
         </DialogContent>
       </Dialog>
+      {/* Modal: Importar Miembros */}
+      <Dialog open={isImportModalOpen} onOpenChange={(open) => {
+        if (!isImporting) {
+          setIsImportModalOpen(open);
+          if (!open) setImportFile(null);
+        }
+      }}>
+        <DialogContent className="sm:max-w-md border-border/50 bg-card rounded-3xl shadow-2xl overflow-hidden p-0">
+          <div className="px-6 py-5 border-b border-border/50 bg-secondary/10 shrink-0">
+            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+              <FileUp className="h-5 w-5 text-blue-500" />
+              Importar Miembros (Excel)
+            </h2>
+            <p className="text-[12px] text-muted-foreground mt-1">Sube un archivo .xlsx para registrar múltiples usuarios.</p>
+          </div>
+
+          <div className="p-6 space-y-6">
+            <div className="space-y-4">
+              <div
+                className="border-2 border-dashed border-border/50 rounded-2xl p-8 hover:bg-secondary/50 transition-colors cursor-pointer text-center group"
+                onClick={() => document.getElementById('excel-upload')?.click()}
+              >
+                <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                  <FileUp className="h-6 w-6 text-blue-500" />
+                </div>
+                <h3 className="font-semibold text-foreground mb-1">Haz clic para seleccionar un archivo</h3>
+                <p className="text-xs text-muted-foreground">Solo archivos de Excel (.xlsx)</p>
+                <input
+                  id="excel-upload"
+                  type="file"
+                  accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) setImportFile(file);
+                  }}
+                />
+              </div>
+
+              {importFile && (
+                <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-3 flex items-center justify-between">
+                  <span className="text-sm font-medium text-blue-400 truncate max-w-[200px]">{importFile.name}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 hover:bg-red-500/10 hover:text-red-400 text-muted-foreground transition-colors"
+                    onClick={() => setImportFile(null)}
+                    disabled={isImporting}
+                  >
+                    Quitar
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-secondary/30 rounded-xl p-4 space-y-2 border border-border/30">
+              <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-500" /> Importante
+              </h4>
+              <ul className="text-xs text-muted-foreground space-y-1.5 ml-1">
+                <li>• Asegúrate de usar el formato correcto.</li>
+                <li>• Campos obligatorios: Nombre Completo.</li>
+                <li>• El 'Plan' debe coincidir con los nombres definidos en tus <span className="text-primary font-medium">Planes Pro</span>. Si se deja en blanco asumirá duración 30 días.</li>
+              </ul>
+              <Button
+                variant="link"
+                className="text-xs text-blue-400 hover:text-blue-300 h-auto p-0 mt-2"
+                onClick={handleDownloadTemplate}
+              >
+                Descargar plantilla de Excel
+              </Button>
+            </div>
+          </div>
+
+          <div className="p-6 bg-secondary/10 border-t border-border/50 flex flex-col md:flex-row gap-3">
+            <Button
+              variant="outline"
+              onClick={() => { setIsImportModalOpen(false); setImportFile(null); }}
+              className="flex-1 h-12 rounded-xl"
+              disabled={isImporting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={processImportFile}
+              disabled={!importFile || isImporting}
+              className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-600/20 glow-volt transition-colors relative"
+            >
+              {isImporting ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  Importando...
+                </>
+              ) : (
+                "Procesar Archivo"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Carnet Digital */}
       <MemberCardModal
         member={cardMember ? {
