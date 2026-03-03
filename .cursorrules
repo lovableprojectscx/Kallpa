@@ -74,3 +74,30 @@
 ### 9.4 React Query — Configuración de Caché
 - **PROHIBIDO:** Eliminar o reducir `staleTime`, `placeholderData: keepPreviousData`, `refetchOnMount: false`, o `refetchOnWindowFocus: false` de los queries del Dashboard y RetentionPanel.
 - **Razón:** Sin estas opciones, React Query recarga los datos desde cero cada vez que el componente se monta o la ventana recibe foco, mostrando estados de carga vacíos ("...") que el usuario percibe como "recarga".
+
+## 10. LÓGICA DE NEGOCIO — MIEMBROS Y PLANES (NO ROMPER)
+
+### 10.1 Members.tsx — Queries con Caché
+- El fetch de miembros tiene `staleTime: 2 min` y `placeholderData` para que la lista no desaparezca al navegar y volver.
+- El fetch de planes tiene `staleTime: 10 min` porque los planes raramente cambian.
+- **PROHIBIDO:** Quitar estas configuraciones de caché porque causarán una lista vacía al regresar a la página.
+
+### 10.2 Members.tsx — Plan por defecto al registrar
+- El formulario de nuevo miembro usa `useState("")` para el plan inicial.
+- Un `useEffect` observa `membershipPlans` y auto-selecciona el primero activo disponible cuando el plan actual no coincide con ninguno.
+- **PROHIBIDO:** Volver a hardcodear el plan inicial como `"basico"` o cualquier nombre fijo. Si el gym no tiene plan con ese nombre, el formulario queda sin plan válido.
+- **Regla:** El plan siempre se inicializa dinámicamente según los planes activos del tenant.
+
+### 10.3 Plans.tsx — Protección al eliminar planes
+- Antes de eliminar un plan, el sistema consulta cuántos miembros activos lo tienen asignado.
+- Si `count > 0`, el sistema lanza un error y **NO elimina** el plan.
+- El mensaje de error indica exactamente cuántos miembros tienen ese plan y da alternativas (cambiar plan o desactivar).
+- **PROHIBIDO:** Quitar esta verificación. Eliminar un plan con miembros activos los deja con `plan = id_inexistente` y sus fichas mostrarán "Sin Plan" silenciosamente.
+- **Recomendación para el admin:** Usar "Desactivar" en vez de "Eliminar" para planes con miembros.
+
+### 10.4 Retención — Lógica de "En Riesgo"
+- Un miembro activo es "En Riesgo" si:
+  - **Asistió alguna vez** y su última visita fue hace 7+ días → texto "Última visita hace X días"
+  - **Nunca asistió** y se inscribió hace 7+ días → texto "Nunca ha asistido — hace X días inscrito"
+- El RPC `get_retention_risk_members` usa `COALESCE(last_visit, created_at)` — nunca eliminar esta lógica.
+- El mensaje de WhatsApp de reenganche es **diferente** según el tipo: primer timers reciben invitación a "primera sesión", inactivos reciben mensaje de extrañarlos.

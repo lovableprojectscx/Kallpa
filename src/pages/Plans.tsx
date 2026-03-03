@@ -138,6 +138,24 @@ const Plans = () => {
         mutationFn: async (id: string) => {
             if (!requireSubscription()) throw new Error('sin_licencia');
             if (!user?.tenantId) throw new Error("Sin tenant");
+
+            // Protección: verificar si hay miembros activos usando este plan
+            // Eliminar un plan con miembros asignados los dejaría sin plan sin saberlo
+            const { count, error: countError } = await supabase
+                .from("members")
+                .select("id", { count: "exact", head: true })
+                .eq("tenant_id", user.tenantId)
+                .eq("plan", id)
+                .eq("status", "active");
+
+            if (countError) throw countError;
+
+            if (count && count > 0) {
+                throw new Error(
+                    `⚠️ No puedes eliminar este plan: ${count} miembro${count > 1 ? 's' : ''} activo${count > 1 ? 's' : ''} lo ${count > 1 ? 'tienen' : 'tiene'} asignado. Cambia su plan primero o desactívalo en vez de eliminarlo.`
+                );
+            }
+
             const { error } = await supabase
                 .from("membership_plans")
                 .delete()

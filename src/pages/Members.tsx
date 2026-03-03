@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -38,7 +38,7 @@ const Members = () => {
   // Form State
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [plan, setPlan] = useState("basico");
+  const [plan, setPlan] = useState(""); // Auto-seleccionado por useEffect cuando cargan los planes
   const [phone, setPhone] = useState("");
   const [photoFile, setPhotoFile] = useState<File | null>(null);
 
@@ -68,7 +68,16 @@ const Members = () => {
       return data || [];
     },
     enabled: !!user?.tenantId,
+    staleTime: 1000 * 60 * 10, // Planes raramente cambian — 10 min de caché
+    refetchOnWindowFocus: false,
   });
+
+  // Auto-seleccionar el primer plan activo cuando el formulario esta sin plan válido
+  useEffect(() => {
+    if (membershipPlans.length > 0 && !membershipPlans.find(p => p.id === plan)) {
+      setPlan(membershipPlans[0].id);
+    }
+  }, [membershipPlans]);
 
   // FETCH MEMBERS con última visita
   const { data: members = [], isLoading } = useQuery({
@@ -124,7 +133,10 @@ const Members = () => {
         streak: streakMap[m.id] || 0,
       }));
     },
-    enabled: !!user?.tenantId
+    enabled: !!user?.tenantId,
+    staleTime: 1000 * 60 * 2, // 2 min de caché — evita recarga en cada visita a la página
+    placeholderData: (prev: any) => prev, // Mantener lista visible durante refresco
+    refetchOnWindowFocus: false,
   });
 
   const handleExportExcel = () => {
