@@ -37,7 +37,7 @@ const Affiliate = () => {
 
             const hasReferredBy = !!profile?.referred_by;
             const daysSinceRegistration = profile ? (new Date().getTime() - new Date(profile.created_at).getTime()) / (1000 * 60 * 60 * 24) : 999;
-            const canEnterReferralCode = !hasReferredBy && daysSinceRegistration <= 7;
+            const canEnterReferralCode = !hasReferredBy && daysSinceRegistration <= 30; // Ampliado a 30 días
 
             const { data: aff, error: affErr } = await supabase
                 .from('affiliates')
@@ -198,7 +198,7 @@ const Affiliate = () => {
                     <h3 className="text-base sm:text-lg font-semibold text-foreground">¿Te refirió otro gimnasio?</h3>
                 </div>
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                    Ingresa su código de embajador. (Solo disponible en tus primeros 7 días)
+                    Ingresa su código de embajador. (Solo disponible en tus primeros 30 días)
                 </p>
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 max-w-sm">
                     <Input
@@ -404,8 +404,8 @@ const Affiliate = () => {
                                 </div>
 
                                 {credits > 0 ? (
-                                    <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                                        {[1, 3, 6].map((months) => {
+                                    <div className="grid grid-cols-4 gap-2 sm:gap-3">
+                                        {[1, 3, 6, 12].map((months) => {
                                             const cost = months * 100;
                                             const canRedeem = credits >= cost;
                                             return (

@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
-import { Gift, Users, Zap, Loader2, Star } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Gift, Users, Zap, Loader2, Star, Check, X } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 const CREDITS_PER_MONTH = 100; // 100 créditos = 1 mes gratis
 
@@ -83,6 +84,24 @@ const AdminAffiliates = () => {
     }
   });
 
+  const queryClient = useQueryClient();
+
+  // Mutación: aprobar o rechazar afiliado
+  const updateStatus = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: 'active' | 'rejected' }) => {
+      const { error } = await supabase
+        .from('affiliates')
+        .update({ status })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      toast.success(vars.status === 'active' ? 'Afiliado aprobado ✅' : 'Afiliado rechazado');
+      queryClient.invalidateQueries({ queryKey: ['admin-affiliates'] });
+    },
+    onError: (e: any) => toast.error('Error: ' + e.message),
+  });
+
   const totalEmbajadores = affiliates.length;
   const totalActivaciones = affiliates.reduce((s: number, a: any) => s + a.activated, 0);
   const totalCredits = affiliates.reduce((s: number, a: any) => s + a.creditsBalance, 0);
@@ -146,30 +165,32 @@ const AdminAffiliates = () => {
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="text-[10px] uppercase">Embajador</TableHead>
                     <TableHead className="text-[10px] uppercase">Código</TableHead>
+                    <TableHead className="text-[10px] uppercase">Estado</TableHead>
                     <TableHead className="text-[10px] uppercase">Invitados</TableHead>
                     <TableHead className="text-[10px] uppercase">Activados</TableHead>
                     <TableHead className="text-[10px] uppercase">Créditos actuales</TableHead>
                     <TableHead className="text-[10px] uppercase">Progreso siguiente mes</TableHead>
                     <TableHead className="text-[10px] uppercase">Meses canjeados</TableHead>
+                    <TableHead className="text-[10px] uppercase">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                      <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
                         <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-primary" />
                         Cargando afiliados...
                       </TableCell>
                     </TableRow>
                   ) : affiliates.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                      <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
                         No hay afiliados registrados.
                       </TableCell>
                     </TableRow>
                   ) : (
                     affiliates.map((a: any) => (
-                      <TableRow key={a.id}>
+                      <TableRow key={a.id} className={a.status === 'pending' ? 'bg-amber-500/5 border-l-2 border-amber-500/40' : ''}>
                         {/* Embajador */}
                         <TableCell>
                           <p className="text-xs font-medium text-foreground">{a.name}</p>
@@ -178,6 +199,17 @@ const AdminAffiliates = () => {
 
                         {/* Código */}
                         <TableCell className="font-mono text-xs text-muted-foreground">{a.code}</TableCell>
+
+                        {/* Estado */}
+                        <TableCell>
+                          <Badge variant="outline" className={
+                            a.status === 'active' ? 'bg-success/15 text-success border-success/30' :
+                              a.status === 'pending' ? 'bg-amber-500/15 text-amber-500 border-amber-500/30' :
+                                'bg-red-500/15 text-red-400 border-red-500/30'
+                          }>
+                            {a.status === 'active' ? 'Activo' : a.status === 'pending' ? 'Pendiente' : 'Rechazado'}
+                          </Badge>
+                        </TableCell>
 
                         {/* Invitados */}
                         <TableCell className="text-xs">{a.invites}</TableCell>
@@ -221,6 +253,32 @@ const AdminAffiliates = () => {
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Star className="h-3 w-3 text-amber-400" />
                               {a.mesesCanjeados} mes{a.mesesCanjeados > 1 ? 'es' : ''}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+
+                        {/* Acciones: Aprobar / Rechazar si está pending */}
+                        <TableCell>
+                          {a.status === 'pending' ? (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => updateStatus.mutate({ id: a.id, status: 'active' })}
+                                disabled={updateStatus.isPending}
+                                className="h-7 w-7 rounded-lg bg-success/10 text-success hover:bg-success/20 flex items-center justify-center transition-colors"
+                                title="Aprobar"
+                              >
+                                <Check className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => updateStatus.mutate({ id: a.id, status: 'rejected' })}
+                                disabled={updateStatus.isPending}
+                                className="h-7 w-7 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 flex items-center justify-center transition-colors"
+                                title="Rechazar"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
                             </div>
                           ) : (
                             <span className="text-xs text-muted-foreground">—</span>
