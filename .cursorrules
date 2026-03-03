@@ -163,8 +163,8 @@
 
 ### 13.2 AdminDashboard — Estadísticas Globales del SaaS
 - Usa `Promise.all` para hacer 6 queries simultáneas (licencias, tenants, afiliados, etc.) — no cambiar a queries secuenciales.
-- **Créditos de Afiliados:** Se calculan en el frontend como `$50 por gimnasio activo referido`. Un gym se considera "activado" si tiene `tenant_id` y además tiene una licencia canjeada (`status = 'redeemed'`).
-- **PROHIBIDO:** Cambiar el valor de `$50 por gym activo` sin actualizar también la lógica del módulo de Afiliados completo.
+- **Créditos de Afiliados en el Dashboard:** El dashboard estima `S/50 por gym activo` solo como indicador contable visual — NO es la tasa real de créditos.
+- La tasa real está en `AdminAffiliates.tsx` y `Affiliate.tsx`: `CREDITS_PER_MONTH = 100`. Ver sección 13.5.
 
 ### 13.3 AdminLicenses — Licencias de Acceso al SaaS
 - **Estructura de una licencia:** `code` (XXXX-XXXX-XXXX-XXXX), `duration_months` (1/3/6/12), `status` (available/redeemed/expired), `price_pen`, `created_by` (id del superadmin).
@@ -184,3 +184,15 @@
 - **Filtro de seguridad:** Se excluyen perfiles `superadmin` y tenants sin email (`email = "Sin correo"`).
 - `referredBy` está pendiente de implementación (actualmente siempre es `null`).
 - **PROHIBIDO:** Mostrar datos de perfiles `superadmin` en la tabla de clientes.
+
+### 13.5 Sistema de Créditos de Afiliados — Cómo funciona
+- Un **Embajador** es un dueño de gym que refiere a otros dueños de gym a Kallpa.
+- Flujo: Embajador comparte su código → referido se registra (dentro de 7 días) → referido activa suscripción → Embajador gana créditos.
+- **Tasa de créditos:** `100 créditos por cada MES de licencia comprada` por el referido.
+  - Si el referido compra licencia de 12 meses → el embajador recibe 1,200 créditos.
+  - Si el referido compra licencia de 1 mes → el embajador recibe 100 créditos.
+- **Canje:** `100 créditos = 1 mes gratis de suscripción` para el gym del embajador.
+- El canje se ejecuta via RPC `redeem_affiliate_credits(p_months, p_tenant_id)` — descuenta créditos y extiende la suscripción.
+- **PROHIBIDO:** Cambiar `CREDITS_PER_MONTH = 100` sin actualizar también el RPC `redeem_affiliate_credits` en Supabase.
+- La tabla `affiliate_credit_logs` registra cada vez que se ganan créditos (historial).
+- La columna `credits_balance` en `affiliates` es el saldo actual disponible.
