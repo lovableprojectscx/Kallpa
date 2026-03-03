@@ -101,3 +101,33 @@
   - **Nunca asistió** y se inscribió hace 7+ días → texto "Nunca ha asistido — hace X días inscrito"
 - El RPC `get_retention_risk_members` usa `COALESCE(last_visit, created_at)` — nunca eliminar esta lógica.
 - El mensaje de WhatsApp de reenganche es **diferente** según el tipo: primer timers reciben invitación a "primera sesión", inactivos reciben mensaje de extrañarlos.
+
+## 11. LÓGICA DE NEGOCIO — TERMINAL DE RECEPCIÓN (NO ROMPER)
+
+### 11.1 Recepcion.tsx — Anti Doble Check-in
+- **REGLA:** Antes de insertar asistencia, el sistema verifica si el miembro ya tiene un registro de check-in para el día de hoy (desde `00:00:00` hasta ahora).
+- Si ya entró hoy, muestra "Ya registrado hoy ✅" y NO inserta un segundo registro.
+- **PROHIBIDO:** Quitar esta verificación. Sin ella, un miembro puede acumular 10 asistencias en un día con varios escaneos rápidos, corrompiendo las estadísticas del Dashboard.
+
+### 11.2 Recepcion.tsx — Queries con Caché
+- `todayCheckins`: `refetchInterval: 15s` + `keepPreviousData` — lista siempre visible sin parpadeo.
+- `alerts` (membresías por vencer): `staleTime: 2 min` + `keepPreviousData`.
+- `allPlans`: `staleTime: 10 min` + `refetchOnWindowFocus: false` (planes raramente cambian).
+- **PROHIBIDO:** Eliminar estas configuraciones de caché.
+
+### 11.3 LoginRecepcion.tsx — Verificación de Status del Staff
+- El login verifica: primero que `role === 'staff'`, luego que `status === 'active'`.
+- Un staff con status diferente a 'active' (ej: suspendido) recibe mensaje de error y es bloqueado.
+- **REGLA:** No simplificar esta verificación a solo `role === 'staff'`.
+
+### 11.4 RPC remove_staff_member — PELIGROSO ⚠️
+- El RPC `remove_staff_member()` hace `SET role = NULL, tenant_id = NULL, status = NULL` sobre el perfil del staff.
+- Cuando un recepcionista hace clic en "Salir del Gimnasio", esto borra su asociación con el gym **permanentemente** — el admin tendría que re-invitarlo.
+- **Es un comportamiento intencional de "desvincular staff"** pero el botón "Salir" debería tener un cartel de advertencia claro antes de ejecutar.
+- **PROHIBIDO:** Remover la confirmación del AlertDialog antes de ejecutar `handleLeaveGym`.
+
+### 11.5 effectiveTenantId — Cómo funciona la Recepción multi-gym
+- `effectiveTenantId = sessionStorage.getItem("staff_tenant_id") || user?.tenantId`
+- Cuando un admin entra al terminal de otro gym (para pruebas), usa `sessionStorage` para sobrescribir su propio tenantId.
+- Cuando un recepcionista normal entra, su `tenant_id` del profile se guarda en `sessionStorage` al hacer login.
+- **PROHIBIDO:** Cambiar esta lógica o eliminar el `sessionStorage`. Todo el sistema de check-in depende de `effectiveTenantId` para el aislamiento multitenant.

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Scanner } from "@yudiel/react-qr-scanner";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -49,7 +49,9 @@ export default function Recepcion() {
                 .order("check_in_time", { ascending: false });
             return data || [];
         },
-        refetchInterval: 15000,
+        refetchInterval: 15000, // Refresco en vivo cada 15s
+        placeholderData: keepPreviousData, // Lista visible durante refresco — sin parpadeo
+        staleTime: 1000 * 30,
         enabled: !!effectiveTenantId,
     });
 
@@ -71,6 +73,8 @@ export default function Recepcion() {
             });
         },
         enabled: !!effectiveTenantId,
+        staleTime: 1000 * 60 * 2, // Alertas: caché de 2 min
+        placeholderData: keepPreviousData,
     });
 
     const { data: memberSearch = [] } = useQuery({
@@ -96,6 +100,8 @@ export default function Recepcion() {
             return data || [];
         },
         enabled: !!effectiveTenantId,
+        staleTime: 1000 * 60 * 10, // Planes: caché de 10 min (raramente cambian)
+        refetchOnWindowFocus: false,
     });
 
     const getPlanName = (planId: string) => (allPlans as any[]).find(p => p.id === planId)?.name || "Sin plan";
@@ -114,6 +120,23 @@ export default function Recepcion() {
                 .single();
 
             if (error || !member) throw new Error("Miembro no encontrado");
+
+            // FIX: Anti doble check-in — verificar si ya entró HOY
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
+            const { count: alreadyIn } = await supabase
+                .from("attendance")
+                .select("id", { count: "exact", head: true })
+                .eq("member_id", memberId)
+                .eq("tenant_id", effectiveTenantId)
+                .gte("check_in_time", todayStart.toISOString());
+
+            if (alreadyIn && alreadyIn > 0) {
+                setStatus("approved");
+                setScannedMember({ name: member.full_name, plan: getPlanName(member.plan), info: "Ya registrado hoy ✅" });
+                return;
+            }
+
             if (member.status !== "active") {
                 setStatus("denied");
                 setScannedMember({ name: member.full_name, plan: getPlanName(member.plan), info: "Membresía no activa" });

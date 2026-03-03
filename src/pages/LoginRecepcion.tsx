@@ -44,6 +44,13 @@ export default function LoginRecepcion() {
             }
 
             if (profile?.role === "staff" && profile?.tenant_id) {
+                // Verificar que la cuenta de staff esté activa (no suspendida)
+                if (profile.status && profile.status !== "active") {
+                    await supabase.auth.signOut();
+                    toast.error("Tu cuenta de recepcionista está suspendida. Contacta al administrador.", { duration: 6000 });
+                    setLoading(false);
+                    return;
+                }
                 sessionStorage.setItem("staff_tenant_id", profile.tenant_id);
                 navigate("/recepcion", { replace: true });
                 return;
