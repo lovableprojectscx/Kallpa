@@ -96,12 +96,19 @@ export function RetentionPanel() {
               </div>
               <button
                 onClick={() => {
-                  const text = encodeURIComponent(`Hola ${member.name.split(' ')[0]}, notamos que hace ${member.daysAway} días no vienes a entrenar. ¡Te extrañamos en el gimnasio! ¿Cuándo te vemos de vuelta? 💪`);
-                  if (member.phone) {
-                    window.open(`https://wa.me/${member.phone}?text=${text}`, '_blank');
-                  } else {
-                    window.open(`https://wa.me/?text=${text}`, '_blank');
-                  }
+                  const firstName = member.name.split(' ')[0];
+                  // Mensaje diferenciado: nunca asistió vs dejó de asistir
+                  const msg = member.neverAttended
+                    ? `¡Hola ${firstName}! 🏋️ Vemos que te inscribiste hace ${member.daysAway} días en el gimnasio, pero aún no has podido venir. ¡Tu primera sesión te espera! ¿Cuándo arrancamos? Cualquier duda estoy aquí para ayudarte 💪`
+                    : `¡Hola ${firstName}! Notamos que hace ${member.daysAway} días no vienes a entrenar. ¡Te extrañamos en el gimnasio! ¿Cuándo te vemos de vuelta? 💪`;
+                  const encoded = encodeURIComponent(msg);
+                  const cleanPhone = member.phone?.replace(/\D/g, '');
+                  window.open(
+                    cleanPhone
+                      ? `https://wa.me/${cleanPhone}?text=${encoded}`
+                      : `https://wa.me/?text=${encoded}`,
+                    '_blank'
+                  );
                 }}
                 className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-1.5 sm:px-3 sm:py-1.5 text-[10px] sm:text-[11px] font-semibold text-primary transition-smooth hover:bg-primary/20 hover:scale-105 active:scale-95"
               >
