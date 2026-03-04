@@ -243,8 +243,8 @@ const Members = () => {
         return {
           tenant_id: user?.tenantId,
           full_name: nombre.trim(),
-          email: cEmail.trim(),
-          phone: String(telefono).trim(),
+          email: cEmail.trim() || null,
+          phone: String(telefono).trim() || null,
           plan: resolvedPlanId,
           status: 'active',
           start_date: startDate.toISOString().split('T')[0],
@@ -310,9 +310,9 @@ const Members = () => {
         .from('members')
         .insert({
           full_name: fullName,
-          email,
+          email: email.trim() || null,
           plan,
-          phone,
+          phone: phone.trim() || null,
           status: 'active',
           tenant_id: user.tenantId,
           photo_url: photoUrl,
@@ -363,8 +363,8 @@ const Members = () => {
         .from('members')
         .update({
           full_name: editForm.full_name,
-          email: editForm.email,
-          phone: editForm.phone,
+          email: editForm.email?.trim() || null,
+          phone: editForm.phone?.trim() || null,
           status: editForm.status,
           plan: editForm.plan,
           photo_url: photoUrl,
