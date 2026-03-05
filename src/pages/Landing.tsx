@@ -11,29 +11,22 @@ export default function Landing() {
     const navigate = useNavigate();
 
     const handleCTA = () => {
-        if (isLoading) return;
+        // If authenticated, navigate regardless of loading state (data already known)
         if (isAuthenticated) {
-            if (hasTenant) {
-                navigate('/dashboard');
-            } else {
-                navigate('/onboarding');
-            }
-        } else {
-            navigate('/register');
+            navigate(hasTenant ? '/dashboard' : '/onboarding');
+            return;
         }
+        // Not authenticated: always let them go to register (never block silently)
+        navigate('/register');
     };
 
     const handleLogin = () => {
-        if (isLoading) return;
+        // If authenticated, navigate regardless of loading state
         if (isAuthenticated) {
-            if (hasTenant) {
-                navigate('/dashboard');
-            } else {
-                navigate('/onboarding');
-            }
-        } else {
-            navigate('/login');
+            navigate(hasTenant ? '/dashboard' : '/onboarding');
+            return;
         }
+        navigate('/login');
     };
 
     const containerVariants = {

@@ -27,7 +27,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Initial load and auth state subscription
     useEffect(() => {
         let mounted = true;
 
@@ -40,8 +39,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 return;
             }
 
+            // Safety timeout: if Supabase hangs for more than 8 seconds,
+            // force isLoading=false so the UI never gets permanently stuck.
+            const timeout = setTimeout(() => {
+                if (mounted) {
+                    console.warn("[AuthContext] loadUserAndProfile timed out – forcing isLoading=false");
+                    setIsLoading(false);
+                }
+            }, 8000);
+
             try {
-                // Get the user's profile which contains the tenant_id
                 const { data: profile, error } = await supabase
                     .from('profiles')
                     .select('tenant_id, full_name, role')
@@ -62,7 +69,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         created_at: sessionUser.created_at
                     };
 
-                    // Only update if something actually changed to avoid re-triggering dependents
                     setUser(prev => {
                         if (JSON.stringify(prev) === JSON.stringify(newUser)) return prev;
                         return newUser;
@@ -71,6 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } catch (err) {
                 console.error("Unexpected error loading user profile", err);
             } finally {
+                clearTimeout(timeout);
                 if (mounted) {
                     setIsLoading(false);
                 }
@@ -82,15 +89,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             loadUserAndProfile(session?.user || null);
         });
 
-        // 2. Listen for auth changes (login, logout only)
-        // TOKEN_REFRESHED is intentionally excluded: Supabase refreshes the JWT automatically
-        // when the user switches back to this browser tab, which would re-trigger loadUserAndProfile()
-        // and cause a visual reload/flash. The user data has NOT changed on a token refresh.
-        // INITIAL_SESSION is also excluded because getSession() above already handles the initial load.
+        // 2. Listen for auth changes.
+        // We now also handle INITIAL_SESSION — this is the event Supabase fires when
+        // the OAuth callback (Google) redirects back to /dashboard. Without handling it,
+        // the second Google login gets stuck because getSession() fires but the
+        // INITIAL_SESSION handler never ran, leaving stale state.
+        // TOKEN_REFRESHED is still excluded to avoid unnecessary UI flashes.
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             (event, session) => {
-                if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-                    setIsLoading(true);
+                if (
+                    event === 'SIGNED_IN' ||
+                    event === 'SIGNED_OUT' ||
+                    event === 'INITIAL_SESSION'
+                ) {
+                    // Only set loading if we don't already have user data (first load)
+                    // This avoids a flash when switching tabs or minor re-auths
+                    setIsLoading(prev => {
+                        if (event === 'SIGNED_OUT') return true;
+                        if (!user) return true;          // First load – show spinner
+                        return prev;                     // Already loaded – stay silent
+                    });
                     loadUserAndProfile(session?.user || null);
                 }
             }
@@ -100,15 +118,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             mounted = false;
             subscription.unsubscribe();
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const login = async (email: string, password: string): Promise<boolean> => {
         setIsLoading(true);
         try {
-            const { error } = await supabase.auth.signInWithPassword({
-                email,
-                password
-            });
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) {
                 console.error("Login error:", error);
                 return false;
@@ -118,8 +134,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.error("Unexpected login error", error);
             return false;
         } finally {
-            // we don't setIsLoading(false) here because onAuthStateChange will trigger and set it
-            // if we set it here it might unblock UI before profile is loaded.
+            // Fallback: if onAuthStateChange doesn't fire within a reasonable time,
+            // release the loading lock. The auth state listener sets it back properly.
+            setTimeout(() => setIsLoading(false), 5000);
         }
     };
 
@@ -145,13 +162,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!user) return;
 
         try {
-            // Emplear upsert para garantizar la existencia de la fila en `profiles`
             const { error } = await supabase.from('profiles').upsert({
                 id: user.id,
                 email: user.email,
                 full_name: user.name,
                 tenant_id: id,
-                role: user.role || 'admin' // Preservar perfil de admin global si lo tiene
+                role: user.role || 'admin'
             }, {
                 onConflict: 'id'
             });
