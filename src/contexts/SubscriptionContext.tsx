@@ -139,7 +139,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         if (!isInitialized) {
             setIsLoading(true);
         }
-        checkSubscription();
+        void checkSubscription();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id, user?.tenantId, user?.role, hasTenant]);
 

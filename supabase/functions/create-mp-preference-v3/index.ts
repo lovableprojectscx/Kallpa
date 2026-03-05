@@ -90,7 +90,7 @@ serve(async (req) => {
                 pending: `${req.headers.get('origin')}/subscription?payment=pending`,
             },
             auto_return: "approved",
-            notification_url: `https://tzahwzskardwwiguumnl.supabase.co/functions/v1/mp-webhook`,
+            notification_url: `${supabaseUrl}/functions/v1/mp-webhook`,
         };
 
         const response = await preference.create({ body: preferenceBody });

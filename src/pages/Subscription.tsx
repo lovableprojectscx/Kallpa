@@ -25,7 +25,7 @@ export default function Subscription() {
             // Limpiar la URL para evitar que se repita el toast al recargar
             window.history.replaceState({}, document.title, window.location.pathname);
             // Refrescar el estado global de la suscripción
-            if (checkSubscription) checkSubscription();
+            if (checkSubscription) void checkSubscription();
         } else if (paymentStatus === 'failure') {
             toast.error("El pago no pudo ser procesado o fue cancelado.");
             window.history.replaceState({}, document.title, window.location.pathname);
