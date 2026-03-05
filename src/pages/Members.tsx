@@ -716,7 +716,7 @@ const Members = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-[#25D366] hover:bg-[#25D366]/10 md:bg-transparent bg-secondary/80 backdrop-blur-md hidden sm:inline-flex"
+                          className="h-8 w-8 text-muted-foreground hover:text-[#25D366] hover:bg-[#25D366]/10 md:bg-transparent bg-secondary/80 backdrop-blur-md inline-flex"
                           title="Enviar Enlace por WhatsApp"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -737,7 +737,7 @@ const Members = () => {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 md:bg-transparent bg-secondary/80 backdrop-blur-md hidden sm:inline-flex"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 md:bg-transparent bg-secondary/80 backdrop-blur-md inline-flex"
                           title="Eliminar"
                           onClick={(e) => { e.stopPropagation(); setDeletingMember(member); }}
                         >
