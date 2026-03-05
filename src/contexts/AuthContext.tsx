@@ -90,25 +90,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         // 2. Listen for auth changes.
-        // We now also handle INITIAL_SESSION — this is the event Supabase fires when
-        // the OAuth callback (Google) redirects back to /dashboard. Without handling it,
-        // the second Google login gets stuck because getSession() fires but the
-        // INITIAL_SESSION handler never ran, leaving stale state.
-        // TOKEN_REFRESHED is still excluded to avoid unnecessary UI flashes.
+        // RULE 9.3 (.cursorrules): Only listen to SIGNED_IN and SIGNED_OUT.
+        // INITIAL_SESSION and TOKEN_REFRESHED are intentionally excluded:
+        //   • TOKEN_REFRESHED fires on tab focus — would cause unnecessary re-renders / flashes.
+        //   • INITIAL_SESSION overlaps with getSession() above — causes double loadUserAndProfile call.
+        // The initial session is handled by getSession() on mount (line above).
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             (event, session) => {
-                if (
-                    event === 'SIGNED_IN' ||
-                    event === 'SIGNED_OUT' ||
-                    event === 'INITIAL_SESSION'
-                ) {
-                    // Only set loading if we don't already have user data (first load)
-                    // This avoids a flash when switching tabs or minor re-auths
-                    setIsLoading(prev => {
-                        if (event === 'SIGNED_OUT') return true;
-                        if (!user) return true;          // First load – show spinner
-                        return prev;                     // Already loaded – stay silent
-                    });
+                if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
                     loadUserAndProfile(session?.user || null);
                 }
             }

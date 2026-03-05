@@ -13,6 +13,7 @@ interface SubscriptionContextType {
     hasUsedTrial: boolean;
     activateTrial: () => Promise<boolean>;
     isLoading: boolean;
+    isInitialized: boolean;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -302,7 +303,8 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
             requireSubscription,
             hasUsedTrial,
             activateTrial,
-            isLoading
+            isLoading,
+            isInitialized
         }}>
             {children}
         </SubscriptionContext.Provider>

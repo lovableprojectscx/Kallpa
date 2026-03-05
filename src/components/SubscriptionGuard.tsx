@@ -9,16 +9,15 @@ type SubscriptionGuardProps = {
 }
 
 const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({ children }) => {
-    const { hasActiveSubscription, expirationDate, isLoading } = useSubscription();
+    const { hasActiveSubscription, isLoading, isInitialized } = useSubscription();
     const { user } = useAuth();
     const location = useLocation();
 
-    // CRITICAL: Only block on the very first load (when we have no subscription
-    // data at all). Background re-checks (e.g. after onboarding or token refresh)
-    // must run silently — otherwise the dashboard freezes on every Google OAuth return.
-    // `hasActiveSubscription` starts as `false` and `expirationDate` as null,
-    // so we use isLoading + no expirationDate as the "truly first load" signal.
-    if (isLoading && expirationDate === null && user?.role !== 'superadmin' && user?.role !== 'staff') {
+    // RULE 9.2 (.cursorrules): Use isInitialized to detect first load, NOT expirationDate === null.
+    // Using expirationDate === null creates a cycle: expirationDate=null → isLoading=true →
+    // SubscriptionGuard shows black screen → checkSubscription resets expirationDate=null → ...
+    // Only show the blocking spinner before the very first subscription check completes.
+    if (isLoading && !isInitialized) {
         return (
             <div className="min-h-screen w-full flex items-center justify-center bg-background">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
