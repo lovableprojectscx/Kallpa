@@ -142,11 +142,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const loginWithGoogle = async () => {
         try {
+            // Always redirect to /dashboard after Google OAuth callback.
+            // Using the current page's origin ensures it works on both localhost and production.
+            // We intentionally do NOT use window.location.href as redirectTo because:
+            //   • If the user is already on /dashboard and re-authenticates (e.g. token expired),
+            //     redirecting back to /dashboard is correct.
+            //   • If they're on /login or /register we still want /dashboard (the app will
+            //     route them correctly based on hasTenant once loaded).
+            const redirectTo = `${window.location.origin}/dashboard`;
+
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
-                options: {
-                    redirectTo: `${window.location.origin}/dashboard`
-                }
+                options: { redirectTo }
             });
             if (error) {
                 console.error("Google login error:", error);
