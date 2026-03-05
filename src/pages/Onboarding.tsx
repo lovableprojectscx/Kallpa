@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Building2, ArrowRight, Loader2, Sparkles, Upload, ImageIcon, X } from "lucide-react";
+import { Building2, ArrowRight, Loader2, Sparkles, Upload, ImageIcon, X, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +14,7 @@ const Onboarding = () => {
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const { user, setTenantId } = useAuth();
+    const { user, setTenantId, logout } = useAuth();
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -79,12 +79,11 @@ const Onboarding = () => {
                 }
             }
 
-            // 4. Pre-crear la fila de settings (con logo si se subió)
-            // upsert en vez de insert para evitar fallo si la fila ya existe (doble submit)
-            await supabase.from('gym_settings').upsert({
+            // 4. Pre-crear la fila de settings
+            await supabase.from('gym_settings').insert({
                 tenant_id: tenantData.id,
                 ...(logoUrl ? { logo_url: logoUrl } : {})
-            }, { onConflict: 'tenant_id' });
+            });
 
             // 5. Crear planes predeterminados
             await supabase.from('membership_plans').insert([
@@ -256,6 +255,17 @@ const Onboarding = () => {
                         className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors py-1 disabled:opacity-50"
                     >
                         Omitir y configurar después →
+                    </button>
+
+                    {/* Cerrar sesión */}
+                    <button
+                        type="button"
+                        disabled={isSubmitting}
+                        onClick={() => logout()}
+                        className="w-full text-center text-[11px] text-muted-foreground/50 hover:text-destructive transition-colors py-1 flex items-center justify-center gap-1 disabled:opacity-50"
+                    >
+                        <LogOut className="h-3 w-3" />
+                        Cerrar sesión
                     </button>
                 </form>
 

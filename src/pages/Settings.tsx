@@ -79,13 +79,12 @@ const Settings = () => {
       const setE = settingsResponse.error;
 
       if (setE && setE.code === 'PGRST116') {
-        // upsert en vez de insert para evitar fallo con UNIQUE constraint si la fila ya existe
         const { data: newSettings, error: insertE } = await supabase
           .from('gym_settings')
-          .upsert({
+          .insert({
             tenant_id: user.tenantId,
             gym_name: tenant?.name || 'Mi Gimnasio'
-          }, { onConflict: 'tenant_id' })
+          })
           .select().single();
 
         if (insertE) {
@@ -144,7 +143,10 @@ const Settings = () => {
     mutationFn: async () => {
       if (!user?.tenantId) throw new Error("No Tenant");
       await supabase.from('tenants').update({ name: gymName }).eq('id', user.tenantId);
-      const { error } = await supabase.from('gym_settings').update({
+
+      const settingsPayload = {
+        tenant_id: user.tenantId,
+        gym_name: gymName,
         contact_email: gymEmail,
         contact_phone: gymPhone,
         whatsapp_number: waNumber ? `${waCountryCode}${waNumber.replace(/\D/g, '')}` : "",
@@ -152,7 +154,19 @@ const Settings = () => {
         timezone: gymTimeZone,
         social_media: { instagram: gymInstagram, facebook: gymFacebook, website: gymWeb },
         operating_hours: schedule
-      }).eq('tenant_id', user.tenantId);
+      };
+
+      const settingsId = tenantData?.settings?.id;
+      let error;
+
+      if (settingsId) {
+        // La fila existe — actualizar por id (seguro, sin necesitar UNIQUE constraint)
+        ({ error } = await supabase.from('gym_settings').update(settingsPayload).eq('id', settingsId));
+      } else {
+        // No existe todavía — insertar
+        ({ error } = await supabase.from('gym_settings').insert(settingsPayload));
+      }
+
       if (error) throw error;
     },
     onSuccess: () => {

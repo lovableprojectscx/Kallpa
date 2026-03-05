@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -17,9 +17,18 @@ const Register = () => {
     const [referralCode, setReferralCode] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const { loginWithGoogle } = useAuth();
+    const { loginWithGoogle, isAuthenticated, isLoading, user } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+
+    // Si ya hay sesión activa, redirigir
+    useEffect(() => {
+        if (!isLoading && isAuthenticated) {
+            if (user?.role === 'superadmin') navigate('/admin', { replace: true });
+            else if (user?.role === 'staff') navigate('/recepcion', { replace: true });
+            else navigate('/dashboard', { replace: true });
+        }
+    }, [isLoading, isAuthenticated, user?.role]);
 
     React.useEffect(() => {
         const ref = searchParams.get("ref");

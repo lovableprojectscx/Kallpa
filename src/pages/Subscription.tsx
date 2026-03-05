@@ -22,10 +22,8 @@ export default function Subscription() {
         const paymentStatus = params.get('payment');
         if (paymentStatus === 'success') {
             toast.success("¡Pago exitoso! Tu suscripción ha sido actualizada (puede tardar unos segundos en reflejarse)", { duration: 8000 });
-            // Limpiar la URL para evitar que se repita el toast al recargar
             window.history.replaceState({}, document.title, window.location.pathname);
-            // Refrescar el estado global de la suscripción
-            if (checkSubscription) void checkSubscription();
+            void checkSubscription();
         } else if (paymentStatus === 'failure') {
             toast.error("El pago no pudo ser procesado o fue cancelado.");
             window.history.replaceState({}, document.title, window.location.pathname);
@@ -33,7 +31,8 @@ export default function Subscription() {
             toast.warning("El pago está pendiente de acreditación. Te avisaremos cuando se confirme.");
             window.history.replaceState({}, document.title, window.location.pathname);
         }
-    }, [checkSubscription]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleBuySubscription = async (months: number, pricePen: number) => {
         if (!user?.tenantId) return;

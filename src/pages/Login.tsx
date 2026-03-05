@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Dumbbell, Eye, EyeOff, Mail, Lock, Loader2, ArrowRight, UserCog, Users } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Loader2, ArrowRight, UserCog, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,16 +14,24 @@ import { supabase } from "@/lib/supabase";
 
 const Login = () => {
     const [email, setEmail] = useState("");
-    const [staffUsername, setStaffUsername] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const { login, loginWithGoogle } = useAuth();
+    const { login, loginWithGoogle, isAuthenticated, isLoading, user } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
     const fromPath = location.state?.from?.pathname;
     const from = (!fromPath || fromPath === "/") ? "/dashboard" : fromPath;
+
+    // Si ya hay sesión activa, redirigir al destino correspondiente
+    useEffect(() => {
+        if (!isLoading && isAuthenticated) {
+            if (user?.role === 'superadmin') navigate('/admin', { replace: true });
+            else if (user?.role === 'staff') navigate('/recepcion', { replace: true });
+            else navigate(from, { replace: true });
+        }
+    }, [isLoading, isAuthenticated, user?.role]);
 
     const handleSubmitOwner = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -64,32 +72,6 @@ const Login = () => {
             setIsSubmitting(false);
         }
 
-    };
-
-    const handleSubmitStaff = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!staffUsername || !password) {
-            toast.error("Por favor ingresa tu usuario y contraseña de staff");
-            return;
-        }
-
-        setIsSubmitting(true);
-        try {
-            // El truco mágico: Concatenamos un dominio interno para cumplir con Supabase
-            const fakeEmail = `${staffUsername.trim().toLowerCase()}@staff.kallpa.site`;
-
-            const success = await login(fakeEmail, password);
-            if (success) {
-                toast.success("¡Bienvenido al sistema!");
-                navigate(from, { replace: true });
-            } else {
-                toast.error("Usuario o contraseña incorrectos");
-            }
-        } catch (error) {
-            toast.error("Error al iniciar sesión de staff");
-        } finally {
-            setIsSubmitting(false);
-        }
     };
 
     return (
@@ -224,64 +206,21 @@ const Login = () => {
                         </TabsContent>
 
                         <TabsContent value="staff" className="mt-0 outline-none space-y-4 sm:space-y-6">
-                            <form onSubmit={handleSubmitStaff} className="space-y-4 sm:space-y-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="username">Usuario de Staff</Label>
-                                    <div className="relative group">
-                                        <UserCog className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                        <Input
-                                            id="username"
-                                            type="text"
-                                            placeholder="Ej: recepcion-centro"
-                                            className="pl-10 bg-secondary/30 border-border/50 focus:ring-primary/20 h-11 lowercase"
-                                            value={staffUsername}
-                                            onChange={(e) => setStaffUsername(e.target.value)}
-                                            disabled={isSubmitting}
-                                        />
-                                    </div>
+                            <div className="flex flex-col items-center justify-center gap-6 py-4 text-center">
+                                <Users className="h-12 w-12 text-primary/40" />
+                                <div>
+                                    <p className="text-sm font-medium text-foreground">Acceso para Recepcionistas</p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        El personal de recepción usa un portal dedicado con su correo y contraseña asignados por el administrador.
+                                    </p>
                                 </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="password-staff">Contraseña asignada</Label>
-                                    <div className="relative group">
-                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                        <Input
-                                            id="password-staff"
-                                            type={showPassword ? "text" : "password"}
-                                            placeholder="••••••••"
-                                            className="pl-10 pr-10 bg-secondary/30 border-border/50 focus:ring-primary/20 h-11"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            disabled={isSubmitting}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                                        >
-                                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                        </button>
-                                    </div>
-                                </div>
-
                                 <Button
-                                    type="submit"
-                                    disabled={isSubmitting}
-                                    className={cn(
-                                        "w-full h-11 text-sm font-semibold transition-all duration-300 gap-2",
-                                        isSubmitting ? "bg-secondary text-muted-foreground" : "bg-primary text-primary-foreground hover:opacity-90 active:scale-[0.98] glow-volt"
-                                    )}
+                                    onClick={() => navigate('/recepcion/login')}
+                                    className="w-full h-11 bg-primary text-primary-foreground hover:opacity-90 gap-2"
                                 >
-                                    {isSubmitting ? (
-                                        <><Loader2 className="h-4 w-4 animate-spin" />Iniciando...</>
-                                    ) : (
-                                        <>Entrar como Staff <ArrowRight className="h-4 w-4" /></>
-                                    )}
+                                    <ArrowRight className="h-4 w-4" />
+                                    Ir al Portal de Recepción
                                 </Button>
-                            </form>
-
-                            <div className="mt-6 text-center text-[13px] text-muted-foreground pt-2">
-                                Tu administrador debe crear y proporcionarte estas credenciales.
                             </div>
                         </TabsContent>
                     </Card>

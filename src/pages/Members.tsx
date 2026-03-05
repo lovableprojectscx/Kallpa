@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Search, Plus, QrCode, Smartphone, CheckCircle2, UserPlus, Flame, Pencil, Tag, Loader2, CreditCard, Trash2, MessageCircle, FileDown, FileUp, RefreshCw, CalendarPlus, AlertCircle } from "lucide-react";
+import { Search, Plus, QrCode, Smartphone, CheckCircle2, UserPlus, Flame, Pencil, Tag, Loader2, CreditCard, Trash2, MessageCircle, FileDown, FileUp, RefreshCw, CalendarPlus, AlertCircle, RotateCcw, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/lib/supabase";
@@ -58,6 +58,12 @@ const Members = () => {
   const [editForm, setEditForm] = useState({ full_name: "", email: "", phone: "", status: "active", plan: "", start_date: "", end_date: "" });
   const [deletingMember, setDeletingMember] = useState<any | null>(null);
 
+  // Quick Renew state
+  const [renewingMember, setRenewingMember] = useState<any | null>(null);
+  const [renewPlanId, setRenewPlanId] = useState("");
+  const [renewMode, setRenewMode] = useState<'today' | 'extend'>('today');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'expiring' | 'expired'>('all');
+
   // FETCH PLANS
   const { data: membershipPlans = [] } = useQuery({
     queryKey: ['membership_plans', user?.tenantId],
@@ -83,6 +89,14 @@ const Members = () => {
       setPlan(membershipPlans[0].id);
     }
   }, [membershipPlans]);
+
+  // Pre-cargar plan del miembro al abrir modal de renovación
+  useEffect(() => {
+    if (renewingMember) {
+      setRenewPlanId(renewingMember.plan || (membershipPlans as any[])[0]?.id || "");
+      setRenewMode('today');
+    }
+  }, [renewingMember]);
 
   // FETCH MEMBERS con última visita
   const { data: members = [], isLoading } = useQuery({
@@ -306,6 +320,9 @@ const Members = () => {
       const endDate = new Date();
       endDate.setDate(startDate.getDate() + durationDays);
 
+      const startDateStr = startDate.toISOString().split('T')[0];
+      const endDateStr   = endDate.toISOString().split('T')[0];
+
       const { data, error } = await supabase
         .from('members')
         .insert({
@@ -316,13 +333,27 @@ const Members = () => {
           status: 'active',
           tenant_id: user.tenantId,
           photo_url: photoUrl,
-          start_date: startDate.toISOString().split('T')[0],
-          end_date: endDate.toISOString().split('T')[0]
+          start_date: startDateStr,
+          end_date: endDateStr
         })
         .select()
         .single();
 
       if (error) throw error;
+
+      // Registrar pago inmutable para reportes de ventas
+      await supabase.from('payments').insert({
+        tenant_id: user.tenantId,
+        member_id: data.id,
+        plan_id: selectedPlan?.id || null,
+        plan_name: selectedPlan?.name || 'Sin plan',
+        amount: selectedPlan?.price || 0,
+        payment_date: startDateStr,
+        period_start: startDateStr,
+        period_end: endDateStr,
+        payment_type: 'new',
+      });
+
       return data;
     },
     onSuccess: (data) => {
@@ -372,8 +403,31 @@ const Members = () => {
           end_date: editForm.end_date || null
         })
         .eq('id', editingMember!.id)
-        .eq('tenant_id', user?.tenantId); // Seguridad extra: solo el propio tenant
+        .eq('tenant_id', user?.tenantId);
       if (error) throw error;
+
+      // Registrar pago solo si cambió start_date (nueva renovación o cambio de plan con nueva vigencia)
+      const isNewPeriod = editForm.start_date && editForm.start_date !== editingMember!.start_date;
+      if (isNewPeriod && user?.tenantId) {
+        const newPlan = (membershipPlans as any[]).find(p => p.id === editForm.plan);
+        const oldPlan = (membershipPlans as any[]).find(p => p.id === editingMember!.plan);
+        const planChanged = editForm.plan !== editingMember!.plan;
+        let paymentType: 'renewal' | 'upgrade' | 'downgrade' = 'renewal';
+        if (planChanged && newPlan && oldPlan) {
+          paymentType = newPlan.price > oldPlan.price ? 'upgrade' : newPlan.price < oldPlan.price ? 'downgrade' : 'renewal';
+        }
+        await supabase.from('payments').insert({
+          tenant_id: user.tenantId,
+          member_id: editingMember!.id,
+          plan_id: newPlan?.id || null,
+          plan_name: newPlan?.name || 'Sin plan',
+          amount: newPlan?.price || 0,
+          payment_date: editForm.start_date,
+          period_start: editForm.start_date,
+          period_end: editForm.end_date || null,
+          payment_type: paymentType,
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['members', user?.tenantId] });
@@ -403,6 +457,69 @@ const Members = () => {
     onError: (error: any) => {
       if (error.message !== 'sin_licencia') toast.error(error.message || "Error al eliminar miembro");
     }
+  });
+
+  // QUICK RENEW — sin abrir el modal de edición completo
+  const quickRenewMember = useMutation({
+    mutationFn: async () => {
+      if (!requireSubscription()) throw new Error('sin_licencia');
+      if (!renewingMember || !user?.tenantId) throw new Error("Datos incompletos");
+
+      const selectedPlan = (membershipPlans as any[]).find(p => p.id === renewPlanId);
+      const durationDays = selectedPlan?.duration_days || 30;
+
+      let startDate: Date;
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+
+      if (renewMode === 'today') {
+        startDate = new Date();
+      } else {
+        if (renewingMember.end_date) {
+          const currentEnd = new Date(renewingMember.end_date + 'T00:00:00');
+          startDate = currentEnd > today ? new Date(currentEnd) : new Date();
+        } else {
+          startDate = new Date();
+        }
+      }
+
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + durationDays);
+
+      const startStr = startDate.toISOString().split('T')[0];
+      const endStr = endDate.toISOString().split('T')[0];
+
+      const { error } = await supabase
+        .from('members')
+        .update({ plan: renewPlanId, start_date: startStr, end_date: endStr, status: 'active' })
+        .eq('id', renewingMember.id)
+        .eq('tenant_id', user.tenantId);
+      if (error) throw error;
+
+      const oldPlan = (membershipPlans as any[]).find(p => p.id === renewingMember.plan);
+      const planChanged = renewPlanId !== renewingMember.plan;
+      let paymentType: 'renewal' | 'upgrade' | 'downgrade' = 'renewal';
+      if (planChanged && selectedPlan && oldPlan) {
+        paymentType = selectedPlan.price > oldPlan.price ? 'upgrade' : selectedPlan.price < oldPlan.price ? 'downgrade' : 'renewal';
+      }
+
+      await supabase.from('payments').insert({
+        tenant_id: user.tenantId,
+        member_id: renewingMember.id,
+        plan_id: selectedPlan?.id || null,
+        plan_name: selectedPlan?.name || 'Sin plan',
+        amount: selectedPlan?.price || 0,
+        payment_date: startStr,
+        period_start: startStr,
+        period_end: endStr,
+        payment_type: paymentType,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['members', user?.tenantId] });
+      toast.success('¡Renovación registrada!');
+      setRenewingMember(null);
+    },
+    onError: (e: any) => { if (e.message !== 'sin_licencia') toast.error(e.message || 'Error al renovar'); },
   });
 
   const openEdit = (member: any) => {
@@ -493,7 +610,7 @@ const Members = () => {
     if (!generatedQRMember) return;
     const portalUrl = `${window.location.origin}/portal/${generatedQRMember.id}`;
     const nombre = generatedQRMember.name.split(" ")[0];
-    const text = `¡Hola ${nombre}! \u{1F389} Bienvenido a tu nuevo gimnasio. \u{1F3CB}\u{FE0F}\u{200D}\u{2642}\u{FE0F}\n\nAquí tienes tu Portal de Miembro, donde podrás ver el estado de tu cuenta, vigencia de tu plan y descargar tu Pase Digital:\n\u{1F449} ${portalUrl}\n\n¡A entrenar duro!`;
+    const text = `¡Hola ${nombre}! 🎉 Bienvenido a tu nuevo gimnasio. 💪\n\nAquí tienes tu Portal de Miembro, donde podrás ver el estado de tu cuenta, vigencia de tu plan y descargar tu Pase Digital:\n👉 ${portalUrl}\n\n¡A entrenar duro! 🔥`;
     const encodedUrl = encodeURIComponent(text);
 
     // Si tenemos el teléfono, enviamos el mensaje directo a ese número,
@@ -506,10 +623,35 @@ const Members = () => {
     }
   };
 
-  const filteredMembers = members.filter((m: any) =>
-    m.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const getDaysUntilExpiry = (end_date: string | null): number | null => {
+    if (!end_date) return null;
+    const end = new Date(end_date + 'T00:00:00');
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    return Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  };
+
+  const filteredMembers = members.filter((m: any) => {
+    const matchSearch =
+      m.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      m.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!matchSearch) return false;
+
+    if (filterStatus === 'all') return true;
+    const days = getDaysUntilExpiry(m.end_date);
+    if (filterStatus === 'expired') return days !== null && days < 0;
+    if (filterStatus === 'expiring') return days !== null && days >= 0 && days <= 5;
+    if (filterStatus === 'active') return days === null || days > 5;
+    return true;
+  });
+
+  const expiredCount = (members as any[]).filter(m => {
+    const days = getDaysUntilExpiry(m.end_date);
+    return days !== null && days < 0;
+  }).length;
+  const expiringCount = (members as any[]).filter(m => {
+    const days = getDaysUntilExpiry(m.end_date);
+    return days !== null && days >= 0 && days <= 5;
+  }).length;
 
   // Resolver nombre del plan
   const getPlanName = (planId: string) => {
@@ -572,11 +714,46 @@ const Members = () => {
           </div>
         </div>
 
+        {/* Filtros de estado */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {([
+            { key: 'all', label: 'Todos', count: members.length },
+            { key: 'active', label: 'Activos', count: (members as any[]).length - expiredCount - expiringCount },
+            { key: 'expiring', label: 'Por Vencer', count: expiringCount, warn: true },
+            { key: 'expired', label: 'Vencidos', count: expiredCount, danger: true },
+          ] as const).map(({ key, label, count, warn, danger }) => (
+            <button
+              key={key}
+              onClick={() => setFilterStatus(key)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border",
+                filterStatus === key
+                  ? danger
+                    ? "bg-red-500/15 text-red-400 border-red-400/30"
+                    : warn
+                    ? "bg-amber-500/15 text-amber-400 border-amber-400/30"
+                    : "bg-primary/10 text-primary border-primary/30"
+                  : "bg-secondary/40 text-muted-foreground border-border/40 hover:bg-secondary/70"
+              )}
+            >
+              {label}
+              <span className={cn(
+                "px-1.5 py-0.5 rounded-full text-[10px] font-bold",
+                filterStatus === key
+                  ? danger ? "bg-red-400/20" : warn ? "bg-amber-400/20" : "bg-primary/20"
+                  : "bg-secondary"
+              )}>
+                {count}
+              </span>
+            </button>
+          ))}
+        </div>
+
         {/* Lista de Miembros */}
         <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm shadow-sm ring-1 ring-border/20">
           <div>
             {/* Cabecera de Grid - Solo Desktop */}
-            <div className="hidden md:grid grid-cols-[2.5fr_1.5fr_1.5fr_1fr_1fr_180px] bg-secondary/40 border-b border-border/50 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <div className="hidden md:grid grid-cols-[2.5fr_1.5fr_1.7fr_1fr_1fr_210px] bg-secondary/40 border-b border-border/50 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
               <div className="px-6 py-4">Miembro</div>
               <div className="px-6 py-4">Plan</div>
               <div className="px-6 py-4">Estado</div>
@@ -596,6 +773,10 @@ const Members = () => {
                 </div>
               ) : (
                 filteredMembers.map((member, i) => {
+                  const days = getDaysUntilExpiry(member.end_date);
+                  const isExpired = days !== null && days < 0;
+                  const isExpiring = days !== null && days >= 0 && days <= 5;
+
                   let currentStatus = member.status || 'inactive';
                   if (member.end_date) {
                     const end = new Date(member.end_date);
@@ -617,7 +798,14 @@ const Members = () => {
                       initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2, delay: i * 0.02 }}
-                      className="flex flex-col md:grid md:grid-cols-[2.5fr_1.5fr_1.5fr_1fr_1fr_180px] md:items-center relative hover:bg-secondary/20 transition-colors group cursor-pointer"
+                      className={cn(
+                        "flex flex-col md:grid md:grid-cols-[2.5fr_1.5fr_1.7fr_1fr_1fr_210px] md:items-center relative hover:bg-secondary/20 transition-colors group cursor-pointer border-l-2",
+                        isExpired
+                          ? "border-l-red-400/60 bg-red-500/[0.03]"
+                          : isExpiring
+                          ? "border-l-amber-400/60 bg-amber-500/[0.03]"
+                          : "border-l-transparent"
+                      )}
                     >
                       {/* Miembro */}
                       <div className="px-4 py-3 md:px-6 md:py-4 flex flex-row items-center justify-between md:justify-start gap-4">
@@ -654,13 +842,26 @@ const Members = () => {
                         </div>
 
                         {/* Estado */}
-                        <div className="md:px-6 md:py-4 flex flex-col md:items-start items-end flex-shrink-0">
+                        <div className="md:px-6 md:py-4 flex flex-col md:items-start items-end flex-shrink-0 gap-1">
                           <span className={cn("inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider", st.className)}>
                             {st.label}
                           </span>
-                          {member.end_date && (
-                            <span className={cn("text-[10px] pl-1 hidden sm:block", currentStatus === 'expired' ? "text-red-400 font-medium" : "text-muted-foreground")} title="Fecha de vencimiento del plan">
-                              Vence: {format(new Date(member.end_date), "d MMM yy", { locale: es })}
+                          {days !== null && (
+                            <span className={cn(
+                              "inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
+                              isExpired
+                                ? "text-red-400 bg-red-400/10"
+                                : isExpiring
+                                ? "text-amber-400 bg-amber-400/10"
+                                : "text-muted-foreground"
+                            )}>
+                              <Clock className="h-2.5 w-2.5" />
+                              {isExpired
+                                ? `Venció hace ${Math.abs(days)}d`
+                                : days === 0
+                                ? "Vence hoy"
+                                : `Vence en ${days}d`
+                              }
                             </span>
                           )}
                         </div>
@@ -690,59 +891,79 @@ const Members = () => {
                       </div>
 
                       {/* Acciones */}
-                      <div className="absolute top-3 right-3 md:relative md:top-0 md:right-0 md:px-6 md:py-4 flex items-center justify-end gap-1 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-primary md:bg-transparent bg-secondary/80 backdrop-blur-md"
-                          title="Ver Carnet"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (!requireSubscription()) return;
-                            setCardMember(member);
-                          }}
-                        >
-                          <CreditCard className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground md:hover:text-primary md:bg-transparent bg-secondary/80 backdrop-blur-md"
-                          title="Editar"
-                          onClick={(e) => { e.stopPropagation(); openEdit(member); }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-[#25D366] hover:bg-[#25D366]/10 md:bg-transparent bg-secondary/80 backdrop-blur-md inline-flex"
-                          title="Enviar Enlace por WhatsApp"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const portalUrl = `${window.location.origin}/portal/${member.id}`;
-                            const nombre = member.full_name.split(" ")[0];
-                            const text = `¡Hola ${nombre}! \u{1F389} Bienvenido a tu nuevo gimnasio. \u{1F3CB}\u{FE0F}\u{200D}\u{2642}\u{FE0F}\n\nAquí tienes tu Portal de Miembro, donde podrás ver el estado de tu cuenta, vigencia de tu plan y descargar tu Pase Digital:\n\u{1F449} ${portalUrl}\n\n¡A entrenar duro!`;
-                            const encodedUrl = encodeURIComponent(text);
-                            if (member.phone) {
-                              const cleanPhone = member.phone.replace(/\D/g, '');
-                              window.open(`https://wa.me/${cleanPhone}?text=${encodedUrl}`, '_blank');
-                            } else {
-                              window.open(`https://wa.me/?text=${encodedUrl}`, '_blank');
-                            }
-                          }}
-                        >
-                          <MessageCircle className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 md:bg-transparent bg-secondary/80 backdrop-blur-md inline-flex"
-                          title="Eliminar"
-                          onClick={(e) => { e.stopPropagation(); setDeletingMember(member); }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <div className="absolute top-3 right-3 md:relative md:top-0 md:right-0 md:px-4 md:py-4 flex items-center justify-end gap-1">
+                        {/* Botón Renovar — siempre visible para vencidos/por vencer */}
+                        {(isExpired || isExpiring) && (
+                          <Button
+                            size="sm"
+                            className={cn(
+                              "h-8 px-3 text-[11px] font-bold gap-1.5 rounded-lg shrink-0",
+                              isExpired
+                                ? "bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-400/30"
+                                : "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25 border border-amber-400/30"
+                            )}
+                            onClick={(e) => { e.stopPropagation(); setRenewingMember(member); }}
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                            Renovar
+                          </Button>
+                        )}
+
+                        {/* Resto de acciones — visibles en hover en desktop */}
+                        <div className={cn("flex items-center gap-1", !isExpired && !isExpiring && "md:opacity-0 group-hover:opacity-100 transition-opacity")}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-primary md:bg-transparent bg-secondary/80 backdrop-blur-md"
+                            title="Ver Carnet"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!requireSubscription()) return;
+                              setCardMember(member);
+                            }}
+                          >
+                            <CreditCard className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground md:hover:text-primary md:bg-transparent bg-secondary/80 backdrop-blur-md"
+                            title="Editar"
+                            onClick={(e) => { e.stopPropagation(); openEdit(member); }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-[#25D366] hover:bg-[#25D366]/10 md:bg-transparent bg-secondary/80 backdrop-blur-md inline-flex"
+                            title="Enviar Enlace por WhatsApp"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const portalUrl = `${window.location.origin}/portal/${member.id}`;
+                              const nombre = member.full_name.split(" ")[0];
+                              const text = `¡Hola ${nombre}! 🎉 Bienvenido a tu nuevo gimnasio. 💪\n\nAquí tienes tu Portal de Miembro, donde podrás ver el estado de tu cuenta, vigencia de tu plan y descargar tu Pase Digital:\n👉 ${portalUrl}\n\n¡A entrenar duro! 🔥`;
+                              const encodedUrl = encodeURIComponent(text);
+                              if (member.phone) {
+                                const cleanPhone = member.phone.replace(/\D/g, '');
+                                window.open(`https://wa.me/${cleanPhone}?text=${encodedUrl}`, '_blank');
+                              } else {
+                                window.open(`https://wa.me/?text=${encodedUrl}`, '_blank');
+                              }
+                            }}
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 md:bg-transparent bg-secondary/80 backdrop-blur-md inline-flex"
+                            title="Eliminar"
+                            onClick={(e) => { e.stopPropagation(); setDeletingMember(member); }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </motion.div>
                   );
@@ -1069,6 +1290,161 @@ const Members = () => {
           </div>
         </DialogContent>
       </Dialog>
+      {/* Modal: Renovación Rápida */}
+      <Dialog open={!!renewingMember} onOpenChange={(open) => !open && setRenewingMember(null)}>
+        <DialogContent className="sm:max-w-[420px] p-0 border-border/50 bg-card rounded-3xl overflow-hidden shadow-2xl">
+          {(() => {
+            if (!renewingMember) return null;
+            const selectedPlan = (membershipPlans as any[]).find(p => p.id === renewPlanId);
+            const durationDays = selectedPlan?.duration_days || 30;
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            let previewStart: Date;
+            if (renewMode === 'today') {
+              previewStart = new Date();
+            } else {
+              if (renewingMember.end_date) {
+                const currentEnd = new Date(renewingMember.end_date + 'T00:00:00');
+                previewStart = currentEnd > today ? new Date(currentEnd) : new Date();
+              } else {
+                previewStart = new Date();
+              }
+            }
+            const previewEnd = new Date(previewStart);
+            previewEnd.setDate(previewStart.getDate() + durationDays);
+            const daysUntil = getDaysUntilExpiry(renewingMember.end_date);
+            const memberIsExpired = daysUntil !== null && daysUntil < 0;
+
+            return (
+              <>
+                {/* Header */}
+                <div className="px-6 py-5 border-b border-border/50 bg-secondary/10">
+                  <div className="flex items-center gap-3">
+                    {renewingMember.photo_url ? (
+                      <img src={renewingMember.photo_url} alt={renewingMember.full_name} className="h-10 w-10 rounded-xl object-cover ring-1 ring-border/50" />
+                    ) : (
+                      <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                        {renewingMember.full_name.substring(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <h2 className="text-base font-bold text-foreground">{renewingMember.full_name}</h2>
+                      <span className={cn(
+                        "text-[10px] font-semibold",
+                        memberIsExpired ? "text-red-400" : "text-amber-400"
+                      )}>
+                        {memberIsExpired
+                          ? `Venció hace ${Math.abs(daysUntil!)} días`
+                          : daysUntil === 0 ? "Vence hoy" : `Vence en ${daysUntil} días`
+                        }
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 space-y-5">
+                  {/* Plan selector */}
+                  <div className="space-y-2">
+                    <Label>Plan a Renovar</Label>
+                    <Select value={renewPlanId} onValueChange={setRenewPlanId}>
+                      <SelectTrigger className="w-full bg-secondary/30 h-11 border-border/50">
+                        <SelectValue placeholder="Selecciona un plan" />
+                      </SelectTrigger>
+                      <SelectContent className="border-border/50 bg-card rounded-xl shadow-xl">
+                        {(membershipPlans as any[]).map((p: any) => (
+                          <SelectItem key={p.id} value={p.id} className="cursor-pointer py-3 focus:bg-secondary/40">
+                            <div className="flex items-center gap-2.5">
+                              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color || '#6b7280' }} />
+                              <span className="font-semibold text-sm">{p.name}</span>
+                              <span className="text-muted-foreground text-xs bg-secondary px-1.5 py-0.5 rounded-md">
+                                S/{p.price} / {p.duration_days}d
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Modo de renovación */}
+                  <div className="space-y-2">
+                    <Label>Inicio de la nueva vigencia</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setRenewMode('today')}
+                        className={cn(
+                          "flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all",
+                          renewMode === 'today'
+                            ? "border-primary/50 bg-primary/10 text-primary"
+                            : "border-border/40 bg-secondary/30 text-muted-foreground hover:bg-secondary/60"
+                        )}
+                      >
+                        <div className="flex items-center gap-1.5 text-xs font-bold">
+                          <RefreshCw className="h-3 w-3" />
+                          Desde hoy
+                        </div>
+                        <span className="text-[10px] opacity-70">Reinicia la vigencia</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRenewMode('extend')}
+                        disabled={!renewingMember.end_date || memberIsExpired}
+                        className={cn(
+                          "flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all",
+                          renewMode === 'extend'
+                            ? "border-primary/50 bg-primary/10 text-primary"
+                            : "border-border/40 bg-secondary/30 text-muted-foreground hover:bg-secondary/60",
+                          (!renewingMember.end_date || memberIsExpired) && "opacity-40 cursor-not-allowed"
+                        )}
+                      >
+                        <div className="flex items-center gap-1.5 text-xs font-bold">
+                          <CalendarPlus className="h-3 w-3" />
+                          Extender
+                        </div>
+                        <span className="text-[10px] opacity-70">Suma desde vencimiento</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Preview de fechas */}
+                  <div className="rounded-xl bg-secondary/40 border border-border/30 p-4 flex items-center justify-between">
+                    <div className="text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-1">Inicio</p>
+                      <p className="text-sm font-bold text-foreground">{format(previewStart, "d MMM yyyy", { locale: es })}</p>
+                    </div>
+                    <div className="text-muted-foreground/40 text-xs font-bold">→</div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-1">Vence</p>
+                      <p className="text-sm font-bold text-foreground">{format(previewEnd, "d MMM yyyy", { locale: es })}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold mb-1">Precio</p>
+                      <p className="text-sm font-bold text-primary">S/ {selectedPlan?.price || 0}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-6 pb-6 flex gap-3">
+                  <Button variant="outline" className="flex-1 h-11 rounded-xl" onClick={() => setRenewingMember(null)}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    className="flex-[2] h-11 bg-primary text-primary-foreground hover:opacity-90 rounded-xl font-bold glow-volt gap-2"
+                    disabled={quickRenewMember.isPending || !renewPlanId}
+                    onClick={() => quickRenewMember.mutate()}
+                  >
+                    {quickRenewMember.isPending
+                      ? <><Loader2 className="h-4 w-4 animate-spin" /> Renovando...</>
+                      : <><RotateCcw className="h-4 w-4" /> Confirmar Renovación</>
+                    }
+                  </Button>
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
       {/* Modal: Importar Miembros */}
       <Dialog open={isImportModalOpen} onOpenChange={(open) => {
         if (!isImporting) {

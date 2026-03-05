@@ -16,16 +16,29 @@ const ResetPassword = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // En Supabase, cuando accedes desde el link mágico, la sesión se establece automáticamente
-        // si el hash de recuperación en la URL es válido.
-        const checkSession = async () => {
+        // Supabase procesa el hash #access_token de forma asíncrona y emite PASSWORD_RECOVERY.
+        // Esperamos ese evento; si en 5s no llega y tampoco hay sesión, el link es inválido.
+        let redirected = false;
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+            if (event === 'PASSWORD_RECOVERY') {
+                redirected = true; // link válido — dejamos que el usuario cambie su contraseña
+            }
+        });
+
+        const timer = setTimeout(async () => {
+            if (redirected) return;
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
                 toast.error("Enlace inválido o expirado. Solicita uno nuevo.");
                 navigate("/forgot-password");
             }
+        }, 1500);
+
+        return () => {
+            subscription.unsubscribe();
+            clearTimeout(timer);
         };
-        checkSession();
     }, [navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {

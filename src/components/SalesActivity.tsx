@@ -16,42 +16,45 @@ export function SalesActivity({ selectedDate }: SalesActivityProps) {
     queryFn: async () => {
       if (!user?.tenantId) return [];
 
-      // 1. Miembros cuya membresía inició en la fecha seleccionada
-      const { data: members, error: membersError } = await supabase
-        .from("members")
-        .select("id, full_name, plan, created_at, start_date")
+      // Pagos registrados en la fecha seleccionada (inmutables — no cambian si el plan cambia)
+      const dayStart = `${selectedDate}T00:00:00`;
+      const dayEnd   = `${selectedDate}T23:59:59`;
+
+      const { data: payments, error } = await supabase
+        .from("payments")
+        .select("id, amount, plan_name, plan_id, payment_type, created_at, member_id, members(full_name)")
         .eq("tenant_id", user.tenantId)
-        .eq("start_date", selectedDate)
+        .gte("payment_date", dayStart)
+        .lte("payment_date", dayEnd)
         .order("created_at", { ascending: false });
 
-      if (membersError) {
-        console.error("SalesActivity members error:", membersError);
+      if (error) {
+        console.error("SalesActivity payments error:", error);
         return [];
       }
-      if (!members || members.length === 0) return [];
+      if (!payments || payments.length === 0) return [];
 
-      // 2. Planes únicos que aparecen en esos miembros
-      const planIds = [...new Set(members.map((m) => m.plan).filter(Boolean))];
-
-      let plansMap: Record<string, { name: string; price: number; color: string }> = {};
+      // Colores de planes (opcional — enriquece la UI)
+      const planIds = [...new Set(payments.map((p: any) => p.plan_id).filter(Boolean))];
+      let colorsMap: Record<string, string> = {};
       if (planIds.length > 0) {
         const { data: plans } = await supabase
           .from("membership_plans")
-          .select("id, name, price, color")
+          .select("id, color")
           .in("id", planIds);
-
-        (plans || []).forEach((p: any) => {
-          plansMap[p.id] = { name: p.name, price: p.price || 0, color: p.color || "#7C3AED" };
-        });
+        (plans || []).forEach((p: any) => { colorsMap[p.id] = p.color || "#7C3AED"; });
       }
 
-      // 3. Combinar
-      return members.map((m: any) => ({
-        id: m.id,
-        full_name: m.full_name || "Miembro",
-        created_at: m.created_at,
-        isNew: (m.created_at || "").split("T")[0] === selectedDate,
-        plan: plansMap[m.plan] ?? { name: "Sin plan", price: 0, color: "#6b7280" },
+      return payments.map((p: any) => ({
+        id: p.id,
+        full_name: (p.members as any)?.full_name || "Miembro",
+        created_at: p.created_at,
+        isNew: p.payment_type === 'new',
+        plan: {
+          name: p.plan_name || "Sin plan",
+          price: p.amount || 0,
+          color: colorsMap[p.plan_id] || "#7C3AED",
+        },
       }));
     },
     enabled: !!user?.tenantId,
