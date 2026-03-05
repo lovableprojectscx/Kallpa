@@ -113,19 +113,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const login = async (email: string, password: string): Promise<boolean> => {
         setIsLoading(true);
         try {
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
             if (error) {
                 console.error("Login error:", error);
                 return false;
+            }
+            // Load profile directly — don't depend on onAuthStateChange firing SIGNED_IN,
+            // which may not fire when re-logging in with an already-valid token (TOKEN_REFRESHED instead).
+            if (data.user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('tenant_id, full_name, role')
+                    .eq('id', data.user.id)
+                    .single();
+
+                const newUser = {
+                    id: data.user.id,
+                    email: data.user.email!,
+                    name: profile?.full_name || data.user.user_metadata?.name || 'Administrador',
+                    tenantId: profile?.tenant_id || null,
+                    role: profile?.role || 'admin',
+                    created_at: data.user.created_at
+                };
+                setUser(newUser);
             }
             return true;
         } catch (error) {
             console.error("Unexpected login error", error);
             return false;
         } finally {
-            // Fallback: if onAuthStateChange doesn't fire within a reasonable time,
-            // release the loading lock. The auth state listener sets it back properly.
-            setTimeout(() => setIsLoading(false), 5000);
+            setIsLoading(false);
         }
     };
 

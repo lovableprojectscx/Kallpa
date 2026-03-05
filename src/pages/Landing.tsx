@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { QrCode, TrendingUp, Brain, Users, ArrowRight, ShieldCheck, Zap, Activity, MessageCircle } from 'lucide-react';
+import { QrCode, TrendingUp, Brain, Users, ArrowRight, ShieldCheck, Zap, Activity, MessageCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -10,18 +10,24 @@ export default function Landing() {
     const { isAuthenticated, hasTenant, isLoading } = useAuth();
     const navigate = useNavigate();
 
+    // Auto-redirect if user is already authenticated (after auth state resolves)
+    useEffect(() => {
+        if (!isLoading && isAuthenticated) {
+            navigate(hasTenant ? '/dashboard' : '/onboarding', { replace: true });
+        }
+    }, [isLoading, isAuthenticated, hasTenant, navigate]);
+
     const handleCTA = () => {
-        // If authenticated, navigate regardless of loading state (data already known)
+        if (isLoading) return;
         if (isAuthenticated) {
             navigate(hasTenant ? '/dashboard' : '/onboarding');
             return;
         }
-        // Not authenticated: always let them go to register (never block silently)
         navigate('/register');
     };
 
     const handleLogin = () => {
-        // If authenticated, navigate regardless of loading state
+        if (isLoading) return;
         if (isAuthenticated) {
             navigate(hasTenant ? '/dashboard' : '/onboarding');
             return;
@@ -86,9 +92,10 @@ export default function Landing() {
                         </button>
                         <Button
                             onClick={handleCTA}
+                            disabled={isLoading}
                             className="bg-[#D3FF24] hover:bg-[#D3FF24]/90 text-black font-bold border-none shadow-[0_0_20px_rgba(211,255,36,0.2)] hover:shadow-[0_0_30px_rgba(211,255,36,0.4)] transition-all duration-300"
                         >
-                            Comenzar Ahora <ArrowRight className="ml-2 w-4 h-4" />
+                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Comenzar Ahora <ArrowRight className="ml-2 w-4 h-4" /></>}
                         </Button>
                     </div>
                 </div>

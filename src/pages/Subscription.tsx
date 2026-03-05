@@ -100,7 +100,7 @@ export default function Subscription() {
         if (success) {
             toast.success("¡Código canjeado con éxito! Tu gimnasio ha sido activado.");
             setActivationCode("");
-            checkSubscription();
+            // redeemMembershipCode ya llama checkSubscription() internamente — no duplicar aquí
         } else {
             toast.error("Código inválido, expirado o ya utilizado.");
         }

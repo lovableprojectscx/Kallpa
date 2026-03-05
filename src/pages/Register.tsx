@@ -17,7 +17,7 @@ const Register = () => {
     const [referralCode, setReferralCode] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const { setTenantId, loginWithGoogle } = useAuth(); // Might need to clear or prepare for onboarding
+    const { loginWithGoogle } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
 

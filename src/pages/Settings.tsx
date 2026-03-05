@@ -79,12 +79,13 @@ const Settings = () => {
       const setE = settingsResponse.error;
 
       if (setE && setE.code === 'PGRST116') {
+        // upsert en vez de insert para evitar fallo con UNIQUE constraint si la fila ya existe
         const { data: newSettings, error: insertE } = await supabase
           .from('gym_settings')
-          .insert({
+          .upsert({
             tenant_id: user.tenantId,
             gym_name: tenant?.name || 'Mi Gimnasio'
-          })
+          }, { onConflict: 'tenant_id' })
           .select().single();
 
         if (insertE) {

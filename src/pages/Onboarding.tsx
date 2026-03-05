@@ -80,10 +80,11 @@ const Onboarding = () => {
             }
 
             // 4. Pre-crear la fila de settings (con logo si se subió)
-            await supabase.from('gym_settings').insert({
+            // upsert en vez de insert para evitar fallo si la fila ya existe (doble submit)
+            await supabase.from('gym_settings').upsert({
                 tenant_id: tenantData.id,
                 ...(logoUrl ? { logo_url: logoUrl } : {})
-            });
+            }, { onConflict: 'tenant_id' });
 
             // 5. Crear planes predeterminados
             await supabase.from('membership_plans').insert([
