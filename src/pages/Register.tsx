@@ -83,7 +83,7 @@ const Register = () => {
                 // Nota: SignUp ya devuelve una sesión si el correo no requiere confirmación
                 if (data.session) {
                     toast.success("¡Bienvenido a KALLPA! Tu cuenta ha sido creada.");
-                    navigate("/dashboard", { replace: true });
+                    navigate("/onboarding", { replace: true });
                 } else {
                     // Si por alguna razón no hay sesión (ej. config cambió), intentamos login manual silencioso
                     const { error: loginError } = await supabase.auth.signInWithPassword({
@@ -96,7 +96,7 @@ const Register = () => {
                         navigate("/login");
                     } else {
                         toast.success("¡Bienvenido a KALLPA!");
-                        navigate("/dashboard", { replace: true });
+                        navigate("/onboarding", { replace: true });
                     }
                 }
             }

@@ -25,8 +25,7 @@ const ForgotPassword = () => {
         setIsSubmitting(true);
         try {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                // redirectTo: origin + '/update-password',
-                // Supabase usará el Site URL por defecto o el Return URL configurado.
+                redirectTo: `${window.location.origin}/update-password`,
             });
 
             if (error) {

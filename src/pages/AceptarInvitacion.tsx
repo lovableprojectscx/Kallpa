@@ -35,19 +35,21 @@ export default function AceptarInvitacion() {
             const userId = updateData.user?.id;
             const meta = updateData.user?.user_metadata;
 
-            if (userId && meta?.tenant_id) {
-                // Actualizar profile: confirmar que está activo
-                await supabase.from("profiles").upsert({
-                    id: userId,
-                    full_name: meta.full_name || "",
-                    email: updateData.user?.email || "",
-                    role: "staff",
-                    tenant_id: meta.tenant_id,
-                    status: "active",
-                }, { onConflict: "id" });
-
-                sessionStorage.setItem("staff_tenant_id", meta.tenant_id);
+            if (!userId || !meta?.tenant_id) {
+                throw new Error("Invitación inválida: faltan datos del gimnasio. Contacta a tu administrador.");
             }
+
+            // Actualizar profile: confirmar que está activo
+            await supabase.from("profiles").upsert({
+                id: userId,
+                full_name: meta.full_name || "",
+                email: updateData.user?.email || "",
+                role: "staff",
+                tenant_id: meta.tenant_id,
+                status: "active",
+            }, { onConflict: "id" });
+
+            sessionStorage.setItem("staff_tenant_id", meta.tenant_id);
 
             setDone(true);
             setTimeout(() => navigate("/recepcion", { replace: true }), 2000);

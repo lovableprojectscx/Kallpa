@@ -43,7 +43,7 @@ const Onboarding = () => {
 
     // Lógica principal de creación del espacio de trabajo (desacoplada del evento)
     const runSetup = async () => {
-        if (!user) return;
+        if (!user || isSubmitting) return;
 
         const finalName = companyName.trim() || user.name || "Mi Gimnasio";
         const slug = finalName.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.random().toString(36).substring(2, 6);
