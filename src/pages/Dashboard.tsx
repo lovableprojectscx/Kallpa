@@ -2,6 +2,7 @@
 import { StatCard } from "@/components/StatCard";
 import { RetentionPanel } from "@/components/RetentionPanel";
 import { RecentActivity } from "@/components/RecentActivity";
+import { SalesActivity } from "@/components/SalesActivity";
 import { AttendanceChart } from "@/components/AttendanceChart";
 import { Users, UserCheck, TrendingUp, AlertCircle, Loader2, BarChart3, DollarSign, PieChart, ArrowUpRight, ArrowDownRight, Activity, TrendingDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -262,7 +263,10 @@ const Index = () => {
             <AttendanceChart />
           </div>
           <div className="lg:col-span-2">
-            <RecentActivity />
+            {viewMode === 'sales'
+              ? <SalesActivity selectedDate={selectedDate} />
+              : <RecentActivity />
+            }
           </div>
         </div>
 
