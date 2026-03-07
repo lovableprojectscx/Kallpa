@@ -15,7 +15,6 @@ export default function Landing() {
     // Solo serán redirigidos si hacen clic explícitamente en "Ir a mi Panel" o "Ingresar".
 
     const handleCTA = () => {
-        if (isLoading) return;
         if (isAuthenticated) {
             navigate(hasTenant ? '/dashboard' : '/onboarding');
             return;
@@ -24,7 +23,6 @@ export default function Landing() {
     };
 
     const handleLogin = () => {
-        if (isLoading) return;
         if (isAuthenticated) {
             navigate(hasTenant ? '/dashboard' : '/onboarding');
             return;
@@ -89,10 +87,9 @@ export default function Landing() {
                         </button>
                         <Button
                             onClick={handleCTA}
-                            disabled={isLoading}
                             className="bg-[#D3FF24] hover:bg-[#D3FF24]/90 text-black font-bold border-none shadow-[0_0_20px_rgba(211,255,36,0.2)] hover:shadow-[0_0_30px_rgba(211,255,36,0.4)] transition-all duration-300"
                         >
-                            {!isLoading && isAuthenticated ? "Ir a mi Panel" : "Comenzar Ahora"} <ArrowRight className="ml-2 w-4 h-4" />
+                            Comenzar Ahora <ArrowRight className="ml-2 w-4 h-4" />
                         </Button>
                     </div>
                 </div>
@@ -126,11 +123,10 @@ export default function Landing() {
                         <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full px-2 sm:px-0">
                             <Button
                                 onClick={handleCTA}
-                                disabled={isLoading}
                                 size="lg"
                                 className="w-full sm:w-auto bg-[#D3FF24] hover:bg-[#e1ff63] text-black font-bold h-12 md:h-14 px-8 rounded-xl shadow-[0_0_30px_rgba(211,255,36,0.2)] transition-all duration-300 transform hover:scale-105"
                             >
-                                {!isLoading && isAuthenticated ? "Entrar al Sistema" : "Empieza Gratis"} <ArrowRight className="ml-2 w-4 h-4" />
+                                Empieza Gratis <ArrowRight className="ml-2 w-4 h-4" />
                             </Button>
                         </motion.div>
                     </motion.div>
@@ -432,11 +428,10 @@ export default function Landing() {
                         <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight mb-6 md:mb-8">Digitalízate. <br className="sm:hidden" /> <span className="text-[#D3FF24]">O quédate atrás.</span></h2>
                         <Button
                             onClick={handleCTA}
-                            disabled={isLoading}
                             size="lg"
                             className="bg-[#D3FF24] hover:bg-[#e1ff63] text-black font-bold h-14 md:h-16 px-6 md:px-12 text-sm md:text-lg rounded-xl md:rounded-2xl shadow-[0_0_30px_rgba(211,255,36,0.2)] hover:shadow-[0_0_50px_rgba(211,255,36,0.4)] transition-all duration-300 w-full sm:w-auto"
                         >
-                            {!isLoading && isAuthenticated ? "Volver a mi Panel" : "Crear Cuenta Gratis Ahora"}
+                            Crear Cuenta Gratis Ahora
                         </Button>
                     </div>
 
