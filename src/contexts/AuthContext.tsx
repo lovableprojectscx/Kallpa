@@ -86,9 +86,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
 
         // 1. Check active session on mount
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        const checkSession = async () => {
+            // CRITICAL FIX: If we are returning from Google OAuth, the URL will have ?code= or #access_token=
+            // Supabase needs a moment to exchange this code for a real session in the background.
+            // If we blindly call getSession() and immediately set user=null, AuthGuard will shoot them to /login,
+            // which can break the flow.
+            const urlParams = new URLSearchParams(window.location.search);
+            const isOAuthRedirect = urlParams.has('code') || window.location.hash.includes('access_token=');
+
+            if (isOAuthRedirect) {
+                // Wait a bit before checking session manually, let onAuthStateChange (SIGNED_IN) handle it
+                // We keep isLoading=true so AuthGuard shows the spinner and doesn't redirect.
+                return;
+            }
+
+            const { data: { session } } = await supabase.auth.getSession();
             loadUserAndProfile(session?.user || null);
-        });
+        };
+
+        checkSession();
 
         // 2. Listen for auth changes.
         // RULE 9.3 (.cursorrules): Only listen to SIGNED_IN and SIGNED_OUT.
@@ -98,7 +114,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // The initial session is handled by getSession() on mount (line above).
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             (event, session) => {
-                if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+                if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
+                    // We must include INITIAL_SESSION because if we skipped checking getSession() due to 
+                    // isOAuthRedirect, INITIAL_SESSION might be the only event fired once the code is parsed!
+                    if (event === 'INITIAL_SESSION' && !session) {
+                        // ALWAYS ignore empty INITIAL_SESSION events from the listener.
+                        // For normal loads, getSession() handles the empty state.
+                        // For OAuth redirects, we wait for the exchange to finish and fire SIGNED_IN.
+                        return;
+                    }
                     loadUserAndProfile(session?.user || null);
                 }
             }
