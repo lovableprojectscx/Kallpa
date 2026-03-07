@@ -206,22 +206,7 @@ const Login = () => {
                         </TabsContent>
 
                         <TabsContent value="staff" className="mt-0 outline-none space-y-4 sm:space-y-6">
-                            <div className="flex flex-col items-center justify-center gap-6 py-4 text-center">
-                                <Users className="h-12 w-12 text-primary/40" />
-                                <div>
-                                    <p className="text-sm font-medium text-foreground">Acceso para Recepcionistas</p>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        El personal de recepción usa un portal dedicado con su correo y contraseña asignados por el administrador.
-                                    </p>
-                                </div>
-                                <Button
-                                    onClick={() => navigate('/recepcion/login')}
-                                    className="w-full h-11 bg-primary text-primary-foreground hover:opacity-90 gap-2"
-                                >
-                                    <ArrowRight className="h-4 w-4" />
-                                    Ir al Portal de Recepción
-                                </Button>
-                            </div>
+                            <StaffLoginForm />
                         </TabsContent>
                     </Card>
                 </Tabs>
@@ -241,4 +226,124 @@ const Card = ({ children, className }: { children: React.ReactNode, className?: 
     </div>
 );
 
+// Formulario de login para recepcionistas — incrustado directamente en el tab
+function StaffLoginForm() {
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [showPw, setShowPw] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
+
+    const handleStaffLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                email: email.trim().toLowerCase(),
+                password,
+            });
+
+            if (authError || !authData.user) {
+                toast.error("Email o contraseña incorrectos.");
+                return;
+            }
+
+            const { data: profile } = await supabase
+                .from("profiles")
+                .select("role, tenant_id, status")
+                .eq("id", authData.user.id)
+                .single();
+
+            if (profile?.role === "admin" || profile?.role === "superadmin") {
+                await supabase.auth.signOut();
+                toast.error("Esta cuenta es de administrador. Usa el acceso de Propietario.", { duration: 5000 });
+                return;
+            }
+
+            if (profile?.role === "staff" && profile?.tenant_id) {
+                if (profile.status && profile.status !== "active") {
+                    await supabase.auth.signOut();
+                    toast.error("Tu cuenta está suspendida. Contacta al administrador.", { duration: 6000 });
+                    return;
+                }
+                sessionStorage.setItem("staff_tenant_id", profile.tenant_id);
+                navigate("/recepcion", { replace: true });
+                return;
+            }
+
+            await supabase.auth.signOut();
+            toast.error("Esta cuenta no tiene acceso de recepcionista.", { duration: 5000 });
+        } catch {
+            toast.error("Error de conexión. Intenta de nuevo.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <form onSubmit={handleStaffLogin} className="space-y-4">
+            <div className="space-y-2">
+                <Label htmlFor="staff-email">Email de Recepcionista</Label>
+                <div className="relative group">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <Input
+                        id="staff-email"
+                        type="email"
+                        placeholder="recepcion@tugimnasio.com"
+                        className="pl-10 bg-secondary/30 border-border/50 focus:ring-primary/20 h-11"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={loading}
+                        required
+                    />
+                </div>
+            </div>
+
+            <div className="space-y-2">
+                <Label htmlFor="staff-password">Contraseña</Label>
+                <div className="relative group">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                    <Input
+                        id="staff-password"
+                        type={showPw ? "text" : "password"}
+                        placeholder="••••••••"
+                        className="pl-10 pr-10 bg-secondary/30 border-border/50 focus:ring-primary/20 h-11"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={loading}
+                        required
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowPw(!showPw)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                </div>
+            </div>
+
+            <Button
+                type="submit"
+                disabled={loading}
+                className={cn(
+                    "w-full h-11 text-sm font-semibold transition-all duration-300 gap-2",
+                    loading ? "bg-secondary text-muted-foreground" : "bg-primary text-primary-foreground hover:opacity-90 active:scale-[0.98] glow-volt"
+                )}
+            >
+                {loading ? (
+                    <><Loader2 className="h-4 w-4 animate-spin" />Verificando...</>
+                ) : (
+                    <>Entrar a Recepción <ArrowRight className="h-4 w-4" /></>
+                )}
+            </Button>
+
+            <p className="text-center text-[11px] text-muted-foreground">
+                Acceso exclusivo para recepcionistas asignados por el administrador.
+            </p>
+        </form>
+    );
+}
+
 export default Login;
+
