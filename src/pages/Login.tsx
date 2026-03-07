@@ -24,14 +24,14 @@ const Login = () => {
     const fromPath = location.state?.from?.pathname;
     const from = (!fromPath || fromPath === "/") ? "/dashboard" : fromPath;
 
-    // Si ya hay sesión activa, redirigir al destino correspondiente
+    // Redirigir si el usuario ya está autenticado (protección segura)
     useEffect(() => {
-        if (!isLoading && isAuthenticated) {
-            if (user?.role === 'superadmin') navigate('/admin', { replace: true });
-            else if (user?.role === 'staff') navigate('/recepcion', { replace: true });
+        if (!isLoading && isAuthenticated && user) {
+            if (user.role === 'superadmin') navigate('/admin', { replace: true });
+            else if (user.role === 'staff') navigate('/recepcion', { replace: true });
             else navigate(from, { replace: true });
         }
-    }, [isLoading, isAuthenticated, user?.role]);
+    }, [isLoading, isAuthenticated, user, navigate, from]);
 
     const handleSubmitOwner = async (e: React.FormEvent) => {
         e.preventDefault();

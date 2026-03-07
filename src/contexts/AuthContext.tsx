@@ -107,22 +107,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         checkSession();
 
         // 2. Listen for auth changes.
-        // RULE 9.3 (.cursorrules): Only listen to SIGNED_IN and SIGNED_OUT.
-        // INITIAL_SESSION and TOKEN_REFRESHED are intentionally excluded:
-        //   • TOKEN_REFRESHED fires on tab focus — would cause unnecessary re-renders / flashes.
-        //   • INITIAL_SESSION overlaps with getSession() above — causes double loadUserAndProfile call.
-        // The initial session is handled by getSession() on mount (line above).
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             (event, session) => {
                 if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
-                    // We must include INITIAL_SESSION because if we skipped checking getSession() due to 
-                    // isOAuthRedirect, INITIAL_SESSION might be the only event fired once the code is parsed!
                     if (event === 'INITIAL_SESSION' && !session) {
-                        // ALWAYS ignore empty INITIAL_SESSION events from the listener.
-                        // For normal loads, getSession() handles the empty state.
-                        // For OAuth redirects, we wait for the exchange to finish and fire SIGNED_IN.
                         return;
                     }
+
+                    // CRITICAL FIX: If we just signed in (e.g., from Register.tsx calling signUp), 
+                    // we MUST set isLoading = true immediately so AuthGuard doesn't bounce the user 
+                    // to /login while loadUserAndProfile is fetching the DB profile.
+                    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+                        setIsLoading(true);
+                    }
+
                     loadUserAndProfile(session?.user || null);
                 }
             }

@@ -21,14 +21,14 @@ const Register = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
 
-    // Si ya hay sesión activa, redirigir
+    // Redirigir si el usuario ya está autenticado (protección segura)
     useEffect(() => {
-        if (!isLoading && isAuthenticated) {
-            if (user?.role === 'superadmin') navigate('/admin', { replace: true });
-            else if (user?.role === 'staff') navigate('/recepcion', { replace: true });
+        if (!isLoading && isAuthenticated && user) {
+            if (user.role === 'superadmin') navigate('/admin', { replace: true });
+            else if (user.role === 'staff') navigate('/recepcion', { replace: true });
             else navigate('/dashboard', { replace: true });
         }
-    }, [isLoading, isAuthenticated, user?.role]);
+    }, [isLoading, isAuthenticated, user, navigate]);
 
     React.useEffect(() => {
         const ref = searchParams.get("ref");
