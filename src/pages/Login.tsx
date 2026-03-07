@@ -22,7 +22,7 @@ const Login = () => {
     const location = useLocation();
 
     const fromPath = location.state?.from?.pathname;
-    const from = (!fromPath || fromPath === "/") ? "/dashboard" : fromPath;
+    const from = (!fromPath || fromPath === "/" || fromPath === "/login") ? "/dashboard" : fromPath;
 
     // Redirigir si el usuario ya está autenticado (protección segura)
     useEffect(() => {

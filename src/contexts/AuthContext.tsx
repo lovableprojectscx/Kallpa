@@ -97,6 +97,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (isOAuthRedirect) {
                 // Wait a bit before checking session manually, let onAuthStateChange (SIGNED_IN) handle it
                 // We keep isLoading=true so AuthGuard shows the spinner and doesn't redirect.
+                // WE MUST clear the 5 sec timeout, because OAuth callback parsing can be slow on slow networks!
+                clearTimeout(globalTimeout);
                 return;
             }
 
