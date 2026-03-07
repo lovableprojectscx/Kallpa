@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet, Navigate } from "react-router-dom";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import AuthGuard from "./components/AuthGuard";
@@ -71,12 +71,12 @@ const App = () => (
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/update-password" element={<ResetPassword />} />
               <Route path="/onboarding" element={<AuthGuard><Onboarding /></AuthGuard>} />
-              {/* Recepción — login propio para staff */}
-              <Route path="/recepcion/login" element={<LoginRecepcion />} />
+              {/* Recepción — login propio para staff, autocontenido en la misma página */}
+              <Route path="/recepcion/login" element={<Navigate to="/recepcion" replace />} />
               {/* Aceptar invitación de staff */}
               <Route path="/recepcion/aceptar" element={<AceptarInvitacion />} />
-              {/* Terminal de Recepción */}
-              <Route path="/recepcion" element={<AuthGuard><Recepcion /></AuthGuard>} />
+              {/* Terminal de Recepción — maneja su propio estado de autenticación */}
+              <Route path="/recepcion" element={<Recepcion />} />
               {/* Rutas públicas — sin autenticación */}
               <Route path="/" element={<Landing />} />
               <Route path="/carnet/:memberId" element={<CarnetPublico />} />

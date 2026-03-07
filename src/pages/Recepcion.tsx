@@ -10,7 +10,8 @@ import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import {
     Search, CheckCircle2, XCircle, Clock, Users,
-    LogOut, Dumbbell, ScanLine, AlertTriangle, Bell, Camera, UserMinus
+    LogOut, Dumbbell, ScanLine, AlertTriangle, Bell, Camera, UserMinus,
+    Eye, EyeOff, Loader2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -21,8 +22,154 @@ import {
 
 type ScanStatus = "idle" | "processing" | "approved" | "denied";
 
+// ── Login Form (embedded) ─────────────────────────────────────────────────────
+function LoginRecepcion({ onSuccess }: { onSuccess: () => void }) {
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [showPw, setShowPw] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                email: email.trim().toLowerCase(),
+                password,
+            });
+
+            if (authError || !authData.user) {
+                toast.error("Email o contraseña incorrectos.");
+                setLoading(false);
+                return;
+            }
+
+            const { data: profile } = await supabase
+                .from("profiles")
+                .select("role, tenant_id, status")
+                .eq("id", authData.user.id)
+                .single();
+
+            if (profile?.role === "admin" || profile?.role === "superadmin") {
+                await supabase.auth.signOut();
+                toast.error("Esta cuenta es de administrador. Usa el acceso de empresa.", { duration: 5000 });
+                setLoading(false);
+                return;
+            }
+
+            if (profile?.role === "staff" && profile?.tenant_id) {
+                if (profile.status && profile.status !== "active") {
+                    await supabase.auth.signOut();
+                    toast.error("Tu cuenta de recepcionista está suspendida. Contacta al administrador.", { duration: 6000 });
+                    setLoading(false);
+                    return;
+                }
+                sessionStorage.setItem("staff_tenant_id", profile.tenant_id);
+                onSuccess(); // Refresh the parent — no navigation needed
+                return;
+            }
+
+            await supabase.auth.signOut();
+            toast.error("Esta cuenta no tiene acceso de recepcionista.", { duration: 5000 });
+        } catch {
+            toast.error("Error de conexión. Intenta de nuevo.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div
+            className="min-h-screen flex flex-col items-center justify-center p-4"
+            style={{ background: "linear-gradient(135deg, #0a0a14 0%, #0f0f1c 60%, #111128 100%)" }}
+        >
+            <motion.div
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="w-full max-w-sm"
+            >
+                {/* Logo */}
+                <div className="flex flex-col items-center gap-3 mb-8">
+                    <div className="h-14 w-14 rounded-2xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center">
+                        <ScanLine className="h-7 w-7 text-violet-400" />
+                    </div>
+                    <div className="text-center">
+                        <h1 className="text-2xl font-bold text-white">Acceso Recepción</h1>
+                        <p className="text-sm text-white/40 mt-1">Kallpa — Terminal de personal</p>
+                    </div>
+                </div>
+
+                {/* Formulario */}
+                <form onSubmit={handleLogin} className="space-y-4">
+                    <div>
+                        <label className="block text-xs font-medium text-white/50 uppercase tracking-widest mb-2">
+                            Email
+                        </label>
+                        <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="tu@email.com"
+                            required
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 text-sm focus:outline-none focus:border-violet-500/60 transition-colors"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-medium text-white/50 uppercase tracking-widest mb-2">
+                            Contraseña
+                        </label>
+                        <div className="relative">
+                            <input
+                                type={showPw ? "text" : "password"}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="••••••••"
+                                required
+                                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-11 text-white placeholder:text-white/20 text-sm focus:outline-none focus:border-violet-500/60 transition-colors"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPw(!showPw)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                            >
+                                {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                        </div>
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full py-3.5 rounded-xl font-semibold text-sm text-white bg-violet-600 hover:bg-violet-500 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 mt-2"
+                    >
+                        {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Verificando...</> : "Ingresar al Terminal"}
+                    </button>
+                </form>
+
+                {/* Separador */}
+                <div className="flex items-center gap-3 my-6">
+                    <div className="flex-1 h-px bg-white/5" />
+                    <span className="text-xs text-white/20">¿Eres administrador?</span>
+                    <div className="flex-1 h-px bg-white/5" />
+                </div>
+
+                <a
+                    href="/login"
+                    className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-white/10 text-sm text-white/40 hover:text-white/70 hover:border-white/20 transition-colors"
+                >
+                    <Dumbbell className="h-4 w-4" />
+                    Acceso Administrador
+                </a>
+            </motion.div>
+        </div>
+    );
+}
+
+// ── Terminal Principal ────────────────────────────────────────────────────────
 export default function Recepcion() {
-    const { user, logout } = useAuth();
+    const { user, logout, isAuthenticated, isLoading } = useAuth();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [status, setStatus] = useState<ScanStatus>("idle");
@@ -30,14 +177,18 @@ export default function Recepcion() {
     const [searchTerm, setSearchTerm] = useState("");
     const [showSearch, setShowSearch] = useState(false);
     const [confirmLeaveOpen, setConfirmLeaveOpen] = useState(false);
+    const [refreshKey, setRefreshKey] = useState(0);
     const searchRef = useRef<HTMLInputElement>(null);
 
-    // tenant efectivo: sessionStorage (cuando admin entra como staff de otro gym) o el propio
+    const isStaff = user?.role === "staff";
     const effectiveTenantId = sessionStorage.getItem("staff_tenant_id") || user?.tenantId;
+
+    // Show the embedded login form if not authenticated or not staff
+    const showLogin = !isLoading && (!isAuthenticated || !isStaff);
 
     // ── Data ──────────────────────────────────────────────────
     const { data: todayCheckins = [] } = useQuery({
-        queryKey: ["reception_today", effectiveTenantId],
+        queryKey: ["reception_today", effectiveTenantId, refreshKey],
         queryFn: async () => {
             if (!effectiveTenantId) return [];
             const today = new Date().toISOString().split("T")[0];
@@ -49,10 +200,10 @@ export default function Recepcion() {
                 .order("check_in_time", { ascending: false });
             return data || [];
         },
-        refetchInterval: 15000, // Refresco en vivo cada 15s
-        placeholderData: keepPreviousData, // Lista visible durante refresco — sin parpadeo
+        refetchInterval: 15000,
+        placeholderData: keepPreviousData,
         staleTime: 1000 * 30,
-        enabled: !!effectiveTenantId,
+        enabled: !!effectiveTenantId && !showLogin,
     });
 
     const { data: alerts = [] } = useQuery({
@@ -72,8 +223,8 @@ export default function Recepcion() {
                 return days <= 5;
             });
         },
-        enabled: !!effectiveTenantId,
-        staleTime: 1000 * 60 * 2, // Alertas: caché de 2 min
+        enabled: !!effectiveTenantId && !showLogin,
+        staleTime: 1000 * 60 * 2,
         placeholderData: keepPreviousData,
     });
 
@@ -99,8 +250,8 @@ export default function Recepcion() {
             const { data } = await supabase.from("membership_plans").select("id, name, color").eq("tenant_id", effectiveTenantId);
             return data || [];
         },
-        enabled: !!effectiveTenantId,
-        staleTime: 1000 * 60 * 10, // Planes: caché de 10 min (raramente cambian)
+        enabled: !!effectiveTenantId && !showLogin,
+        staleTime: 1000 * 60 * 10,
         refetchOnWindowFocus: false,
     });
 
@@ -121,7 +272,6 @@ export default function Recepcion() {
 
             if (error || !member) throw new Error("Miembro no encontrado");
 
-            // FIX: Anti doble check-in — verificar si ya entró HOY
             const todayStart = new Date();
             todayStart.setHours(0, 0, 0, 0);
             const { count: alreadyIn } = await supabase
@@ -177,7 +327,8 @@ export default function Recepcion() {
     const handleLogout = async () => {
         sessionStorage.removeItem("staff_tenant_id");
         await logout();
-        navigate("/recepcion/login");
+        // No navigation needed — the page will automatically show the login form
+        setRefreshKey(k => k + 1);
     };
 
     const handleLeaveGym = async () => {
@@ -187,8 +338,22 @@ export default function Recepcion() {
         }
         sessionStorage.removeItem("staff_tenant_id");
         await logout();
-        navigate("/recepcion/login");
+        setRefreshKey(k => k + 1);
     };
+
+    // Show loading spinner during auth init
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#0a0a14]">
+                <Loader2 className="h-8 w-8 animate-spin text-violet-400" />
+            </div>
+        );
+    }
+
+    // Show embedded login if not authenticated or not staff
+    if (showLogin) {
+        return <LoginRecepcion onSuccess={() => setRefreshKey(k => k + 1)} />;
+    }
 
     // ── UI ────────────────────────────────────────────────────
     const now = new Date();
@@ -210,7 +375,6 @@ export default function Recepcion() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    {/* Botón para que el staff se retire del gimnasio */}
                     <button onClick={() => setConfirmLeaveOpen(true)}
                         title="Retirarme de este gimnasio"
                         className="hidden sm:flex h-8 px-3 rounded-lg bg-white/5 border border-white/10 items-center gap-1.5 text-[11px] text-white/30 hover:text-amber-400 hover:border-amber-400/30 transition-colors">
