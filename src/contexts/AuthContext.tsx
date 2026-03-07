@@ -30,23 +30,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         let mounted = true;
 
+        // GLOBAL Safety timeout: si Supabase auth (getSession) se queda pensando
+        // o no responde, forzar isLoading = false para nunca dejar la web en blanco.
+        const globalTimeout = setTimeout(() => {
+            if (mounted) {
+                console.warn("[AuthContext] Global Auth Initialization timed out – forcing isLoading=false");
+                setIsLoading(false);
+            }
+        }, 5000);
+
         const loadUserAndProfile = async (sessionUser: any) => {
             if (!sessionUser) {
                 if (mounted) {
                     setUser(null);
                     setIsLoading(false);
+                    clearTimeout(globalTimeout);
                 }
                 return;
             }
-
-            // Safety timeout: if Supabase hangs for more than 8 seconds,
-            // force isLoading=false so the UI never gets permanently stuck.
-            const timeout = setTimeout(() => {
-                if (mounted) {
-                    console.warn("[AuthContext] loadUserAndProfile timed out – forcing isLoading=false");
-                    setIsLoading(false);
-                }
-            }, 8000);
 
             try {
                 const { data: profile, error } = await supabase
@@ -77,9 +78,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } catch (err) {
                 console.error("Unexpected error loading user profile", err);
             } finally {
-                clearTimeout(timeout);
                 if (mounted) {
                     setIsLoading(false);
+                    clearTimeout(globalTimeout);
                 }
             }
         };
@@ -199,10 +200,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const logout = async () => {
         try {
-            await supabase.auth.signOut({ scope: 'global' });
+            // Forzamos limpiar el estado local INMEDIATAMENTE para evitar que 
+            // la UI se quede trabada si Supabase signOut falla (por red o token inválido).
             setUser(null);
+
+            // Usamos local scope porque global puede fallar y trabar la app
+            // si el usuario tiene múltiples pestañas o la red falla.
+            const { error } = await supabase.auth.signOut({ scope: 'local' });
+            if (error) {
+                console.error("Supabase signOut error (token already invalid?):", error);
+            }
         } catch (error) {
-            console.error("Error logging out", error);
+            console.error("Unexpected error logging out", error);
         }
     };
 
