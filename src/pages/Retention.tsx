@@ -11,6 +11,12 @@ import { differenceInDays } from "date-fns";
 const Retention = () => {
   const { user } = useAuth();
 
+  /**
+   * Calcula métricas de retención sobre los miembros activos del tenant.
+   * Consulta `members` con su última asistencia (attendance limitada a 1 registro, orden desc).
+   * Clasifica como "en riesgo" a los activos con 7+ días sin check-in o inscritos
+   * hace 7+ días sin ningún check-in. También cuenta bajas totales (expired/suspended).
+   */
   const { data: stats, isLoading } = useQuery({
     queryKey: ['retention_stats', user?.tenantId],
     queryFn: async () => {

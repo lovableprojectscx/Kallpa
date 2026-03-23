@@ -12,6 +12,13 @@ const CREDITS_PER_MONTH = 100; // 100 créditos = 1 mes gratis
 
 const AdminAffiliates = () => {
 
+  /**
+   * Carga todos los afiliados con sus métricas calculadas en el cliente.
+   * Combina 3 fuentes: `affiliates` (con perfil e invitados), `affiliate_credit_logs`
+   * (historial de créditos ganados) y `licenses` (activaciones reales de referidos).
+   * Filtra superadmins y calcula: invites, activated, creditsBalance, totalEarned,
+   * mesesCanjeados y progressPct.
+   */
   const { data: affiliates = [], isLoading } = useQuery({
     queryKey: ['admin-affiliates'],
     queryFn: async () => {
@@ -86,7 +93,7 @@ const AdminAffiliates = () => {
 
   const queryClient = useQueryClient();
 
-  // Mutación: aprobar o rechazar afiliado
+  /** Aprueba o rechaza la solicitud de un afiliado actualizando `affiliates.status`. */
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: 'active' | 'rejected' }) => {
       const { error } = await supabase

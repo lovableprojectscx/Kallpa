@@ -13,7 +13,6 @@ import {
     LogOut, Dumbbell, ScanLine, AlertTriangle, Bell, Camera, UserMinus,
     Eye, EyeOff, Loader2
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel,
     AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -170,7 +169,6 @@ function LoginRecepcion({ onSuccess }: { onSuccess: () => void }) {
 // ── Terminal Principal ────────────────────────────────────────────────────────
 export default function Recepcion() {
     const { user, logout, isAuthenticated, isLoading } = useAuth();
-    const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [status, setStatus] = useState<ScanStatus>("idle");
     const [scannedMember, setScannedMember] = useState<{ name: string; plan: string; info: string } | null>(null);
@@ -258,7 +256,15 @@ export default function Recepcion() {
     const getPlanName = (planId: string) => (allPlans as any[]).find(p => p.id === planId)?.name || "Sin plan";
     const getPlanColor = (planId: string) => (allPlans as any[]).find(p => p.id === planId)?.color || "#7C3AED";
 
-    // ── Check-in mutation ─────────────────────────────────────
+    /**
+     * Registra la entrada de un miembro al gimnasio.
+     * Flujo:
+     * 1. Busca al miembro en BD y valida que pertenece al tenant.
+     * 2. Si ya hizo check-in hoy → aprueba sin duplicar registro.
+     * 3. Si la membresía no está activa → deniega acceso.
+     * 4. Si todo OK → inserta en `attendance` y muestra días restantes.
+     * El estado visual (approved/denied) se resetea automáticamente a los 3.5s.
+     */
     const processScan = useMutation({
         mutationFn: async (memberId: string) => {
             if (!effectiveTenantId) throw new Error("Sin tenant");
@@ -314,16 +320,23 @@ export default function Recepcion() {
         onSettled: () => { setTimeout(() => { setStatus("idle"); setScannedMember(null); }, 3500); },
     });
 
+    /** Callback del componente `Scanner`. Dispara `processScan` con el valor raw del QR, solo si el terminal está idle. */
     const handleCameraScan = (data: any) => {
         if (data?.[0]?.rawValue && status === "idle") processScan.mutate(data[0].rawValue);
     };
 
+    /** Check-in manual desde la búsqueda por nombre. Cierra el dropdown y llama a `processScan`. */
     const handleManualCheckin = (member: any) => {
         setShowSearch(false);
         setSearchTerm("");
         processScan.mutate(member.id);
     };
 
+    /**
+     * Cierra la sesión del recepcionista.
+     * Limpia el `staff_tenant_id` de sessionStorage antes de llamar a `logout()`.
+     * La página muestra automáticamente el formulario de login al quedar `isAuthenticated=false`.
+     */
     const handleLogout = async () => {
         sessionStorage.removeItem("staff_tenant_id");
         await logout();
@@ -331,6 +344,11 @@ export default function Recepcion() {
         setRefreshKey(k => k + 1);
     };
 
+    /**
+     * Revoca el propio acceso del recepcionista al gimnasio.
+     * Llama al RPC `remove_staff_member` con su propio user_id para desvincularse,
+     * luego cierra sesión. Acción irreversible hasta que el admin lo invite nuevamente.
+     */
     const handleLeaveGym = async () => {
         const tid = sessionStorage.getItem("staff_tenant_id") || user?.tenantId;
         if (tid && user?.id) {

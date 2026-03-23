@@ -123,6 +123,11 @@ const Members = () => {
     refetchOnWindowFocus: false,
   });
 
+  /**
+   * Exporta la lista completa de miembros a un archivo Excel (.xlsx).
+   * Incluye nombre, email, teléfono, plan, estado, fechas y días restantes.
+   * Usa la librería SheetJS (xlsx) para generar el archivo en el cliente.
+   */
   const handleExportExcel = () => {
     if (!members || members.length === 0) {
       toast.error("No hay miembros para exportar");
@@ -180,6 +185,7 @@ const Members = () => {
     }
   };
 
+  /** Descarga una plantilla Excel con las columnas requeridas para importación masiva. */
   const handleDownloadTemplate = () => {
     // Generar formato de plantilla para facilitar la importación
     const templateData = [
@@ -202,6 +208,12 @@ const Members = () => {
     toast.success("Formato descargado");
   };
 
+  /**
+   * Procesa el archivo Excel seleccionado e importa los miembros en lote.
+   * Mapea columnas por nombre (case-insensitive) y resuelve el plan por nombre.
+   * Calcula start_date=hoy y end_date=hoy+días del plan para cada fila.
+   * Filas sin nombre son ignoradas. Requiere suscripción activa.
+   */
   const processImportFile = async () => {
     if (!importFile) {
       toast.error("Por favor, selecciona un archivo primero");
@@ -297,6 +309,7 @@ const Members = () => {
     mutationFn: async () => {
       if (!requireSubscription()) throw new Error('sin_licencia');
       if (!user?.tenantId) throw new Error("No tenant ID");
+      if (!fullName.trim()) throw new Error("El nombre del miembro es requerido");
 
       let photoUrl = null;
       if (photoFile) {
@@ -326,7 +339,7 @@ const Members = () => {
       const { data, error } = await supabase
         .from('members')
         .insert({
-          full_name: fullName,
+          full_name: fullName.trim(),
           email: email.trim() || null,
           plan,
           phone: phone.trim() || null,
@@ -361,8 +374,8 @@ const Members = () => {
       toast.success("¡Miembro registrado con éxito!");
       setIsNewMemberOpen(false);
       setGeneratedQRMember({ id: data.id, name: data.full_name, phone: data.phone });
-      // Reset form
-      setFullName(""); setEmail(""); setPlan("basico"); setPhone(""); setPhotoFile(null);
+      // Reset form — restaurar al primer plan disponible, no a un string fijo
+      setFullName(""); setEmail(""); setPlan((membershipPlans as any[])[0]?.id || ""); setPhone(""); setPhotoFile(null);
     },
     onError: (error: any) => {
       if (error.message !== 'sin_licencia') toast.error(error.message || "Error al registrar miembro");
@@ -535,6 +548,11 @@ const Members = () => {
     });
   };
 
+  /**
+   * Actualiza el plan en el formulario de edición y recalcula automáticamente
+   * la fecha de fin según la duración del nuevo plan.
+   * Aplica compensación de timezone al parsear start_date para evitar desfases UTC.
+   */
   const handleEditPlanChange = (newPlanId: string) => {
     const selectedPlan = (membershipPlans as any[]).find(p => p.id === newPlanId);
     const durationDays = selectedPlan?.duration_days || 30;
@@ -559,7 +577,7 @@ const Members = () => {
     }));
   };
 
-  // Renueva el plan contando desde hoy
+  /** Renueva el plan del miembro desde hoy, sobreescribiendo fechas actuales. */
   const handleRenewFromToday = () => {
     if (!editForm.plan) return;
     const selectedPlan = (membershipPlans as any[]).find(p => p.id === editForm.plan);
@@ -577,8 +595,11 @@ const Members = () => {
     }));
   };
 
-  // Extiende el plan sumando la duración desde la fecha de vencimiento actual
-  // (si el plan ya venció, extiende desde hoy)
+  /**
+   * Extiende el plan desde la fecha de vencimiento actual (renovación anticipada).
+   * Si el plan ya venció (end_date < hoy), extiende desde hoy.
+   * Aplica compensación de timezone al parsear end_date.
+   */
   const handleExtendFromExpiry = () => {
     if (!editForm.plan) return;
     const selectedPlan = (membershipPlans as any[]).find(p => p.id === editForm.plan);
@@ -606,6 +627,11 @@ const Members = () => {
     }));
   };
 
+  /**
+   * Abre WhatsApp con un mensaje de bienvenida pre-generado para el miembro recién registrado.
+   * Si el miembro tiene número de teléfono, abre el chat directo (wa.me/{número}).
+   * Si no tiene teléfono, abre WhatsApp con el texto listo para compartir manualmente.
+   */
   const handleWhatsApp = () => {
     if (!generatedQRMember) return;
     const portalUrl = `${window.location.origin}/portal/${generatedQRMember.id}`;
@@ -623,6 +649,7 @@ const Members = () => {
     }
   };
 
+  /** Calcula los días restantes hasta la expiración del plan. Retorna null si no hay fecha fin. */
   const getDaysUntilExpiry = (end_date: string | null): number | null => {
     if (!end_date) return null;
     const end = new Date(end_date + 'T00:00:00');
@@ -979,10 +1006,10 @@ const Members = () => {
         <DialogContent className="sm:max-w-[480px] p-0 border-border/50 bg-card rounded-3xl overflow-hidden shadow-2xl max-h-[96vh] flex flex-col">
           <div className="px-6 py-5 border-b border-border/50 bg-secondary/10 flex items-center justify-between shrink-0">
             <div>
-              <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+              <DialogTitle className="text-xl font-bold text-foreground flex items-center gap-2">
                 <UserPlus className="h-5 w-5 text-primary" />
                 Registrar Miembro
-              </h2>
+              </DialogTitle>
               <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-0.5 opacity-50">
                 Pase Digital Kallpa
               </p>
@@ -1095,7 +1122,7 @@ const Members = () => {
               <div className="mx-auto w-12 h-12 bg-success/15 rounded-full flex items-center justify-center mb-4">
                 <CheckCircle2 className="h-6 w-6 text-success" />
               </div>
-              <h2 className="text-2xl font-display text-foreground">Pase Digital Creado</h2>
+              <DialogTitle className="text-2xl font-display text-foreground">Pase Digital Creado</DialogTitle>
               <p className="text-sm text-muted-foreground px-4">
                 Pase de acceso de <span className="text-foreground font-semibold">{generatedQRMember?.name}</span>
               </p>
@@ -1142,9 +1169,9 @@ const Members = () => {
         <DialogContent className="sm:max-w-md p-0 border-border/50 bg-card rounded-3xl overflow-hidden shadow-2xl max-h-[96vh] flex flex-col">
           <div className="px-6 py-5 border-b border-border/50 bg-secondary/10 flex items-center justify-between shrink-0">
             <div>
-              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+              <DialogTitle className="text-lg font-bold text-foreground flex items-center gap-2">
                 <Pencil className="h-4 w-4 text-primary" /> Editar Miembro
-              </h2>
+              </DialogTitle>
               <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mt-0.5 opacity-50">Actualizar registro</p>
             </div>
           </div>
@@ -1327,7 +1354,7 @@ const Members = () => {
                       </div>
                     )}
                     <div>
-                      <h2 className="text-base font-bold text-foreground">{renewingMember.full_name}</h2>
+                      <DialogTitle className="text-base font-bold text-foreground">{renewingMember.full_name}</DialogTitle>
                       <span className={cn(
                         "text-[10px] font-semibold",
                         memberIsExpired ? "text-red-400" : "text-amber-400"
@@ -1454,10 +1481,10 @@ const Members = () => {
       }}>
         <DialogContent className="sm:max-w-md border-border/50 bg-card rounded-3xl shadow-2xl overflow-hidden p-0">
           <div className="px-6 py-5 border-b border-border/50 bg-secondary/10 shrink-0">
-            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+            <DialogTitle className="text-xl font-bold text-foreground flex items-center gap-2">
               <FileUp className="h-5 w-5 text-blue-500" />
               Importar Miembros (Excel)
-            </h2>
+            </DialogTitle>
             <p className="text-[12px] text-muted-foreground mt-1">Sube un archivo .xlsx para registrar múltiples usuarios.</p>
           </div>
 

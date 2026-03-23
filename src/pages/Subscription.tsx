@@ -16,6 +16,11 @@ export default function Subscription() {
     const [activationCode, setActivationCode] = useState("");
     const [isRedeeming, setIsRedeeming] = useState(false);
 
+    /**
+     * Al montar, lee los parámetros `?payment=` que Mercado Pago agrega al redirigir de vuelta.
+     * Muestra el toast correspondiente y limpia la URL para evitar re-triggers al recargar.
+     * Se llama solo una vez al montar — la dependencia de `checkSubscription` es estable.
+     */
     useEffect(() => {
         // Check URL parameters for Mercado Pago redirect status
         const params = new URLSearchParams(window.location.search);
@@ -34,6 +39,13 @@ export default function Subscription() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    /**
+     * Inicia el flujo de pago via Mercado Pago para el plan seleccionado.
+     * Obtiene el token de sesión actual y llama a la Edge Function `create-mp-preference-v3`.
+     * Al recibir el `init_point`, redirige la ventana al checkout de MP.
+     * Los resultados de pago regresan via parámetros de URL (?payment=success|failure|pending)
+     * y son procesados en el `useEffect` al montar el componente.
+     */
     const handleBuySubscription = async (months: number, pricePen: number) => {
         if (!user?.tenantId) return;
         setIsProcessingPayment(true);
@@ -77,6 +89,11 @@ export default function Subscription() {
         }
     };
 
+    /**
+     * Activa el período de prueba gratuito de 3 días para este tenant.
+     * Delega en `activateTrial()` del contexto, que muestra sus propios toasts de error.
+     * Solo muestra toast de éxito aquí para no duplicar mensajes.
+     */
     const handleActivateTrial = async () => {
         setIsProcessingPayment(true);
         const success = await activateTrial();
@@ -86,6 +103,11 @@ export default function Subscription() {
         }
     };
 
+    /**
+     * Canjea el código de activación ingresado por el usuario.
+     * Los toasts de error los maneja `redeemMembershipCode` internamente.
+     * Solo mostramos toast de éxito aquí para no duplicar mensajes.
+     */
     const handleRedeemCode = async () => {
         if (!activationCode.trim()) {
             toast.error("Ingresa un código válido");
@@ -100,9 +122,8 @@ export default function Subscription() {
             toast.success("¡Código canjeado con éxito! Tu gimnasio ha sido activado.");
             setActivationCode("");
             // redeemMembershipCode ya llama checkSubscription() internamente — no duplicar aquí
-        } else {
-            toast.error("Código inválido, expirado o ya utilizado.");
         }
+        // No mostrar toast de error aquí — redeemMembershipCode ya lo hace internamente
     };
 
     return (

@@ -13,6 +13,12 @@ const statusLabels: Record<string, { label: string; className: string }> = {
   inactive: { label: "Inactivo", className: "bg-secondary text-muted-foreground" },
 };
 
+/**
+ * Panel de check-ins recientes en tiempo real (últimos 6 registros del tenant).
+ * Se refresca cada 5s con `keepPreviousData` para evitar parpadeo en la lista.
+ * Muestra el estado de membresía de cada miembro usando `statusLabels` para colores.
+ * Usa `AnimatePresence` con `mode="popLayout"` para animar entradas y salidas de ítems.
+ */
 export function RecentActivity() {
   const { user } = useAuth();
 

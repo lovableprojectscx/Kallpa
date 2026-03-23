@@ -5,6 +5,11 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+/**
+ * Layout principal de la aplicación para usuarios admin.
+ * Envuelve el contenido en `SidebarProvider`, monta `AppSidebar` a la izquierda
+ * y el área de contenido con header (SidebarTrigger) + main scrollable a la derecha.
+ */
 export function Layout({ children }: LayoutProps) {
   return (
     <SidebarProvider>

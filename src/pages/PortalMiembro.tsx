@@ -1,14 +1,15 @@
-import { useParams, Link } from "react-router-dom";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useParams, Link, useSearchParams } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import QRCode from "react-qr-code";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import {
     CheckCircle2, XCircle, Dumbbell, Download, Loader2,
-    AlertCircle, Calendar, Clock, RefreshCw, ArrowLeft, Shield, Sparkles, Zap, Smartphone, ExternalLink
+    AlertCircle, Calendar, Clock, ArrowLeft, Sparkles, Zap, Smartphone,
+    CreditCard, Tag, ShoppingCart, CalendarDays, User, Users, CheckCheck
 } from "lucide-react";
-import { format, differenceInDays, parseISO, isAfter } from "date-fns";
+import { format, differenceInDays, parseISO, isAfter, addDays, startOfToday } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -22,16 +23,34 @@ const statusConfig: Record<string, { label: string; icon: any; color: string; bg
 
 export default function PortalMiembro() {
     const { memberId } = useParams<{ memberId: string }>();
+    const [searchParams, setSearchParams] = useSearchParams();
     const cardRef = useRef<HTMLDivElement>(null);
     const [downloading, setDownloading] = useState(false);
-    const [activeTab, setActiveTab] = useState<"portal" | "carnet">("portal");
+    const [activeTab, setActiveTab] = useState<"portal" | "carnet" | "renovar" | "clases">("portal");
     const [scrolled, setScrolled] = useState(false);
+    const [payingPlanId, setPayingPlanId] = useState<string | null>(null);
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20);
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
+
+    // Manejar retorno desde Mercado Pago con ?payment=success/failure/pending
+    useEffect(() => {
+        const paymentStatus = searchParams.get('payment');
+        const planName = searchParams.get('plan');
+        if (!paymentStatus) return;
+        if (paymentStatus === 'success') {
+            toast.success(`¡Pago exitoso! Tu membresía${planName ? ` "${planName}"` : ''} ha sido renovada.`, { duration: 6000 });
+        } else if (paymentStatus === 'failure') {
+            toast.error('El pago no pudo procesarse. Intenta de nuevo o elige otro método.');
+        } else if (paymentStatus === 'pending') {
+            toast.info('Tu pago está en proceso. Te avisaremos cuando se confirme.');
+        }
+        setActiveTab('renovar');
+        setSearchParams({}, { replace: true });
+    }, [searchParams]);
 
     const { data, isLoading, isError } = useQuery({
         queryKey: ["portal_member", memberId],
@@ -67,22 +86,199 @@ export default function PortalMiembro() {
                 }
             }
 
+            let gymHasMp = false;
+
             if (member.tenant_id) {
                 const { data: gs } = await supabase
                     .from("gym_settings")
-                    .select("whatsapp_number, gym_name")
+                    .select("whatsapp_number, gym_name, mp_access_token")
                     .eq("tenant_id", member.tenant_id)
                     .maybeSingle();
                 if (gs?.whatsapp_number) gymWhatsApp = gs.whatsapp_number;
                 if (gs?.gym_name) gymName = gs.gym_name;
+                // Solo necesitamos saber si existe el token, no el valor en sí
+                gymHasMp = !!(gs?.mp_access_token);
             }
 
-            return { ...member, planName, planColor, planPrice, planDays, gymWhatsApp, gymName };
+            return { ...member, planName, planColor, planPrice, planDays, gymWhatsApp, gymName, gymHasMp };
         },
         enabled: !!memberId,
         staleTime: 1000 * 60 * 5,    // 5 min — evita 3 sub-queries en cada cambio de tab
         placeholderData: keepPreviousData,
         refetchOnWindowFocus: false,
+    });
+
+    /** Carga los planes activos del gym del miembro para mostrarlos en la sección de renovación. */
+    const { data: activePlans = [] } = useQuery({
+        queryKey: ["portal_plans", data?.tenant_id],
+        queryFn: async () => {
+            if (!data?.tenant_id) return [];
+            const { data: plans } = await supabase
+                .from("membership_plans")
+                .select("id, name, price, duration_days, color, description")
+                .eq("tenant_id", data.tenant_id)
+                .eq("is_active", true)
+                .order("price", { ascending: true });
+            return plans || [];
+        },
+        enabled: !!data?.tenant_id,
+        staleTime: 1000 * 60 * 5,
+    });
+
+    /**
+     * Inicia el pago de una membresía desde el portal público.
+     * Llama a la Edge Function `create-member-payment` con el anon key (no requiere auth).
+     * Si la preferencia se crea correctamente, redirige al checkout de Mercado Pago.
+     */
+    const handlePayPlan = async (planId: string) => {
+        if (!memberId) return;
+        setPayingPlanId(planId);
+        try {
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
+            const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+            const response = await fetch(`${supabaseUrl}/functions/v1/create-member-payment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': supabaseAnonKey,
+                    'Authorization': `Bearer ${supabaseAnonKey}`,
+                },
+                body: JSON.stringify({ memberId, planId }),
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Error al iniciar el pago');
+            if (result.init_point) {
+                window.location.href = result.init_point;
+            }
+        } catch (err: any) {
+            toast.error(err.message || 'No se pudo iniciar el pago. Intenta de nuevo.');
+        } finally {
+            setPayingPlanId(null);
+        }
+    };
+
+    /** Carga los horarios semanales activos del gym para mostrar en el tab de clases. */
+    const { data: classSchedules = [] } = useQuery({
+        queryKey: ["portal_class_schedules", data?.tenant_id],
+        queryFn: async () => {
+            if (!data?.tenant_id) return [];
+            const { data: schedules } = await supabase
+                .from("class_schedules")
+                .select("*, classes(*)")
+                .eq("tenant_id", data.tenant_id)
+                .eq("is_active", true)
+                .order("start_time", { ascending: true });
+            return schedules || [];
+        },
+        enabled: !!data?.tenant_id,
+        staleTime: 1000 * 60 * 5,
+    });
+
+    /** Reservas del miembro para los próximos 14 días. */
+    const { data: myReservations = [] } = useQuery({
+        queryKey: ["portal_my_reservations", memberId],
+        queryFn: async () => {
+            if (!memberId) return [];
+            const todayStr = startOfToday().toISOString().split("T")[0];
+            const { data: reservations } = await supabase
+                .from("class_reservations")
+                .select("schedule_id, session_date, status")
+                .eq("member_id", memberId)
+                .gte("session_date", todayStr);
+            return reservations || [];
+        },
+        enabled: !!memberId,
+        staleTime: 0,
+    });
+
+    /** Conteo de reservas confirmadas por session (schedule_id + session_date) para calcular cupos. */
+    const { data: sessionCounts = [] } = useQuery({
+        queryKey: ["portal_session_counts", data?.tenant_id],
+        queryFn: async () => {
+            if (!data?.tenant_id) return [];
+            const todayStr = startOfToday().toISOString().split("T")[0];
+            const { data: counts } = await supabase
+                .from("class_reservations")
+                .select("schedule_id, session_date")
+                .eq("tenant_id", data.tenant_id)
+                .eq("status", "confirmed")
+                .gte("session_date", todayStr);
+            return counts || [];
+        },
+        enabled: !!data?.tenant_id,
+        staleTime: 0,
+    });
+
+    /**
+     * Calcula las próximas sesiones para los siguientes 7 días a partir de hoy,
+     * cruzando el horario semanal con los conteos de reservas y las reservas del miembro.
+     */
+    const upcomingSessions = useMemo(() => {
+        const today = startOfToday();
+        const sessions: any[] = [];
+        for (let i = 0; i < 7; i++) {
+            const date = addDays(today, i);
+            const dow = date.getDay(); // 0=Dom, 1=Lun ... 6=Sáb
+            const dateStr = date.toISOString().split("T")[0];
+            const daySchedules = classSchedules.filter((s: any) => s.day_of_week === dow);
+            for (const schedule of daySchedules) {
+                const count = sessionCounts.filter(
+                    (r: any) => r.schedule_id === schedule.id && r.session_date === dateStr
+                ).length;
+                const isReserved = myReservations.some(
+                    (r: any) => r.schedule_id === schedule.id && r.session_date === dateStr && r.status === "confirmed"
+                );
+                sessions.push({
+                    ...schedule,
+                    date,
+                    dateStr,
+                    reservedCount: count,
+                    spotsLeft: (schedule.classes?.capacity || 0) - count,
+                    isReserved,
+                });
+            }
+        }
+        return sessions;
+    }, [classSchedules, sessionCounts, myReservations]);
+
+    const queryClient = useQueryClient();
+
+    /** Confirma la reserva del miembro para una sesión específica. */
+    const reserveMutation = useMutation({
+        mutationFn: async ({ scheduleId, sessionDate, tenantId }: { scheduleId: string; sessionDate: string; tenantId: string }) => {
+            const { error } = await supabase.from("class_reservations").insert({
+                tenant_id: tenantId,
+                schedule_id: scheduleId,
+                member_id: memberId,
+                session_date: sessionDate,
+                status: "confirmed",
+            });
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["portal_my_reservations", memberId] });
+            queryClient.invalidateQueries({ queryKey: ["portal_session_counts", data?.tenant_id] });
+            toast.success("¡Reserva confirmada!");
+        },
+        onError: (e: any) => toast.error(e.message || "No se pudo reservar"),
+    });
+
+    /** Cancela la reserva del miembro para una sesión. */
+    const cancelMutation = useMutation({
+        mutationFn: async ({ scheduleId, sessionDate }: { scheduleId: string; sessionDate: string }) => {
+            const { error } = await supabase.from("class_reservations")
+                .delete()
+                .eq("schedule_id", scheduleId)
+                .eq("member_id", memberId!)
+                .eq("session_date", sessionDate);
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["portal_my_reservations", memberId] });
+            queryClient.invalidateQueries({ queryKey: ["portal_session_counts", data?.tenant_id] });
+            toast.success("Reserva cancelada");
+        },
+        onError: (e: any) => toast.error(e.message || "No se pudo cancelar"),
     });
 
     const downloadCard = async () => {
@@ -309,23 +505,41 @@ export default function PortalMiembro() {
                         <button
                             onClick={() => setActiveTab("portal")}
                             className={cn(
-                                "flex-1 py-4 text-xs font-bold uppercase tracking-[.15em] rounded-2xl transition-all duration-300 flex items-center justify-center gap-2",
-                                activeTab === "portal" ? "bg-primary text-white shadow-xl shadow-primary/20" : "text-white/40 hover:text-white/60"
+                                "flex-1 py-3 text-[10px] font-bold uppercase tracking-[.12em] rounded-2xl transition-all duration-300 flex items-center justify-center gap-1.5",
+                                activeTab === "portal" ? "bg-primary text-black shadow-xl shadow-primary/20" : "text-white/40 hover:text-white/60"
                             )}>
-                            <Smartphone className="h-4 w-4" /> Mi Carnet
+                            <Smartphone className="h-3.5 w-3.5" /> Carnet
                         </button>
                         <button
                             onClick={() => setActiveTab("carnet")}
                             className={cn(
-                                "flex-1 py-4 text-xs font-bold uppercase tracking-[.15em] rounded-2xl transition-all duration-300 flex items-center justify-center gap-2",
-                                activeTab === "carnet" ? "bg-primary text-white shadow-xl shadow-primary/20" : "text-white/40 hover:text-white/60"
+                                "flex-1 py-3 text-[10px] font-bold uppercase tracking-[.12em] rounded-2xl transition-all duration-300 flex items-center justify-center gap-1.5",
+                                activeTab === "carnet" ? "bg-primary text-black shadow-xl shadow-primary/20" : "text-white/40 hover:text-white/60"
                             )}>
-                            <Zap className="h-4 w-4" /> QR Acceso
+                            <Zap className="h-3.5 w-3.5" /> QR Acceso
                         </button>
+                        <button
+                            onClick={() => setActiveTab("renovar")}
+                            className={cn(
+                                "flex-1 py-3 text-[10px] font-bold uppercase tracking-[.12em] rounded-2xl transition-all duration-300 flex items-center justify-center gap-1.5",
+                                activeTab === "renovar" ? "bg-primary text-black shadow-xl shadow-primary/20" : "text-white/40 hover:text-white/60"
+                            )}>
+                            <CreditCard className="h-3.5 w-3.5" /> Renovar
+                        </button>
+                        {classSchedules.length > 0 && (
+                            <button
+                                onClick={() => setActiveTab("clases")}
+                                className={cn(
+                                    "flex-1 py-3 text-[10px] font-bold uppercase tracking-[.12em] rounded-2xl transition-all duration-300 flex items-center justify-center gap-1.5",
+                                    activeTab === "clases" ? "bg-primary text-black shadow-xl shadow-primary/20" : "text-white/40 hover:text-white/60"
+                                )}>
+                                <CalendarDays className="h-3.5 w-3.5" /> Clases
+                            </button>
+                        )}
                     </div>
 
                     <AnimatePresence mode="wait">
-                        {activeTab === "portal" ? (
+                        {activeTab === "portal" && (
                             <motion.div
                                 key="card-view"
                                 initial={{ opacity: 0, scale: 0.9 }}
@@ -384,7 +598,8 @@ export default function PortalMiembro() {
                                     Guardar en mi Galería
                                 </button>
                             </motion.div>
-                        ) : (
+                        )}
+                        {activeTab === "carnet" && (
                             <motion.div
                                 key="qr-view"
                                 initial={{ opacity: 0, y: 20 }}
@@ -409,6 +624,231 @@ export default function PortalMiembro() {
                                     <div className="absolute bottom-0 right-0 h-4 w-4 border-b-2 border-r-2 border-primary" />
                                 </div>
                                 <p className="font-mono text-sm tracking-[.5em] text-primary/60 font-black">#{data.access_code}</p>
+                            </motion.div>
+                        )}
+                        {activeTab === "renovar" && (
+                            <motion.div
+                                key="renovar-view"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 20 }}
+                                className="space-y-4"
+                            >
+                                {/* Info de membresía actual */}
+                                <div className="p-5 rounded-[24px] bg-white/[0.04] border border-white/10 flex items-center justify-between gap-4">
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Plan actual</p>
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: data.planColor }} />
+                                            <p className="text-sm font-bold text-white">{data.planName}</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right space-y-1">
+                                        <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Vence</p>
+                                        <p className={cn("text-sm font-bold", isExpired ? "text-red-400" : "text-white/80")}>
+                                            {endDate ? format(endDate, "dd MMM yyyy", { locale: es }) : "Ilimitado"}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Grid de planes disponibles */}
+                                {!data.gymHasMp ? (
+                                    /* El gym aún no configuró pagos online */
+                                    <div className="py-10 flex flex-col items-center gap-4 text-center">
+                                        <div className="h-16 w-16 rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                                            <CreditCard className="h-8 w-8 text-amber-400/70" />
+                                        </div>
+                                        <div className="space-y-2 max-w-[260px]">
+                                            <p className="text-sm font-bold text-white/80">Pagos online no disponibles</p>
+                                            <p className="text-xs text-white/40 leading-relaxed">
+                                                Este gimnasio aún no tiene activados los pagos en línea.
+                                                Para renovar tu membresía, contacta directamente a recepción.
+                                            </p>
+                                        </div>
+                                        {data.gymWhatsApp && (
+                                            <a
+                                                href={`https://wa.me/${data.gymWhatsApp.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola, soy ${data.full_name} y quiero renovar mi membresía "${data.planName}".`)}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#25D366] text-white font-bold text-sm shadow-lg shadow-[#25D366]/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                                            >
+                                                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                                                </svg>
+                                                Contactar por WhatsApp
+                                            </a>
+                                        )}
+                                    </div>
+                                ) : activePlans.length === 0 ? (
+                                    <div className="py-12 flex flex-col items-center gap-3 text-center">
+                                        <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center">
+                                            <Tag className="h-7 w-7 text-white/20" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-white/60">Sin planes disponibles</p>
+                                            <p className="text-xs text-white/30 mt-1">Contacta a recepción para renovar tu membresía.</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Elige tu plan</p>
+                                        {activePlans.map((plan: any) => (
+                                            <motion.div
+                                                key={plan.id}
+                                                whileTap={{ scale: 0.98 }}
+                                                className="relative rounded-[20px] bg-white/[0.04] border border-white/10 p-5 overflow-hidden"
+                                                style={{ borderColor: plan.id === data.plan ? plan.color + "60" : undefined }}
+                                            >
+                                                {/* Color accent strip */}
+                                                <div className="absolute top-0 left-0 w-1 h-full rounded-l-[20px]" style={{ backgroundColor: plan.color }} />
+                                                <div className="pl-3 flex items-center justify-between gap-4">
+                                                    <div className="flex-1 space-y-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <p className="font-bold text-white text-sm">{plan.name}</p>
+                                                            {plan.id === data.plan && (
+                                                                <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ backgroundColor: plan.color + "30", color: plan.color }}>Tu plan</span>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="text-[11px] text-white/40 flex items-center gap-1">
+                                                                <Clock className="h-3 w-3" /> {plan.duration_days} días
+                                                            </span>
+                                                            {plan.description && (
+                                                                <span className="text-[11px] text-white/30 truncate max-w-[140px]">{plan.description}</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex flex-col items-end gap-2 shrink-0">
+                                                        <p className="text-xl font-black" style={{ color: plan.color }}>
+                                                            S/{Number(plan.price).toFixed(0)}
+                                                        </p>
+                                                        <button
+                                                            onClick={() => handlePayPlan(plan.id)}
+                                                            disabled={payingPlanId !== null}
+                                                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all active:scale-95 disabled:opacity-50"
+                                                            style={{ backgroundColor: plan.color }}
+                                                        >
+                                                            {payingPlanId === plan.id ? (
+                                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                            ) : (
+                                                                <ShoppingCart className="h-3.5 w-3.5" />
+                                                            )}
+                                                            Pagar
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                        <p className="text-center text-[10px] text-white/20 pt-2">
+                                            Pagos procesados por Mercado Pago · 100% seguro
+                                        </p>
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+                        {activeTab === "clases" && (
+                            <motion.div
+                                key="clases-view"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 20 }}
+                                className="space-y-3"
+                            >
+                                {upcomingSessions.length === 0 ? (
+                                    <div className="py-12 flex flex-col items-center gap-3 text-center">
+                                        <div className="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center">
+                                            <CalendarDays className="h-7 w-7 text-white/20" />
+                                        </div>
+                                        <p className="text-sm font-bold text-white/60">Sin clases esta semana</p>
+                                        <p className="text-xs text-white/30">El horario está vacío por ahora.</p>
+                                    </div>
+                                ) : (() => {
+                                    // Agrupar sesiones por día
+                                    const grouped: Record<string, typeof upcomingSessions> = {};
+                                    for (const s of upcomingSessions) {
+                                        if (!grouped[s.dateStr]) grouped[s.dateStr] = [];
+                                        grouped[s.dateStr].push(s);
+                                    }
+                                    return Object.entries(grouped).map(([dateStr, sessions]) => (
+                                        <div key={dateStr} className="space-y-2">
+                                            {/* Cabecera del día */}
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
+                                                    {format(sessions[0].date, "EEEE dd 'de' MMMM", { locale: es })}
+                                                </p>
+                                                <div className="flex-1 h-px bg-white/5" />
+                                            </div>
+                                            {sessions.map((session) => (
+                                                <div
+                                                    key={`${session.id}-${session.dateStr}`}
+                                                    className="rounded-[18px] border overflow-hidden"
+                                                    style={{
+                                                        borderColor: (session.classes?.color || "#7C3AED") + (session.isReserved ? "80" : "30"),
+                                                        backgroundColor: (session.classes?.color || "#7C3AED") + (session.isReserved ? "15" : "08"),
+                                                    }}
+                                                >
+                                                    <div className="flex items-center gap-3 p-4">
+                                                        {/* Hora + color strip */}
+                                                        <div className="flex flex-col items-center shrink-0 w-12">
+                                                            <div className="h-8 w-8 rounded-xl flex items-center justify-center" style={{ backgroundColor: (session.classes?.color || "#7C3AED") + "30" }}>
+                                                                <Clock className="h-4 w-4" style={{ color: session.classes?.color || "#7C3AED" }} />
+                                                            </div>
+                                                            <p className="text-[10px] font-black text-white/50 mt-1 tracking-wider">
+                                                                {session.start_time.slice(0, 5)}
+                                                            </p>
+                                                        </div>
+
+                                                        {/* Info */}
+                                                        <div className="flex-1 overflow-hidden">
+                                                            <p className="font-bold text-sm text-white truncate">
+                                                                {session.classes?.name}
+                                                            </p>
+                                                            <div className="flex items-center gap-3 mt-0.5">
+                                                                {session.classes?.instructor && (
+                                                                    <span className="text-[10px] text-white/40 flex items-center gap-1">
+                                                                        <User className="h-3 w-3" /> {session.classes.instructor}
+                                                                    </span>
+                                                                )}
+                                                                <span className={cn(
+                                                                    "text-[10px] font-bold flex items-center gap-1",
+                                                                    session.spotsLeft <= 0 ? "text-red-400" : session.spotsLeft <= 3 ? "text-amber-400" : "text-white/40"
+                                                                )}>
+                                                                    <Users className="h-3 w-3" />
+                                                                    {session.spotsLeft <= 0 ? "Sin cupos" : `${session.spotsLeft} cupos`}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Botón reservar/cancelar */}
+                                                        {session.isReserved ? (
+                                                            <button
+                                                                onClick={() => cancelMutation.mutate({ scheduleId: session.id, sessionDate: session.dateStr })}
+                                                                disabled={cancelMutation.isPending}
+                                                                className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-bold text-white/60 border border-white/10 hover:border-red-400/40 hover:text-red-400 transition-all active:scale-95"
+                                                            >
+                                                                {cancelMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCheck className="h-3.5 w-3.5" />}
+                                                                Reservado
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => {
+                                                                    if (session.spotsLeft <= 0) return;
+                                                                    reserveMutation.mutate({ scheduleId: session.id, sessionDate: session.dateStr, tenantId: data!.tenant_id });
+                                                                }}
+                                                                disabled={session.spotsLeft <= 0 || reserveMutation.isPending}
+                                                                className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-bold text-white transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                                                                style={{ backgroundColor: session.spotsLeft > 0 ? (session.classes?.color || "#7C3AED") : undefined }}
+                                                            >
+                                                                {reserveMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                                                                {session.spotsLeft <= 0 ? "Lleno" : "Reservar"}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ));
+                                })()}
                             </motion.div>
                         )}
                     </AnimatePresence>

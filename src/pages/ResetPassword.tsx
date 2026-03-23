@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Dumbbell, Eye, EyeOff, Lock, Loader2, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, Lock, Loader2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,12 @@ const ResetPassword = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
 
+    /**
+     * Valida que el usuario llegó aquí desde un link de recuperación legítimo.
+     * Supabase procesa el hash `#access_token` de forma asíncrona y emite el evento
+     * `PASSWORD_RECOVERY` cuando el token es válido.
+     * Si en 1.5s no llega ese evento y tampoco hay sesión activa, redirige a /forgot-password.
+     */
     useEffect(() => {
         // Supabase procesa el hash #access_token de forma asíncrona y emite PASSWORD_RECOVERY.
         // Esperamos ese evento; si en 5s no llega y tampoco hay sesión, el link es inválido.
@@ -41,6 +47,11 @@ const ResetPassword = () => {
         };
     }, [navigate]);
 
+    /**
+     * Actualiza la contraseña del usuario autenticado via token de recuperación.
+     * Valida mínimo 6 caracteres antes de llamar a `supabase.auth.updateUser`.
+     * Redirige a /login al completar con éxito.
+     */
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!password || password.length < 6) {

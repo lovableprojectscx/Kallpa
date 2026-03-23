@@ -17,7 +17,6 @@ import {
   Users,
   Gift,
   Settings,
-  ShieldCheck,
   LogOut
 } from "lucide-react";
 
@@ -32,6 +31,13 @@ const secondaryNav = [
   { title: "Config Admin", url: "/admin/settings", icon: Settings },
 ];
 
+/**
+ * Barra lateral de navegación exclusiva del panel superadmin.
+ * Usa color `coral` en lugar de `primary` para distinguirse visualmente del panel de gimnasio.
+ * Grupos:
+ * - `mainNav`: Panel, Licencias, Clientes, Afiliados.
+ * - `secondaryNav`: Config Admin + botón Cerrar Sesión.
+ */
 export function AdminSidebar() {
   const { logout } = useAuth();
 

@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Upload, Check, RefreshCw, User, Image } from "lucide-react";
+import { RefreshCw, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -13,10 +13,19 @@ interface MemberPhotoCaptureProps {
     className?: string;
 }
 
+/**
+ * Selector de foto para el formulario de miembros.
+ * Valida que el archivo no supere `MAX_PHOTO_SIZE_MB` (5 MB) antes de procesar.
+ * Lee el archivo con `FileReader` para generar una URL de preview local,
+ * y llama a `onPhotoCaptured(file)` para que el padre lo suba a Storage.
+ * `clearPhoto` resetea tanto el preview como el input file (para permitir
+ * seleccionar el mismo archivo de nuevo si el usuario lo desea).
+ */
 const MemberPhotoCapture = ({ onPhotoCaptured, existingPhotoUrl, className }: MemberPhotoCaptureProps) => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(existingPhotoUrl || null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    /** Valida tamaño, lee el archivo como DataURL para el preview y notifica al padre. */
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -38,6 +47,7 @@ const MemberPhotoCapture = ({ onPhotoCaptured, existingPhotoUrl, className }: Me
         reader.readAsDataURL(file);
     };
 
+    /** Limpia el preview y resetea el input para permitir reseleccionar el mismo archivo. */
     const clearPhoto = () => {
         setPreviewUrl(null);
         onPhotoCaptured(null);

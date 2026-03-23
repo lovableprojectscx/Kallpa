@@ -11,7 +11,16 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 
-
+/**
+ * Página de login principal con dos tabs:
+ * - "Propietario": login con email/contraseña o Google para roles admin/superadmin.
+ * - "Recepción": login exclusivo para staff (recepcionistas).
+ *
+ * Una vez autenticado, el useEffect redirige automáticamente según el rol:
+ * - superadmin → /admin
+ * - staff → /recepcion
+ * - admin → ruta de origen (guardada en location.state.from) o /dashboard
+ */
 const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -21,10 +30,14 @@ const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
+    // Destino post-login: si venía de una ruta protegida, volver ahí; si no, al dashboard.
     const fromPath = location.state?.from?.pathname;
     const from = (!fromPath || fromPath === "/" || fromPath === "/login") ? "/dashboard" : fromPath;
 
-    // Redirigir si el usuario ya está autenticado (protección segura)
+    /**
+     * Redirige automáticamente si el usuario ya tiene sesión activa.
+     * Se dispara cuando isLoading cambia a false (auth inicializado) y hay usuario.
+     */
     useEffect(() => {
         if (!isLoading && isAuthenticated && user) {
             if (user.role === 'superadmin') navigate('/admin', { replace: true });
@@ -33,6 +46,15 @@ const Login = () => {
         }
     }, [isLoading, isAuthenticated, user, navigate, from]);
 
+    /**
+     * Maneja el submit del formulario de propietario.
+     * Flujo:
+     * 1. Llama a AuthContext.login() que carga el perfil directamente.
+     * 2. Re-consulta el rol vía Supabase porque setUser() es async y el state
+     *    del componente aún no refleja el nuevo usuario en este punto.
+     * 3. Si el usuario es staff, hace signOut y redirige a /recepcion con un mensaje.
+     * 4. Si es admin/superadmin, navega al destino correcto.
+     */
     const handleSubmitOwner = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email || !password) {
@@ -44,7 +66,8 @@ const Login = () => {
         try {
             const success = await login(email, password);
             if (success) {
-                // Verificar que sea admin — bloquear si es staff
+                // Re-consultar rol directamente porque el state de React (user)
+                // aún no se actualizó en este punto del ciclo de render.
                 const { data: { user: authUser } } = await supabase.auth.getUser();
                 if (authUser) {
                     const { data: profile } = await supabase
@@ -56,7 +79,7 @@ const Login = () => {
                     if (profile?.role === "staff") {
                         await supabase.auth.signOut();
                         toast.error("Esta cuenta es de recepcionista. Usa el acceso de recepción.", { duration: 6000 });
-                        navigate("/recepcion/login");
+                        navigate("/recepcion");
                         return;
                     }
                 }
@@ -71,12 +94,11 @@ const Login = () => {
         } finally {
             setIsSubmitting(false);
         }
-
     };
 
     return (
         <div className="min-h-[100dvh] w-full bg-background flex items-center justify-center p-4 relative overflow-hidden">
-            {/* Bio-Luminescente decorativos */}
+            {/* Fondos decorativos bio-luminiscentes */}
             <div className="absolute top-0 left-0 w-full h-full pointer-events-none -z-10 overflow-hidden">
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
                 <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-coral/10 rounded-full blur-[120px]" />
@@ -219,14 +241,23 @@ const Login = () => {
     );
 };
 
-// Wrapper para Card porque necesitamos usar el componente Card del UI
+/** Card local reutilizable para no importar el componente completo de shadcn solo para este contenedor. */
 const Card = ({ children, className }: { children: React.ReactNode, className?: string }) => (
     <div className={cn("rounded-2xl border bg-card text-card-foreground shadow", className)}>
         {children}
     </div>
 );
 
-// Formulario de login para recepcionistas — incrustado directamente en el tab
+/**
+ * Formulario de login embebido en el tab "Recepción".
+ * Flujo:
+ * 1. Autentica al usuario con Supabase Auth.
+ * 2. Carga el perfil para verificar rol y estado.
+ * 3. Bloquea si es admin/superadmin (debe usar el tab de Propietario).
+ * 4. Bloquea si el perfil está suspendido (status !== 'active').
+ * 5. Si es staff válido, guarda el tenant_id en sessionStorage y navega a /recepcion.
+ *    (sessionStorage porque /recepcion no usa AuthContext sino su propio estado local.)
+ */
 function StaffLoginForm() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -248,11 +279,17 @@ function StaffLoginForm() {
                 return;
             }
 
-            const { data: profile } = await supabase
+            const { data: profile, error: profileError } = await supabase
                 .from("profiles")
                 .select("role, tenant_id, status")
                 .eq("id", authData.user.id)
                 .single();
+
+            if (profileError) {
+                await supabase.auth.signOut();
+                toast.error("Error al verificar la cuenta. Intenta de nuevo.");
+                return;
+            }
 
             if (profile?.role === "admin" || profile?.role === "superadmin") {
                 await supabase.auth.signOut();
@@ -346,4 +383,3 @@ function StaffLoginForm() {
 }
 
 export default Login;
-

@@ -8,15 +8,24 @@ type SubscriptionGuardProps = {
     children: React.ReactNode;
 }
 
+/**
+ * Guard que bloquea el acceso a rutas protegidas cuando el tenant no tiene
+ * suscripción activa.
+ *
+ * Lógica:
+ * - Spinner solo antes de que se complete el PRIMER chequeo de suscripción
+ *   (`isLoading && !isInitialized`). Chequeos posteriores son silenciosos.
+ *   Usar `expirationDate === null` como condición de carga crea un ciclo
+ *   infinito porque checkSubscription resetea expirationDate a null en cada llamada.
+ * - Superadmin y staff tienen suscripción perpetua (ya configurada en checkSubscription).
+ * - La ruta /subscription siempre pasa — el usuario debe poder acceder para pagar o activar trial.
+ * - Sin suscripción activa → redirige a /subscription.
+ */
 const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({ children }) => {
     const { hasActiveSubscription, isLoading, isInitialized } = useSubscription();
     const { user } = useAuth();
     const location = useLocation();
 
-    // RULE 9.2 (.cursorrules): Use isInitialized to detect first load, NOT expirationDate === null.
-    // Using expirationDate === null creates a cycle: expirationDate=null → isLoading=true →
-    // SubscriptionGuard shows black screen → checkSubscription resets expirationDate=null → ...
-    // Only show the blocking spinner before the very first subscription check completes.
     if (isLoading && !isInitialized) {
         return (
             <div className="min-h-screen w-full flex items-center justify-center bg-background">
@@ -25,13 +34,10 @@ const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({ children }) => {
         );
     }
 
-    // Superadmin y staff tienen suscripción perpetua — AuthGuard ya los redirige,
-    // pero como capa de seguridad adicional los dejamos pasar.
     if (user?.role === 'superadmin' || user?.role === 'staff') {
         return <>{children}</>;
     }
 
-    // Siempre permitir /subscription para que el usuario pueda pagar o activar trial
     if (location.pathname === '/subscription') {
         return <>{children}</>;
     }

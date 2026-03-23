@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
     Plus, Tag, Clock, DollarSign, Pencil, Trash2, Loader2,
     ToggleLeft, ToggleRight, Tags, CheckCircle2
@@ -63,12 +63,14 @@ const Plans = () => {
         enabled: !!user?.tenantId,
     });
 
+    /** Abre el modal en modo creación con el formulario en blanco. */
     const openCreate = () => {
         setEditingPlan(null);
         setForm(defaultForm);
         setIsModalOpen(true);
     };
 
+    /** Abre el modal en modo edición, pre-llenando el formulario con los datos del plan. */
     const openEdit = (plan: Plan) => {
         setEditingPlan(plan);
         setForm({
@@ -81,6 +83,13 @@ const Plans = () => {
         setIsModalOpen(true);
     };
 
+    /**
+     * Crea o actualiza un plan de membresía.
+     * - Requiere suscripción activa y tenant configurado.
+     * - Valida que el nombre no sea vacío ni solo whitespace.
+     * - En edición: actualiza filtrando por id Y tenant_id (seguridad de tenant).
+     * - En creación: inserta con el tenant_id del usuario autenticado.
+     */
     const savePlan = useMutation({
         mutationFn: async () => {
             if (!requireSubscription()) throw new Error('sin_licencia');
@@ -116,6 +125,7 @@ const Plans = () => {
         onError: (e: any) => toast.error(e.message),
     });
 
+    /** Activa o desactiva un plan. Los planes desactivados no aparecen en el selector de nuevos miembros. */
     const toggleActive = useMutation({
         mutationFn: async ({ id, is_active }: { id: string; is_active: boolean }) => {
             if (!requireSubscription()) throw new Error('sin_licencia');
@@ -134,6 +144,11 @@ const Plans = () => {
         onError: (e: any) => toast.error(e.message),
     });
 
+    /**
+     * Elimina un plan de membresía.
+     * Protección: verifica que ningún miembro activo tenga asignado este plan antes de eliminar.
+     * Si hay miembros activos, lanza error descriptivo sugiriendo desactivar en vez de eliminar.
+     */
     const deletePlan = useMutation({
         mutationFn: async (id: string) => {
             if (!requireSubscription()) throw new Error('sin_licencia');
@@ -170,6 +185,7 @@ const Plans = () => {
         onError: (e: any) => toast.error(e.message),
     });
 
+    /** Inserta 3 planes predeterminados (Básico, Estándar, Premium) para gimnasios recién configurados. */
     const createDefaultPlans = useMutation({
         mutationFn: async () => {
             if (!requireSubscription()) throw new Error('sin_licencia');
@@ -312,10 +328,10 @@ const Plans = () => {
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogContent className="sm:max-w-md p-0 border-border/50 bg-card rounded-3xl overflow-hidden shadow-2xl">
                     <div className="px-6 py-5 border-b border-border/50 bg-secondary/20">
-                        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                        <DialogTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
                             <Tag className="h-5 w-5 text-primary" />
                             {editingPlan ? "Editar Plan" : "Nuevo Plan de Membresía"}
-                        </h2>
+                        </DialogTitle>
                     </div>
 
                     <div className="p-6 space-y-4">

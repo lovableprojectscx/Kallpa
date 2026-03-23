@@ -24,11 +24,18 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const [hasActiveSubscription, setHasActiveSubscription] = useState<boolean>(false);
     const [expirationDate, setExpirationDate] = useState<Date | null>(null);
     const [hasUsedTrial, setHasUsedTrial] = useState<boolean>(false);
-    // isLoading: true ONLY on the very first check (before any subscription data is known)
-    // After the first check, background re-checks are completely silent (no visible loading flash)
+    // isLoading=true solo en el primer chequeo (antes de conocer el estado de suscripción).
+    // Los re-chequeos posteriores son silenciosos para no mostrar un flash de pantalla negra.
     const [isLoading, setIsLoading] = useState(true);
     const [isInitialized, setIsInitialized] = useState(false);
 
+    /**
+     * Consulta todas las licencias del tenant y recalcula la fecha de expiración
+     * usando algoritmo de stacking (apilamiento):
+     * - Si la licencia se canjeó DESPUÉS de que expiró la anterior → nueva línea de tiempo.
+     * - Si se canjeó ANTES de que expire la anterior → se apila desde la fecha de expiración actual.
+     * Roles especiales (superadmin, staff) reciben suscripción perpetua al año 2099.
+     */
     const checkSubscription = async () => {
         try {
             if (!user || user.role === 'superadmin') {
@@ -57,7 +64,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 return;
             }
 
-            // Check for trial usage specifically
+            // Verificar si el tenant ya usó su trial
             const { data: trialData } = await supabase
                 .from('licenses')
                 .select('id')
@@ -68,13 +75,13 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
             setHasUsedTrial(!!trialData);
 
-            // Buscar todas las licencias del tenant para reconstruir la línea de tiempo (Stacking)
+            // Cargar todas las licencias canjeadas en orden ASCENDENTE para el stacking
             const { data: licenses, error } = await supabase
                 .from('licenses')
                 .select('*')
                 .eq('redeemed_by', user.tenantId)
                 .eq('status', 'redeemed')
-                .order('redeemed_at', { ascending: true }); // ASCENDING para procesar de más antigua a más reciente
+                .order('redeemed_at', { ascending: true });
 
             if (error) {
                 console.error("Error al verificar suscripción:", error);
@@ -89,21 +96,19 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                     const redeemedDate = new Date(license.redeemed_at);
                     const isTrial = license.duration_months === 0 || license.code?.startsWith('TRIAL-');
 
-                    // Base del apilamiento (Stacking)
-                    let startDate = new Date();
-
+                    // Determinar desde dónde apilar esta licencia
+                    let startDate: Date;
                     if (!currentExpiry || currentExpiry < redeemedDate) {
-                        // Compró después de un hueco sin suscripción (o es su primer plan)
+                        // Sin suscripción previa o hueco entre licencias: empieza desde el canje
                         startDate = new Date(redeemedDate);
                     } else {
-                        // Renovación temprana: el plan anterior aún estaba vigente. Apilamos.
+                        // Renovación temprana: apilamos desde la expiración actual
                         startDate = new Date(currentExpiry);
                     }
 
                     if (isTrial) {
                         startDate.setDate(startDate.getDate() + 3);
                     } else {
-                        // Apilar meses
                         startDate.setMonth(startDate.getMonth() + (license.duration_months || 0));
                     }
 
@@ -126,16 +131,15 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
             setHasActiveSubscription(false);
             setExpirationDate(null);
         } finally {
-            // Always mark as done — first or subsequent checks
             setIsLoading(false);
             setIsInitialized(true);
         }
     };
 
     useEffect(() => {
-        // Only show the blocking loader overlay on the VERY FIRST check.
-        // Subsequent re-checks (e.g. when user.tenantId changes after onboarding)
-        // run silently in the background without flashing a black screen.
+        // Solo mostrar el spinner bloqueante en el primer chequeo.
+        // Los re-chequeos (ej. después de onboarding cuando cambia tenantId)
+        // se ejecutan en silencio sin flashear pantalla negra.
         if (!isInitialized) {
             setIsLoading(true);
         }
@@ -143,6 +147,13 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id, user?.tenantId, user?.role, hasTenant]);
 
+    /**
+     * Activa la prueba gratuita de 3 días llamando a la función RPC `activate_gym_trial`.
+     * Guards:
+     * - Requiere usuario con tenant configurado.
+     * - Verifica que el trial no haya sido usado previamente (hasUsedTrial).
+     * Después de activar, recalcula la suscripción para reflejar el trial inmediatamente.
+     */
     const activateTrial = async (): Promise<boolean> => {
         if (!user || !user.tenantId) {
             toast.error("Debes tener un gimnasio configurado.");
@@ -174,6 +185,17 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
     };
 
+    /**
+     * Canjea un código de licencia para el tenant del usuario autenticado.
+     * Flujo:
+     * 1. Verifica que el código exista y esté disponible (status='available').
+     * 2. Actualiza el estado a 'redeemed' con doble check `.eq('status','available')`
+     *    para protección contra race conditions entre peticiones concurrentes.
+     * 3. Intenta otorgar créditos al afiliado que refirió al tenant (no crítico —
+     *    si falla, el canje sigue siendo válido).
+     * 4. Recalcula la suscripción desde la BD para reflejar el stacking real.
+     * Retorna true si el canje fue exitoso, false si falló.
+     */
     const redeemMembershipCode = async (code: string): Promise<boolean> => {
         if (!user || !user.tenantId) {
             toast.error("Debes tener un gimnasio configurado para canjear un código.");
@@ -190,10 +212,11 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 .single();
 
             if (fetchError || !license) {
+                toast.error("Código inválido o ya fue canjeado.");
                 return false;
             }
 
-            // 2. Marcar como canjeado
+            // 2. Marcar como canjeado (doble check de status para evitar race condition)
             const { error: updateError } = await supabase
                 .from('licenses')
                 .update({
@@ -202,13 +225,12 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                     redeemed_at: new Date().toISOString()
                 })
                 .eq('id', license.id)
-                .eq('status', 'available'); // Doble check de seguridad
+                .eq('status', 'available');
 
             if (updateError) throw updateError;
 
-            // 3. Award 1 credit to the affiliate who referred this tenant (if any)
+            // 3. Otorgar créditos al afiliado referidor (operación no crítica)
             try {
-                // Get the owner profile of this tenant (the current user)
                 const { data: ownerProfile } = await supabase
                     .from('profiles')
                     .select('referred_by')
@@ -216,7 +238,6 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                     .single();
 
                 if (ownerProfile?.referred_by) {
-                    // Find the affiliate record for the referrer
                     const { data: affiliateRecord } = await supabase
                         .from('affiliates')
                         .select('id, profile_id, credits_balance')
@@ -225,10 +246,8 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                         .single();
 
                     if (affiliateRecord) {
-                        // 100 créditos = 1 mes extra de suscripción
                         const dur = license.duration_months || 1;
                         const creditsToAdd = dur * 100;
-
                         const reasonText = `Referido activó ${dur} mes${dur > 1 ? 'es' : ''} → +${creditsToAdd} créditos (Tenant: ${user.tenantId})`;
 
                         const { error: rpcError } = await supabase.rpc('award_affiliate_credit_v2', {
@@ -242,7 +261,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
                     }
                 }
             } catch (creditError) {
-                // Non-critical: don't fail the whole redemption if credit awarding fails
+                // No crítico: no fallamos el canje si el crédito al afiliado falla
                 console.warn("Could not award affiliate credit:", creditError);
             }
 
@@ -255,10 +274,17 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
     };
 
+    /**
+     * Verifica si el usuario tiene suscripción activa.
+     * Si no la tiene, muestra un toast con acciones contextuales:
+     * - Si aún no usó el trial: ofrece activarlo directamente desde el toast.
+     * - Si ya lo usó: redirige a /subscription para comprar un plan PRO.
+     * Retorna true si tiene suscripción activa, false si no.
+     */
     const requireSubscription = (): boolean => {
         if (hasActiveSubscription || user?.role === 'superadmin') return true;
 
-        if (!hasUsedTrial && user?.role !== 'superadmin') {
+        if (!hasUsedTrial) {
             toast.error(
                 'Suscripción requerida — Tienes una prueba gratis disponible.',
                 {
@@ -311,6 +337,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     );
 };
 
+/** Hook para acceder al contexto de suscripción. Lanza si se usa fuera de SubscriptionProvider. */
 export const useSubscription = () => {
     const context = useContext(SubscriptionContext);
     if (context === undefined) {

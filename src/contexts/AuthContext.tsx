@@ -30,15 +30,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         let mounted = true;
 
-        // GLOBAL Safety timeout: si Supabase auth (getSession) se queda pensando
-        // o no responde, forzar isLoading = false para nunca dejar la web en blanco.
+        // Seguridad global: si Supabase no responde en 5 s, desbloquea la UI
+        // para evitar una pantalla en blanco indefinida.
         const globalTimeout = setTimeout(() => {
             if (mounted) {
-                console.warn("[AuthContext] Global Auth Initialization timed out – forcing isLoading=false");
+                console.warn("[AuthContext] Auth init timed out – forcing isLoading=false");
                 setIsLoading(false);
             }
         }, 5000);
 
+        /**
+         * Carga el perfil del usuario desde la tabla `profiles` y actualiza el estado global.
+         * - Si `sessionUser` es null, limpia el estado (sesión cerrada).
+         * - Si la query de perfil falla por un error distinto a "no rows" (PGRST116),
+         *   conserva el estado anterior para evitar un redirect falso a /onboarding.
+         * - Usa una comparación JSON para evitar re-renders innecesarios cuando los datos no cambian.
+         */
         const loadUserAndProfile = async (sessionUser: any) => {
             if (!sessionUser) {
                 if (mounted) {
@@ -57,7 +64,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     .single();
 
                 if (error && error.code !== 'PGRST116') {
+                    // Error de red u otro error no recuperable: conservar estado actual
+                    // para no resetear tenantId a null y evitar redirect falso a /onboarding.
                     console.error("Error loading profile:", error);
+                    if (mounted) {
+                        setIsLoading(false);
+                        clearTimeout(globalTimeout);
+                    }
+                    return;
                 }
 
                 if (mounted) {
@@ -85,19 +99,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
         };
 
-        // 1. Check active session on mount
+        /**
+         * Verifica si hay una sesión activa al montar el provider.
+         * Si la URL contiene un código OAuth (?code=) o un token (#access_token=),
+         * no hace getSession() manualmente — deja que `onAuthStateChange` lo maneje
+         * cuando Supabase termine de procesar el callback, evitando un redirect
+         * prematuro a /login durante el intercambio de tokens.
+         */
         const checkSession = async () => {
-            // CRITICAL FIX: If we are returning from Google OAuth, the URL will have ?code= or #access_token=
-            // Supabase needs a moment to exchange this code for a real session in the background.
-            // If we blindly call getSession() and immediately set user=null, AuthGuard will shoot them to /login,
-            // which can break the flow.
             const urlParams = new URLSearchParams(window.location.search);
             const isOAuthRedirect = urlParams.has('code') || window.location.hash.includes('access_token=');
 
             if (isOAuthRedirect) {
-                // Wait a bit before checking session manually, let onAuthStateChange (SIGNED_IN) handle it
-                // We keep isLoading=true so AuthGuard shows the spinner and doesn't redirect.
-                // WE MUST clear the 5 sec timeout, because OAuth callback parsing can be slow on slow networks!
                 clearTimeout(globalTimeout);
                 return;
             }
@@ -108,7 +121,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         checkSession();
 
-        // 2. Listen for auth changes.
+        /**
+         * Escucha cambios de sesión de Supabase en tiempo real.
+         * - SIGNED_IN / INITIAL_SESSION con sesión: activa isLoading=true
+         *   para que AuthGuard muestre el spinner mientras se carga el perfil.
+         * - SIGNED_OUT: limpia el estado via loadUserAndProfile(null).
+         * - TOKEN_REFRESHED e INITIAL_SESSION sin sesión: ignorados
+         *   (el token refresh no necesita recargar el perfil).
+         */
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             (event, session) => {
                 if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
@@ -116,9 +136,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         return;
                     }
 
-                    // CRITICAL FIX: If we just signed in (e.g., from Register.tsx calling signUp), 
-                    // we MUST set isLoading = true immediately so AuthGuard doesn't bounce the user 
-                    // to /login while loadUserAndProfile is fetching the DB profile.
                     if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
                         setIsLoading(true);
                     }
@@ -135,6 +152,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    /**
+     * Inicia sesión con email y contraseña.
+     * Carga el perfil directamente desde el resultado de signInWithPassword,
+     * sin depender de onAuthStateChange (que puede emitir TOKEN_REFRESHED en
+     * lugar de SIGNED_IN si el token ya era válido, causando un loading infinito).
+     * Retorna true si el login fue exitoso, false si hubo un error de credenciales.
+     */
     const login = async (email: string, password: string): Promise<boolean> => {
         setIsLoading(true);
         try {
@@ -143,14 +167,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.error("Login error:", error);
                 return false;
             }
-            // Load profile directly — don't depend on onAuthStateChange firing SIGNED_IN,
-            // which may not fire when re-logging in with an already-valid token (TOKEN_REFRESHED instead).
+
             if (data.user) {
-                const { data: profile } = await supabase
+                const { data: profile, error: profileError } = await supabase
                     .from('profiles')
                     .select('tenant_id, full_name, role')
                     .eq('id', data.user.id)
                     .single();
+
+                if (profileError && profileError.code !== 'PGRST116') {
+                    // Error al cargar perfil: el login fue exitoso en Auth pero no pudimos
+                    // obtener el perfil. Logueamos el error pero retornamos true igual —
+                    // el usuario entrará sin tenantId y será redirigido a /onboarding,
+                    // donde podrá completar su configuración.
+                    console.error("Profile load error after login:", profileError);
+                }
 
                 const newUser = {
                     id: data.user.id,
@@ -171,17 +202,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    /**
+     * Inicia el flujo de autenticación con Google OAuth.
+     * Siempre redirige a /dashboard después del callback — el router se encarga
+     * de redirigir al destino correcto según hasTenant y el rol del usuario.
+     * Lanza excepción si Supabase falla (para que el componente muestre un error).
+     */
     const loginWithGoogle = async () => {
         try {
-            // Always redirect to /dashboard after Google OAuth callback.
-            // Using the current page's origin ensures it works on both localhost and production.
-            // We intentionally do NOT use window.location.href as redirectTo because:
-            //   • If the user is already on /dashboard and re-authenticates (e.g. token expired),
-            //     redirecting back to /dashboard is correct.
-            //   • If they're on /login or /register we still want /dashboard (the app will
-            //     route them correctly based on hasTenant once loaded).
             const redirectTo = `${window.location.origin}/dashboard`;
-
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: { redirectTo }
@@ -196,6 +225,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    /**
+     * Actualiza el tenant_id del usuario tanto en la BD (tabla profiles) como en el estado local.
+     * Se llama desde Onboarding.tsx después de crear el tenant.
+     * Usa upsert con onConflict='id' para evitar race conditions en doble submit.
+     * Lanza excepción si la operación falla para que el llamador pueda manejarla.
+     */
     const setTenantId = async (id: string) => {
         if (!user) return;
 
@@ -222,14 +257,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    /**
+     * Cierra la sesión del usuario.
+     * Limpia el estado local ANTES de llamar a Supabase para evitar que la UI
+     * quede trabada si signOut falla (red caída, token ya inválido).
+     * Usa scope='local' para no invalidar otras pestañas abiertas del mismo usuario.
+     */
     const logout = async () => {
         try {
-            // Forzamos limpiar el estado local INMEDIATAMENTE para evitar que 
-            // la UI se quede trabada si Supabase signOut falla (por red o token inválido).
             setUser(null);
-
-            // Usamos local scope porque global puede fallar y trabar la app
-            // si el usuario tiene múltiples pestañas o la red falla.
             const { error } = await supabase.auth.signOut({ scope: 'local' });
             if (error) {
                 console.error("Supabase signOut error (token already invalid?):", error);
@@ -255,6 +291,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 };
 
+/** Hook para acceder al contexto de autenticación. Lanza si se usa fuera de AuthProvider. */
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (context === undefined) {

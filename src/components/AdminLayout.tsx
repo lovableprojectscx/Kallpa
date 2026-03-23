@@ -1,11 +1,15 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
-import { ShieldCheck } from "lucide-react";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
+/**
+ * Layout exclusivo del panel superadmin.
+ * Idéntico en estructura a `Layout`, pero usa `AdminSidebar` y un header
+ * con la etiqueta "Panel de Administración" en color coral para identificación visual.
+ */
 export function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <SidebarProvider>

@@ -8,6 +8,13 @@ interface SalesActivityProps {
   selectedDate: string; // YYYY-MM-DD
 }
 
+/**
+ * Lista de ventas/pagos del día seleccionado para el modo "Ventas" del Dashboard.
+ * Consulta la tabla `payments` por `payment_date` en el rango del día.
+ * Enriquece cada fila con el color del plan (segunda query a `membership_plans`).
+ * Muestra badge "NUEVO" para inscripciones nuevas (`payment_type === 'new'`).
+ * `keepPreviousData` evita parpadeo al cambiar la fecha seleccionada.
+ */
 export function SalesActivity({ selectedDate }: SalesActivityProps) {
   const { user } = useAuth();
 

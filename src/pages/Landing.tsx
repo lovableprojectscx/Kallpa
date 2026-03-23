@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { QrCode, TrendingUp, Brain, Users, ArrowRight, ShieldCheck, Zap, Activity, MessageCircle, Loader2 } from 'lucide-react';
@@ -7,13 +7,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 export default function Landing() {
-    const { isAuthenticated, hasTenant, isLoading } = useAuth();
+    const { isAuthenticated, hasTenant } = useAuth();
     const navigate = useNavigate();
 
     // Hemos removido la redirección automática a /dashboard.
     // Esto permite que usuarios logueados puedan ver la landing page tranquilamente.
     // Solo serán redirigidos si hacen clic explícitamente en "Ir a mi Panel" o "Ingresar".
 
+    /**
+     * Botón principal de acción (CTA).
+     * Si el usuario ya está autenticado, lo redirige a /dashboard o /onboarding según tenga tenant.
+     * Si no está autenticado, lo lleva al registro.
+     */
     const handleCTA = () => {
         if (isAuthenticated) {
             navigate(hasTenant ? '/dashboard' : '/onboarding');
@@ -22,6 +27,11 @@ export default function Landing() {
         navigate('/register');
     };
 
+    /**
+     * Botón "Ingresar" del navbar.
+     * Si ya está autenticado, redirige a /dashboard o /onboarding.
+     * Si no, lleva a /login.
+     */
     const handleLogin = () => {
         if (isAuthenticated) {
             navigate(hasTenant ? '/dashboard' : '/onboarding');

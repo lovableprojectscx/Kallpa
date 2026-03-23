@@ -2,7 +2,7 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import {
-    Gift, Copy, Share2, Loader2, Smartphone, Facebook, MessageCircle, Twitter,
+    Gift, Copy, Share2, Loader2, Smartphone, Facebook, Twitter,
     Users, CheckCircle2, Star, ChevronRight, Coins
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,13 @@ const Affiliate = () => {
     const [requestSent, setRequestSent] = useState(false);
     const [referralCodeInput, setReferralCodeInput] = useState("");
 
+    /**
+     * Carga completa del estado de afiliado del usuario actual.
+     * Combina datos de 4 tablas: `profiles` (referred_by, created_at),
+     * `affiliates` (código, créditos, status), `profiles` (referidos del afiliado),
+     * y `licenses` (activaciones de los referidos) para calcular stats completos.
+     * También determina `canEnterReferralCode` (ventana de 30 días desde registro).
+     */
     const { data: affiliateData, isLoading } = useQuery({
         queryKey: ['affiliate_full', user?.id],
         queryFn: async () => {
@@ -89,6 +96,11 @@ const Affiliate = () => {
         enabled: !!user?.id,
     });
 
+    /**
+     * Envía la solicitud para convertirse en afiliado/embajador.
+     * Genera un código aleatorio (GYM-XXXX-XXXX) e inserta en `affiliates` con status `pending`.
+     * El superadmin deberá aprobarla. Mientras está pendiente, se muestra el estado de revisión.
+     */
     const requestAffiliate = useMutation({
         mutationFn: async () => {
             if (!user?.id) throw new Error("Sin usuario");
@@ -108,6 +120,11 @@ const Affiliate = () => {
         onError: (e: any) => toast.error(e.message),
     });
 
+    /**
+     * Canjea créditos de afiliado por meses de suscripción para este tenant.
+     * Costo: 100 créditos por mes. Valida el saldo localmente antes de llamar al RPC
+     * `redeem_affiliate_credits` que descuenta créditos y extiende la suscripción en BD.
+     */
     const redeemCredits = useMutation({
         mutationFn: async (months: number) => {
             const cost = months * 100;
@@ -134,6 +151,12 @@ const Affiliate = () => {
         onError: (e: any) => toast.error(e.message),
     });
 
+    /**
+     * Aplica el código de referido de otro afiliado al perfil del usuario actual.
+     * Busca el afiliado por código, valida que no sea el mismo usuario,
+     * y actualiza `profiles.referred_by` con el ID del afiliado encontrado.
+     * Solo disponible en los primeros 30 días desde el registro (canEnterReferralCode).
+     */
     const submitReferralCode = useMutation({
         mutationFn: async (code: string) => {
             if (!user?.id) throw new Error("Sin usuario");
@@ -166,11 +189,13 @@ const Affiliate = () => {
         onError: (e: any) => toast.error(e.message),
     });
 
+    /** Copia el texto al portapapeles y muestra toast de confirmación. */
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
         toast.success("Copiado al portapapeles");
     };
 
+    /** Abre WhatsApp Web con mensaje pre-armado que incluye el código de embajador. */
     const shareWhatsApp = () => {
         const msg = `¡Eleva la gestión de tu gimnasio con KALLPA! Úsame como referido al registrarte y actívate con mi código: ${affiliateData?.code} 💪 👉 https://kallpa.site/`;
         window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
@@ -186,6 +211,10 @@ const Affiliate = () => {
         );
     }
 
+    /**
+     * Renderiza el panel para ingresar el código de un afiliado que refirió al usuario.
+     * Solo visible si `canEnterReferralCode` es true (usuario sin referido previo y dentro de 30 días).
+     */
     const renderReferralCodeSection = () => {
         if (!affiliateData?.canEnterReferralCode) return null;
 

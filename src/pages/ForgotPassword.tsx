@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Dumbbell, Mail, Loader2, ArrowRight } from "lucide-react";
+import { Mail, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,11 @@ const ForgotPassword = () => {
     const [isSent, setIsSent] = useState(false);
     const navigate = useNavigate();
 
+    /**
+     * Envía el email de recuperación de contraseña usando Supabase Auth.
+     * El enlace redirige a `/update-password` donde el usuario establece su nueva contraseña.
+     * Supabase no confirma si el email existe o no por seguridad — siempre muestra éxito.
+     */
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email) {

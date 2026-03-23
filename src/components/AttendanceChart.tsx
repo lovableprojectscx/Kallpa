@@ -6,6 +6,12 @@ import { Loader2 } from "lucide-react";
 
 const hours = ["6am", "7am", "8am", "9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm", "5pm", "6pm", "7pm", "8pm", "9pm"];
 
+/**
+ * Gráfico de barras de asistencia del día actual, distribuido por franjas horarias (6am–9pm).
+ * Consulta `attendance` filtrando desde el inicio del día local y agrupa los registros por hora.
+ * Se auto-refresca cada 10s silenciosamente. `keepPreviousData` evita colapso de barras durante el refresco.
+ * El `maxVal` mínimo es 2 para que las barras nunca dividan entre cero con datos vacíos.
+ */
 export function AttendanceChart() {
   const { user } = useAuth();
 

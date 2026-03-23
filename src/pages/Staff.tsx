@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Users, UserPlus, Shield, Search, Trash2, Mail, Clock } from "lucide-react";
+import { UserPlus, Shield, Search, Trash2, Mail, Clock } from "lucide-react";
 
 const Staff = () => {
     const { user } = useAuth();
@@ -38,7 +38,13 @@ const Staff = () => {
         enabled: !!user?.tenantId
     });
 
-    // INVITE STAFF — envía email de invitación via Edge Function
+    /**
+     * Invita a un nuevo recepcionista llamando a la Edge Function `invite-staff-member`.
+     * La función determina si el email ya tiene cuenta:
+     * - Si ya existe: lo vincula al tenant (status: 'linked').
+     * - Si no existe: envía email con link de activación para crear contraseña.
+     * El staff usa email fake `username@staff.kallpa.site` como diseño conocido.
+     */
     const createStaff = useMutation({
         mutationFn: async () => {
             if (!fullName || !staffEmail) throw new Error("Completa nombre y email.");
@@ -79,7 +85,11 @@ const Staff = () => {
         s.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // DELETE STAFF
+    /**
+     * Revoca el acceso de un recepcionista al sistema.
+     * Llama al RPC `remove_staff_member` que verifica tenant_id antes de operar.
+     * La acción es reversible — el admin puede invitar de nuevo al mismo email.
+     */
     const deleteStaff = useMutation({
         mutationFn: async (staffId: string) => {
             if (!user?.tenantId) throw new Error("Sin empresa configurada.");
@@ -243,10 +253,10 @@ const Staff = () => {
             <Dialog open={isNewStaffOpen} onOpenChange={setIsNewStaffOpen}>
                 <DialogContent className="sm:max-w-[450px] p-0 border-border/50 bg-card rounded-2xl overflow-hidden shadow-2xl">
                     <div className="px-6 py-6 border-b border-border/50 bg-secondary/20">
-                        <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                        <DialogTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
                             <Mail className="h-5 w-5 text-primary" />
                             Invitar Empleado
-                        </h2>
+                        </DialogTitle>
                         <p className="text-sm text-muted-foreground mt-1">
                             Ingresa el email del recepcionista. Recibirá un link para crear su propia contraseña de acceso.
                         </p>

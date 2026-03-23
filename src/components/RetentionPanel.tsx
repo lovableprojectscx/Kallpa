@@ -4,9 +4,15 @@ import { AlertTriangle, Clock, MessageSquare, Loader2, ShieldCheck } from "lucid
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import { differenceInDays, formatDistanceToNow } from "date-fns";
-import { es } from "date-fns/locale";
 
+/**
+ * Panel de miembros en riesgo de abandono, visible en Dashboard y página de Retención.
+ * Llama al RPC `get_retention_risk_members` con umbral de 7 días de inactividad.
+ * El RPC devuelve los campos pre-calculados: `name`, `avatar`, `lastVisit`, `daysAway`,
+ * `phone` y `neverAttended` — por eso no se necesitan utilidades de date-fns aquí.
+ * El botón de reenganche abre WhatsApp con un mensaje diferenciado según si el miembro
+ * nunca asistió o simplemente dejó de ir.
+ */
 export function RetentionPanel() {
   const { user } = useAuth();
 

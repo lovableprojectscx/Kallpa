@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Dumbbell, Eye, EyeOff, Mail, Lock, Loader2, ArrowRight, User, Gift } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Loader2, ArrowRight, User, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,15 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 
+/**
+ * Página de registro de nuevos propietarios de gimnasio.
+ * Flujo:
+ * 1. Registra al usuario en Supabase Auth con email/contraseña.
+ * 2. Si se proporcionó un código de referido, lo vincula en la tabla profiles.
+ * 3. Si signUp devuelve sesión directamente, navega a /onboarding.
+ *    Si no (config de confirmación de email), hace signIn manual silencioso.
+ * También permite registro con Google OAuth.
+ */
 const Register = () => {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -21,7 +30,10 @@ const Register = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
 
-    // Redirigir si el usuario ya está autenticado (protección segura)
+    /**
+     * Redirige si el usuario ya tiene sesión activa.
+     * Corre cuando isLoading pasa a false (auth inicializado).
+     */
     useEffect(() => {
         if (!isLoading && isAuthenticated && user) {
             if (user.role === 'superadmin') navigate('/admin', { replace: true });
@@ -30,16 +42,23 @@ const Register = () => {
         }
     }, [isLoading, isAuthenticated, user, navigate]);
 
-    React.useEffect(() => {
+    /** Pre-rellena el campo de referido si la URL contiene ?ref=CODIGO. */
+    useEffect(() => {
         const ref = searchParams.get("ref");
         if (ref) {
             setReferralCode(ref.toUpperCase());
         }
     }, [searchParams]);
 
+    /**
+     * Maneja el submit del formulario de registro.
+     * Valida campos mínimos, registra en Auth, vincula afiliado si hay código,
+     * e inicia sesión automáticamente navegando a /onboarding.
+     */
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!email || !password || !name) {
+
+        if (!name.trim() || !email || !password) {
             toast.error("Por favor completa todos los campos requeridos");
             return;
         }
@@ -51,13 +70,13 @@ const Register = () => {
 
         setIsSubmitting(true);
         try {
-            // 1. SignUp en Supabase Auth
+            // 1. Registrar en Supabase Auth
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
                     data: {
-                        name: name, // Se guarda en user_metadata
+                        name: name.trim(), // Se guarda en user_metadata y AuthContext lo lee
                     }
                 }
             });
@@ -68,7 +87,7 @@ const Register = () => {
             }
 
             if (data.user) {
-                // Enlazar código de referido si se proporciona
+                // 2. Vincular código de referido si se proporcionó
                 if (referralCode.trim()) {
                     try {
                         const { data: aff } = await supabase
@@ -84,17 +103,17 @@ const Register = () => {
                                 .eq('id', data.user.id);
                         }
                     } catch (err) {
+                        // No crítico: el registro sigue siendo válido sin afiliado
                         console.error("Error linking affiliate:", err);
                     }
                 }
 
-                // Iniciar sesión automáticamente después del registro
-                // Nota: SignUp ya devuelve una sesión si el correo no requiere confirmación
+                // 3. Si signUp devolvió sesión, navegar directamente a onboarding
                 if (data.session) {
                     toast.success("¡Bienvenido a KALLPA! Tu cuenta ha sido creada.");
                     navigate("/onboarding", { replace: true });
                 } else {
-                    // Si por alguna razón no hay sesión (ej. config cambió), intentamos login manual silencioso
+                    // Supabase requiere confirmación de email: intentar login silencioso
                     const { error: loginError } = await supabase.auth.signInWithPassword({
                         email,
                         password,

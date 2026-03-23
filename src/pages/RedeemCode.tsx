@@ -17,6 +17,11 @@ const RedeemCode = () => {
     const { user } = useAuth();
     const queryClient = useQueryClient();
 
+    /**
+     * Canjea un código de licencia/membresía ingresado por el usuario.
+     * Delega en `redeemMembershipCode` del contexto (que muestra sus propios toasts de error).
+     * Solo muestra toast de éxito aquí para no duplicar mensajes.
+     */
     const handleRedeem = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!code.trim()) {
@@ -33,12 +38,14 @@ const RedeemCode = () => {
             setRedeemed(true);
             queryClient.invalidateQueries({ queryKey: ['affiliate_credits'] });
             toast.success("¡Código canjeado con éxito! Plataforma desbloqueada.");
-        } else {
-            toast.error("Código inválido. Por favor intenta de nuevo.");
         }
+        // No mostrar toast de error aquí — redeemMembershipCode ya lo hace internamente
     };
 
-    // Fetch affiliate credits for this user
+    /**
+     * Obtiene los créditos de afiliado del usuario actual (solo si tiene estado 'active').
+     * Se usa para mostrar el panel de canje de créditos por meses de suscripción.
+     */
     const { data: affiliateData } = useQuery({
         queryKey: ['affiliate_credits', user?.id],
         queryFn: async () => {
@@ -56,6 +63,12 @@ const RedeemCode = () => {
 
     const CREDITS_PER_MONTH = 100;
 
+    /**
+     * Canjea 100 créditos de afiliado por 1 mes extra de suscripción.
+     * Descuenta directamente en `affiliates.credits_balance`, registra el canje en
+     * `affiliate_credit_redemptions` e inserta una nueva licencia ya canjeada para que
+     * el motor de stacking de SubscriptionContext la acumule correctamente.
+     */
     const redeemCredits = useMutation({
         mutationFn: async () => {
             const balance = affiliateData?.credits_balance || 0;

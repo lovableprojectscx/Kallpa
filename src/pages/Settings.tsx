@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2, Globe, Shield,
-  Instagram, Facebook, Clock, Key, Loader2, Users, MessageCircle
+  Instagram, Facebook, Clock, Key, Loader2, Users, MessageCircle, CreditCard, Eye, EyeOff, CheckCircle2, Copy, Link2
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
@@ -21,7 +21,7 @@ import Staff from "./Staff";
 
 const Settings = () => {
   const { user, logout } = useAuth();
-  const { hasActiveSubscription, expirationDate, redeemMembershipCode, checkSubscription } = useSubscription();
+  const { hasActiveSubscription, expirationDate, redeemMembershipCode } = useSubscription();
   const queryClient = useQueryClient();
 
   // License State
@@ -39,6 +39,14 @@ const Settings = () => {
   const [gymInstagram, setGymInstagram] = useState("");
   const [gymFacebook, setGymFacebook] = useState("");
   const [gymWeb, setGymWeb] = useState("");
+
+  // Página pública State
+  const [gymSlug, setGymSlug] = useState("");
+
+  // Pagos State
+  const [mpToken, setMpToken] = useState("");
+  const [showMpToken, setShowMpToken] = useState(false);
+  const [savingMpToken, setSavingMpToken] = useState(false);
 
   // Schedule State
   const defaultSchedule = [
@@ -79,12 +87,14 @@ const Settings = () => {
       const setE = settingsResponse.error;
 
       if (setE && setE.code === 'PGRST116') {
+        // Usar upsert para tolerar race conditions si la fila se crea entre
+        // el SELECT que devolvió PGRST116 y este insert (ej. onboarding paralelo)
         const { data: newSettings, error: insertE } = await supabase
           .from('gym_settings')
-          .insert({
+          .upsert({
             tenant_id: user.tenantId,
             gym_name: tenant?.name || 'Mi Gimnasio'
-          })
+          }, { onConflict: 'tenant_id' })
           .select().single();
 
         if (insertE) {
@@ -135,6 +145,8 @@ const Settings = () => {
       if (tenantData.settings?.operating_hours) {
         setSchedule(tenantData.settings.operating_hours);
       }
+      setMpToken((tenantData.settings as any)?.mp_access_token || "");
+      setGymSlug((tenantData.settings as any)?.slug || "");
     }
   }, [tenantData]);
 
@@ -143,6 +155,13 @@ const Settings = () => {
     mutationFn: async () => {
       if (!user?.tenantId) throw new Error("No Tenant");
       await supabase.from('tenants').update({ name: gymName }).eq('id', user.tenantId);
+
+      // Sanitiza el slug: solo letras, números y guiones, sin mayúsculas
+      const sanitizedSlug = gymSlug
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "") || null;
 
       const settingsPayload = {
         tenant_id: user.tenantId,
@@ -153,7 +172,8 @@ const Settings = () => {
         address: gymAddress,
         timezone: gymTimeZone,
         social_media: { instagram: gymInstagram, facebook: gymFacebook, website: gymWeb },
-        operating_hours: schedule
+        operating_hours: schedule,
+        slug: sanitizedSlug,
       };
 
       const settingsId = tenantData?.settings?.id;
@@ -163,8 +183,8 @@ const Settings = () => {
         // La fila existe — actualizar por id (seguro, sin necesitar UNIQUE constraint)
         ({ error } = await supabase.from('gym_settings').update(settingsPayload).eq('id', settingsId));
       } else {
-        // No existe todavía — insertar
-        ({ error } = await supabase.from('gym_settings').insert(settingsPayload));
+        // No existe todavía — upsert para evitar race conditions
+        ({ error } = await supabase.from('gym_settings').upsert(settingsPayload, { onConflict: 'tenant_id' }));
       }
 
       if (error) throw error;
@@ -179,6 +199,11 @@ const Settings = () => {
     }
   });
 
+  /**
+   * Canjea un código de licencia ingresado manualmente.
+   * Los toasts de error los maneja `redeemMembershipCode` internamente.
+   * Solo mostramos toast de éxito aquí para no duplicar mensajes.
+   */
   const handleRedeem = async () => {
     if (!licenseCode.trim()) {
       toast.error("Ingresa un código válido");
@@ -189,12 +214,18 @@ const Settings = () => {
     if (success) {
       toast.success("¡Licencia canjeada con éxito!");
       setLicenseCode("");
-    } else {
-      toast.error("El código no es válido o ya fue canjeado");
     }
+    // No mostrar toast de error aquí — redeemMembershipCode ya lo hace internamente
     setIsRedeeming(false);
   };
 
+  /**
+   * Inicia el proceso de compra de licencia via Mercado Pago.
+   * Obtiene el token de sesión actual y llama a la Edge Function `create-mp-preference-v3`
+   * con la duración y precio seleccionados. Si la preferencia se crea correctamente,
+   * redirige al checkout de Mercado Pago (init_point).
+   * Comparte el estado `isRedeeming` con `handleRedeem` para deshabilitar ambos botones.
+   */
   const handleBuyLicense = async (months: number, price: number) => {
     if (!user?.tenantId) return;
     setIsRedeeming(true);
@@ -238,6 +269,36 @@ const Settings = () => {
       toast.error("Error de conexión: " + err.message);
     } finally {
       setIsRedeeming(false);
+    }
+  };
+
+  /**
+   * Guarda el MP Access Token del gym en `gym_settings.mp_access_token`.
+   * Este token es el que Kallpa usará para crear preferencias de pago en nombre
+   * del gym. El dinero de los miembros va directo a la cuenta MP del dueño.
+   * Separado del `updateSettings` para evitar sobreescribir otros campos accidentalmente.
+   */
+  const handleSaveMpToken = async () => {
+    if (!user?.tenantId) return;
+    setSavingMpToken(true);
+    try {
+      const settingsId = tenantData?.settings?.id;
+      let error;
+      if (settingsId) {
+        ({ error } = await supabase.from('gym_settings')
+          .update({ mp_access_token: mpToken.trim() || null })
+          .eq('id', settingsId));
+      } else {
+        ({ error } = await supabase.from('gym_settings')
+          .upsert({ tenant_id: user.tenantId, mp_access_token: mpToken.trim() || null }, { onConflict: 'tenant_id' }));
+      }
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ['tenant_settings'] });
+      toast.success("Token de Mercado Pago guardado correctamente");
+    } catch (e: any) {
+      toast.error("Error al guardar: " + e.message);
+    } finally {
+      setSavingMpToken(false);
     }
   };
 
@@ -302,6 +363,9 @@ const Settings = () => {
             </TabsTrigger>
             <TabsTrigger value="license" className="flex-1 sm:flex-none rounded-lg py-2 px-2 sm:px-4 text-[10px] sm:text-xs font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
               <Shield className="h-3.5 w-3.5 mr-1 sm:mr-2" /> Licencia
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="flex-1 sm:flex-none rounded-lg py-2 px-2 sm:px-4 text-[10px] sm:text-xs font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
+              <CreditCard className="h-3.5 w-3.5 mr-1 sm:mr-2" /> Pagos
             </TabsTrigger>
             <TabsTrigger value="security" className="flex-1 sm:flex-none rounded-lg py-2 px-2 sm:px-4 text-[10px] sm:text-xs font-medium data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-sm">
               <Key className="h-3.5 w-3.5 mr-1 sm:mr-2" /> Seguridad
@@ -368,6 +432,50 @@ const Settings = () => {
                       <div className="space-y-2">
                         <Label htmlFor="g-addr">Dirección Exacta</Label>
                         <Input id="g-addr" value={gymAddress} onChange={e => setGymAddress(e.target.value)} placeholder="Ej. Av Libertad 123..." className="bg-secondary/20" />
+                      </div>
+
+                      {/* URL Pública del Gym */}
+                      <div className="space-y-2">
+                        <Label htmlFor="g-slug" className="flex items-center gap-2">
+                          <Link2 className="h-3.5 w-3.5 text-primary" />
+                          URL Pública del Gym
+                        </Label>
+                        <div className="flex gap-2">
+                          <div className="flex items-center rounded-md border border-input bg-secondary/10 px-3 text-xs text-muted-foreground shrink-0 select-none">
+                            /g/
+                          </div>
+                          <Input
+                            id="g-slug"
+                            value={gymSlug}
+                            onChange={e => setGymSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))}
+                            placeholder="mi-gimnasio"
+                            className="bg-secondary/20 font-mono flex-1"
+                          />
+                        </div>
+                        {gymSlug && (
+                          <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-secondary/30 border border-border/50">
+                            <p className="text-xs font-mono text-muted-foreground truncate">
+                              {window.location.origin}/g/{gymSlug.toLowerCase().replace(/[^a-z0-9-]/g, "-")}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const url = `${window.location.origin}/g/${gymSlug.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`;
+                                navigator.clipboard.writeText(url).then(() => {
+                                  toast.success("Link copiado al portapapeles");
+                                });
+                              }}
+                              className="shrink-0 text-muted-foreground hover:text-primary transition-colors"
+                              title="Copiar link"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          Esta es la página pública de tu gym donde los clientes potenciales ven tus planes y horarios.
+                          Solo letras, números y guiones.
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="g-tz">Zona Horaria (Timezone)</Label>
@@ -615,6 +723,97 @@ const Settings = () => {
                   </div>
                 </CardContent>
               </Card>
+            </motion.div>
+          </TabsContent>
+
+          {/* PAGOS ONLINE */}
+          <TabsContent value="payments" className="space-y-4 focus-visible:outline-none">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <div className="grid gap-6 lg:grid-cols-2">
+                <Card className="border-border/50 bg-card/50 shadow-sm">
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-lg">Pagos Online de Miembros</CardTitle>
+                    </div>
+                    <CardDescription>
+                      Permite que tus miembros renueven su membresía desde su portal con Mercado Pago.
+                      El dinero va <strong>directo a tu cuenta</strong> — sin intermediarios.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-5">
+                    <div className="space-y-2">
+                      <Label htmlFor="mp-token" className="text-primary font-semibold flex items-center gap-2">
+                        <CreditCard className="h-4 w-4" />
+                        Access Token de Mercado Pago
+                      </Label>
+                      <div className="relative flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            id="mp-token"
+                            type={showMpToken ? "text" : "password"}
+                            value={mpToken}
+                            onChange={e => setMpToken(e.target.value)}
+                            placeholder="APP_USR-XXXXXXXXXXXXXXXX-..."
+                            className="w-full rounded-md border border-input bg-secondary/20 px-3 py-2 text-sm font-mono pr-10 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowMpToken(v => !v)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            {showMpToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                        <Button
+                          onClick={handleSaveMpToken}
+                          disabled={savingMpToken}
+                          className="shrink-0 bg-primary text-primary-foreground hover:opacity-90"
+                        >
+                          {savingMpToken ? <Loader2 className="h-4 w-4 animate-spin" /> : "Guardar"}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Usa el <strong>Access Token de producción</strong> de tu cuenta de Mercado Pago
+                        (empieza con <code className="bg-secondary px-1 rounded text-[11px]">APP_USR-</code>).
+                        Encuéntralo en{" "}
+                        <span className="text-primary font-medium">mercadopago.com → Credenciales de producción</span>.
+                      </p>
+                    </div>
+
+                    {mpToken && (
+                      <div className="flex items-center gap-2 p-3 rounded-lg bg-success/10 border border-success/20">
+                        <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
+                        <p className="text-xs text-success font-medium">Pagos online configurados. Tus miembros ya pueden pagar desde su portal.</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="border-border/50 bg-card/50 shadow-sm h-fit">
+                  <CardHeader>
+                    <CardTitle className="text-base">¿Cómo funciona?</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4 text-sm text-muted-foreground">
+                    {[
+                      { n: "1", text: "Tu miembro entra a su portal y elige un plan" },
+                      { n: "2", text: "Se redirige al checkout de Mercado Pago" },
+                      { n: "3", text: "Paga con tarjeta, Yape, transferencia, etc." },
+                      { n: "4", text: "El dinero va directo a tu cuenta MP" },
+                      { n: "5", text: "El sistema extiende su membresía automáticamente" },
+                    ].map(item => (
+                      <div key={item.n} className="flex items-start gap-3">
+                        <div className="h-6 w-6 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center shrink-0">{item.n}</div>
+                        <p>{item.text}</p>
+                      </div>
+                    ))}
+                    <div className="mt-4 p-3 rounded-lg bg-secondary/50 border border-border/50">
+                      <p className="text-xs font-medium text-foreground">Sin comisiones de plataforma adicionales.</p>
+                      <p className="text-xs mt-1">Solo pagas la comisión estándar de Mercado Pago (~3.49% en Perú).</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </motion.div>
           </TabsContent>
 

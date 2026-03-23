@@ -1,60 +1,56 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { LucideIcon, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { LucideIcon } from "lucide-react";
 
 interface StatCardProps {
   title: string;
   value: string;
-  change?: string;
-  changeType?: "positive" | "negative" | "neutral";
-  icon: LucideIcon;
   subtitle?: string;
-  comparisonLabel?: string;
+  icon: LucideIcon;
+  /** positive = verde, negative = rojo, neutral = gris, warning = ámbar */
+  accent?: "positive" | "negative" | "warning" | "neutral";
 }
 
-export function StatCard({ title, value, change, changeType = "neutral", icon: Icon, subtitle, comparisonLabel }: StatCardProps) {
+const accentStyles = {
+  positive: { wrap: "border-emerald-500/20 bg-emerald-500/5", icon: "bg-emerald-500/15 text-emerald-400", value: "text-foreground" },
+  negative: { wrap: "border-red-500/20 bg-red-500/5",       icon: "bg-red-500/15 text-red-400",       value: "text-red-400" },
+  warning:  { wrap: "border-amber-500/20 bg-amber-500/5",   icon: "bg-amber-500/15 text-amber-400",   value: "text-foreground" },
+  neutral:  { wrap: "border-border/40 bg-card",             icon: "bg-secondary/60 text-muted-foreground", value: "text-foreground" },
+};
+
+/**
+ * Tarjeta de métrica minimalista.
+ * Solo muestra lo esencial: título, número principal, subtítulo e ícono.
+ * Sin badges de tendencia ni etiquetas adicionales que confundan.
+ */
+export function StatCard({ title, value, subtitle, icon: Icon, accent = "neutral" }: StatCardProps) {
+  const s = accentStyles[accent];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-      className="group rounded-2xl border border-border/40 bg-card p-3 sm:p-4 transition-smooth hover:border-border hover:shadow-xl hover:shadow-primary/5"
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      className={cn(
+        "rounded-2xl border p-4 sm:p-5 transition-all hover:shadow-md",
+        s.wrap
+      )}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex flex-col gap-0.5 w-full overflow-hidden">
-          <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.05em] text-muted-foreground/70" title={title}>{title}</span>
-          <div className="flex items-baseline gap-2">
-            <span className="stat-number text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-foreground tracking-tight" title={value}>{value}</span>
-          </div>
-          {subtitle && (
-            <span className="text-[9px] sm:text-[10px] text-muted-foreground/60 font-medium leading-tight" title={subtitle}>
-              {subtitle}
-            </span>
-          )}
-        </div>
-        <div className="flex h-7 w-7 sm:h-8 sm:w-8 md:h-9 md:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-secondary/50 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all duration-300">
-          <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider leading-tight">
+          {title}
+        </p>
+        <div className={cn("h-8 w-8 rounded-xl flex items-center justify-center shrink-0", s.icon)}>
+          <Icon className="h-4 w-4" />
         </div>
       </div>
 
-      {change !== undefined && (
-        <div className="mt-2.5 flex items-center gap-2">
-          <div className={cn(
-            "flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold",
-            changeType === "positive" && "bg-primary/10 text-primary",
-            changeType === "negative" && "bg-coral/10 text-coral",
-            changeType === "neutral" && "bg-secondary text-muted-foreground"
-          )}>
-            {changeType === "positive" && <TrendingUp className="h-3 w-3" />}
-            {changeType === "negative" && <TrendingDown className="h-3 w-3" />}
-            {change}
-          </div>
-          {comparisonLabel && (
-            <span className="text-[10px] font-medium text-muted-foreground/50 uppercase tracking-wider">
-              {comparisonLabel}
-            </span>
-          )}
-        </div>
+      <p className={cn("text-2xl sm:text-3xl font-bold tracking-tight leading-none", s.value)}>
+        {value}
+      </p>
+
+      {subtitle && (
+        <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug">{subtitle}</p>
       )}
     </motion.div>
   );

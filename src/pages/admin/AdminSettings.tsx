@@ -3,7 +3,7 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { Loader2, Save, ShieldCheck, KeyRound, Mail, User } from "lucide-react";
+import { Loader2, Save, ShieldCheck, Mail, User } from "lucide-react";
 
 export default function AdminSettings() {
     const { user } = useAuth();
@@ -15,6 +15,7 @@ export default function AdminSettings() {
         confirmPassword: ""
     });
 
+    /** Pre-rellena el formulario con el nombre y email del superadmin cuando el perfil está disponible. */
     useEffect(() => {
         if (user) {
             setFormData(prev => ({
@@ -25,6 +26,13 @@ export default function AdminSettings() {
         }
     }, [user]);
 
+    /**
+     * Guarda los cambios del perfil del superadmin.
+     * 1. Si el nombre cambió → actualiza `profiles.full_name` y `auth.user_metadata`.
+     * 2. Si se proporcionó contraseña → valida coincidencia y mínimo 6 caracteres,
+     *    luego llama a `supabase.auth.updateUser({ password })`.
+     * Nota: los campos de contraseña están pendientes de renderizar en el formulario.
+     */
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);

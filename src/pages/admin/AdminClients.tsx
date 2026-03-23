@@ -33,25 +33,34 @@ const AdminClients = () => {
         // Buscar el perfil de admin principal para este gimnasio
         const adminProfile = tenant.profiles?.find((p: any) => p.role === 'admin' || p.role === 'superadmin') || tenant.profiles?.[0];
 
-        // Obtener la licencia activa o más reciente
-        // Ordenamos las licencias por fecha de canje descendente
-        const tenantLicenses = tenant.licenses || [];
+        // Calcular expiración real con stacking (igual que SubscriptionContext)
+        // Las licencias se procesan en orden ASCENDENTE para apilar correctamente
+        const tenantLicenses = (tenant.licenses || []).filter((l: any) => l.redeemed_at);
         tenantLicenses.sort((a: any, b: any) =>
-          new Date(b.redeemed_at).getTime() - new Date(a.redeemed_at).getTime()
+          new Date(a.redeemed_at).getTime() - new Date(b.redeemed_at).getTime()
         );
-        const currentLicense = tenantLicenses[0];
 
-        // Determinar estado de la licencia (si ha expirado dependiendo de los meses)
         let status = "expired";
-        let expirationDate = null;
-        if (currentLicense && currentLicense.redeemed_at) {
-          const redeemedDate = new Date(currentLicense.redeemed_at);
-          const expiryDate = new Date(redeemedDate);
-          expiryDate.setMonth(expiryDate.getMonth() + currentLicense.duration_months);
-          expirationDate = expiryDate;
-          if (expirationDate > new Date()) {
-            status = "active";
+        let currentExpiry: Date | null = null;
+        for (const license of tenantLicenses) {
+          const redeemedDate = new Date(license.redeemed_at);
+          const isTrial = license.duration_months === 0 || license.code?.startsWith('TRIAL-');
+          let startDate: Date;
+          if (!currentExpiry || currentExpiry < redeemedDate) {
+            startDate = new Date(redeemedDate);
+          } else {
+            startDate = new Date(currentExpiry);
           }
+          if (isTrial) {
+            startDate.setDate(startDate.getDate() + 3);
+          } else {
+            startDate.setMonth(startDate.getMonth() + (license.duration_months || 0));
+          }
+          currentExpiry = startDate;
+        }
+        const expirationDate = currentExpiry;
+        if (expirationDate && expirationDate > new Date()) {
+          status = "active";
         }
 
         return {
@@ -59,15 +68,15 @@ const AdminClients = () => {
           name: tenant.name || "Gimnasio sin nombre",
           email: adminProfile?.email || "Sin correo",
           role: adminProfile?.role || 'user',
-          license: currentLicense?.code || "Sin Licencia",
+          license: tenantLicenses[tenantLicenses.length - 1]?.code || "Sin Licencia",
           status: status,
           since: new Date(tenant.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }),
           referredBy: null // A implementar en módulo de afiliados
         };
       });
 
-      // Filtramos para limpiar la tabla
-      return mappedData.filter((c: any) => c.email !== "Sin correo" && c.role !== "superadmin");
+      // Solo excluimos al propio superadmin
+      return mappedData.filter((c: any) => c.role !== "superadmin");
     }
   });
 

@@ -1,5 +1,4 @@
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar,
@@ -10,7 +9,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard,
@@ -19,10 +17,11 @@ import {
   CreditCard,
   Bell,
   Settings,
-  Dumbbell,
   Gift,
   Tags,
   LogOut,
+  CalendarDays,
+  Banknote,
 } from "lucide-react";
 
 const mainNav = [
@@ -30,7 +29,9 @@ const mainNav = [
   { title: "Terminal", url: "/terminal", icon: ScanLine },
   { title: "Miembros", url: "/members", icon: Users },
   { title: "Planes", url: "/plans", icon: Tags },
+  { title: "Clases", url: "/classes", icon: CalendarDays },
   { title: "Retención", url: "/retention", icon: Bell },
+  { title: "Pagos", url: "/payments", icon: Banknote },
 ];
 
 const secondaryNav = [
@@ -40,8 +41,14 @@ const secondaryNav = [
 ];
 
 
+/**
+ * Barra lateral de navegación para el panel del administrador de gimnasio.
+ * Divide los ítems en dos grupos:
+ * - `mainNav`: rutas principales (Dashboard, Terminal, Miembros, Planes, Retención).
+ * - `secondaryNav`: rutas secundarias (Planes PRO, Afiliados, Ajustes) + botón Cerrar Sesión.
+ * Usa `NavLink` personalizado que aplica `activeClassName` según la ruta activa.
+ */
 export function AppSidebar() {
-  const location = useLocation();
   const { logout } = useAuth();
 
   return (

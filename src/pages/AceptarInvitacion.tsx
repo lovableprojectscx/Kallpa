@@ -13,6 +13,11 @@ export default function AceptarInvitacion() {
     const [loading, setLoading] = useState(false);
     const [done, setDone] = useState(false);
 
+    /**
+     * Verifica al montar que la URL contiene `#access_token`, lo que indica que el link
+     * de invitación es válido. Supabase incluye este hash en el redirect de `invite`.
+     * Si no está presente, muestra un toast de error (el usuario llegó por URL inválida).
+     */
     useEffect(() => {
         // Supabase redirige con #access_token en la URL al aceptar invitación
         const hash = window.location.hash;
@@ -21,6 +26,15 @@ export default function AceptarInvitacion() {
         }
     }, []);
 
+    /**
+     * Establece la contraseña del nuevo recepcionista y activa su cuenta.
+     * Flujo:
+     * 1. Valida mínimo 6 caracteres y que ambas contraseñas coincidan.
+     * 2. Llama a `supabase.auth.updateUser` con la nueva contraseña.
+     * 3. Lee `user_metadata` del token para obtener `tenant_id` y `full_name`.
+     * 4. Hace upsert en `profiles` para confirmar rol staff y status active.
+     * 5. Guarda `staff_tenant_id` en sessionStorage y redirige a /recepcion.
+     */
     const handleSetPassword = async (e: React.FormEvent) => {
         e.preventDefault();
         if (password.length < 6) { toast.error("La contraseña debe tener al menos 6 caracteres."); return; }

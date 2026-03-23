@@ -7,15 +7,24 @@ type AuthGuardProps = {
     children: React.ReactNode;
 }
 
+/**
+ * Guard de autenticación para rutas del panel principal (admin/staff).
+ *
+ * Orden de evaluación:
+ * 1. Si todavía no hay datos de usuario (primera carga), muestra spinner.
+ *    Una vez que `user` es conocido, los re-checks de token en background
+ *    NO muestran spinner para evitar que Framer Motion re-ejecute animaciones.
+ * 2. Sin sesión → redirige a /login guardando la ruta original en `state.from`.
+ * 3. Staff → siempre a /recepcion, sin importar hasTenant.
+ * 4. Superadmin → siempre dentro de /admin.
+ * 5. Admin sin tenant → /onboarding (solo cuando isLoading=false para evitar
+ *    falsos positivos durante refreshes de token donde tenantId es momentáneamente null).
+ * 6. Admin con tenant intentando entrar a /onboarding → /dashboard.
+ */
 const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     const { user, isAuthenticated, hasTenant, isLoading } = useAuth();
     const location = useLocation();
 
-    // CRITICAL: Only show the blocking spinner on the VERY FIRST load when we have
-    // absolutely no user data yet. If we show the spinner on every isLoading=true
-    // (including background token refreshes), AuthGuard will UNMOUNT its children,
-    // causing Framer Motion to re-run initial animations — creating the "page reload" flash.
-    // If `user` is already known (cached), skip the spinner entirely.
     if (isLoading && !user) {
         return (
             <div className="min-h-screen w-full flex items-center justify-center bg-background">
@@ -28,32 +37,26 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    // Redirigir staff SIEMPRE a /recepcion — sin importar hasTenant
     if (isAuthenticated && user?.role === 'staff') {
         if (!location.pathname.startsWith('/recepcion')) {
             return <Navigate to="/recepcion" replace />;
         }
-        // Staff ya está en /recepcion → mostrar contenido directamente
         return <>{children}</>;
     }
 
-    // Forzar a los superadmins a mantenerse en su ámbito
     if (isAuthenticated && user?.role === 'superadmin' && !location.pathname.startsWith('/admin')) {
         return <Navigate to="/admin" replace />;
     }
 
-    // Si está autenticado pero no tiene empresa configurada, forzar Onboarding (solo para admin)
-    if (isAuthenticated && !hasTenant && location.pathname !== "/onboarding" && user?.role !== 'superadmin') {
+    if (!isLoading && isAuthenticated && !hasTenant && location.pathname !== "/onboarding" && user?.role !== 'superadmin') {
         return <Navigate to="/onboarding" replace />;
     }
 
-    // Si ya tiene empresa e intenta entrar a Onboarding, redirigir al dashboard
     if (isAuthenticated && hasTenant && location.pathname === "/onboarding") {
         return <Navigate to="/dashboard" replace />;
     }
 
     return <>{children}</>;
 };
-
 
 export default AuthGuard;

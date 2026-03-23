@@ -9,6 +9,18 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 
+/**
+ * Página de configuración inicial del gimnasio — se muestra una sola vez,
+ * justo después del registro, cuando el usuario aún no tiene tenant vinculado.
+ * AuthGuard redirige a /dashboard si el usuario ya tiene tenant.
+ *
+ * Pasos internos de runSetup:
+ * 1. Crear tenant en la BD.
+ * 2. Vincular tenant al perfil del usuario (setTenantId).
+ * 3. Subir logo al bucket gym_logos (si se seleccionó uno).
+ * 4. Pre-crear fila en gym_settings con upsert para tolerancia a doble submit.
+ * 5. Insertar 3 planes de membresía predeterminados.
+ */
 const Onboarding = () => {
     const [companyName, setCompanyName] = useState("");
     const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -18,6 +30,11 @@ const Onboarding = () => {
     const navigate = useNavigate();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    /**
+     * Valida y carga el logo seleccionado por el usuario.
+     * Restricciones: solo imágenes, máximo 2MB.
+     * Genera una URL de previsualización local con FileReader.
+     */
     const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -35,13 +52,19 @@ const Onboarding = () => {
         reader.readAsDataURL(file);
     };
 
+    /** Elimina el logo seleccionado y limpia el input de archivo. */
     const removeLogo = () => {
         setLogoFile(null);
         setLogoPreview(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
-    // Lógica principal de creación del espacio de trabajo (desacoplada del evento)
+    /**
+     * Lógica principal de creación del espacio de trabajo.
+     * Desacoplada del evento de formulario para poder llamarse tanto desde
+     * handleSubmit como desde handleSkip.
+     * Guard: isSubmitting evita doble ejecución si el botón se presiona dos veces.
+     */
     const runSetup = async () => {
         if (!user || isSubmitting) return;
 
@@ -50,7 +73,7 @@ const Onboarding = () => {
 
         setIsSubmitting(true);
         try {
-            // 1. Insertar Tenant oficial en la BD
+            // 1. Crear tenant en la BD
             const { data: tenantData, error: tenantError } = await supabase
                 .from('tenants')
                 .insert({ name: finalName, slug })
@@ -59,7 +82,8 @@ const Onboarding = () => {
 
             if (tenantError) throw tenantError;
 
-            // 2. Vincular Tenant al perfil INMEDIATAMENTE
+            // 2. Vincular tenant al perfil — una vez completado, hasTenant=true
+            // y AuthGuard redirigirá a /dashboard si el usuario vuelve a /onboarding
             await setTenantId(tenantData.id);
 
             // 3. Subir logo si se proporcionó
@@ -79,11 +103,12 @@ const Onboarding = () => {
                 }
             }
 
-            // 4. Pre-crear la fila de settings
-            await supabase.from('gym_settings').insert({
+            // 4. Pre-crear fila en gym_settings
+            // Usa upsert con onConflict para tolerar llamadas duplicadas sin lanzar error
+            await supabase.from('gym_settings').upsert({
                 tenant_id: tenantData.id,
                 ...(logoUrl ? { logo_url: logoUrl } : {})
-            });
+            }, { onConflict: 'tenant_id' });
 
             // 5. Crear planes predeterminados
             await supabase.from('membership_plans').insert([
@@ -101,11 +126,13 @@ const Onboarding = () => {
         }
     };
 
+    /** Handler del formulario principal — previene el default y llama a runSetup. */
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         runSetup();
     };
 
+    /** Handler del botón "Omitir" — ejecuta el mismo setup sin nombre de empresa personalizado. */
     const handleSkip = () => {
         runSetup();
     };
@@ -142,7 +169,6 @@ const Onboarding = () => {
                             <span className="text-muted-foreground font-normal">(opcional)</span>
                         </Label>
                         <div className="flex items-center gap-4">
-                            {/* Preview box */}
                             <div
                                 onClick={() => !logoPreview && fileInputRef.current?.click()}
                                 className={`h-20 w-20 rounded-2xl border-2 border-dashed flex items-center justify-center shrink-0 transition-all overflow-hidden ${logoPreview
@@ -228,7 +254,6 @@ const Onboarding = () => {
                         </div>
                     </div>
 
-                    {/* Botón principal */}
                     <Button
                         type="submit"
                         disabled={isSubmitting}
@@ -247,7 +272,6 @@ const Onboarding = () => {
                         )}
                     </Button>
 
-                    {/* Omitir */}
                     <button
                         type="button"
                         disabled={isSubmitting}
@@ -257,7 +281,6 @@ const Onboarding = () => {
                         Omitir y configurar después →
                     </button>
 
-                    {/* Cerrar sesión */}
                     <button
                         type="button"
                         disabled={isSubmitting}

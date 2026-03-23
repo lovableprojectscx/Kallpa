@@ -43,13 +43,16 @@ const AdminLicenses = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Actualizar precio predeterminado cuando cambia la duración
+  /** Sincroniza el precio sugerido en el dialog al cambiar la duración seleccionada. */
   const handleDurationChange = (val: string) => {
     setDuration(val);
     setNewPrice(String(DEFAULT_PRICES[parseInt(val)] || ""));
   };
 
-  // 1. Fetch Licenses
+  /**
+   * Obtiene todas las licencias del sistema con su estado y el nombre del tenant que las canjeó.
+   * Normaliza los datos para mostrar duración legible, precio formateado y fechas localizadas.
+   */
   const { data: licenses = [], isLoading } = useQuery({
     queryKey: ["admin-licenses"],
     queryFn: async () => {
@@ -73,7 +76,10 @@ const AdminLicenses = () => {
     },
   });
 
-  // 2. Generar licencias
+  /**
+   * Genera uno o más códigos de licencia con el formato `XXXX-XXXX-XXXX-XXXX`.
+   * Inserta todos en lote (`licenses.insert`). Máximo 100 por llamada.
+   */
   const generateMutation = useMutation({
     mutationFn: async ({ dur, qty, price }: { dur: number; qty: number; price: number }) => {
       if (!user) throw new Error("No autenticado");
@@ -104,7 +110,7 @@ const AdminLicenses = () => {
     onError: (e: any) => toast.error("Error: " + e.message),
   });
 
-  // 3. Actualizar precio de licencia existente
+  /** Actualiza el `price_pen` de una licencia existente por su código. Solo aplica a licencias 'available'. */
   const updatePriceMutation = useMutation({
     mutationFn: async ({ code, price }: { code: string; price: number }) => {
       const { error } = await supabase
@@ -121,6 +127,7 @@ const AdminLicenses = () => {
     onError: (e: any) => toast.error("Error: " + e.message),
   });
 
+  /** Valida cantidad (1-100) y precio antes de disparar `generateMutation`. */
   const handleGenerate = () => {
     const qty = parseInt(amount);
     const price = parseFloat(newPrice);
@@ -129,11 +136,13 @@ const AdminLicenses = () => {
     generateMutation.mutate({ dur: parseInt(duration), qty, price });
   };
 
+  /** Activa el modo de edición inline para el precio de una licencia específica. */
   const startEdit = (code: string, currentPrice: number | null) => {
     setEditingCode(code);
     setEditingPrice(String(currentPrice ?? ""));
   };
 
+  /** Confirma la edición inline validando que el precio sea un número positivo. */
   const saveEdit = (code: string) => {
     const price = parseFloat(editingPrice);
     if (isNaN(price) || price <= 0) { toast.error("Precio inválido"); return; }

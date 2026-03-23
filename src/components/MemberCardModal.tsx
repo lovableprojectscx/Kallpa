@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, Share2, CheckCircle2, XCircle, Loader2, Dumbbell, Zap, Calendar, Sparkles, User } from "lucide-react";
+import { Download, Share2, CheckCircle2, XCircle, Loader2, Dumbbell, Sparkles, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -29,6 +29,16 @@ const statusConfig: Record<string, { label: string; icon: any; color: string }> 
     inactive: { label: "INACTIVO", icon: XCircle, color: "#94a3b8" },
 };
 
+/**
+ * Modal que muestra el carnet digital de un miembro con su código QR.
+ * El QR apunta al `member.id` y se genera via quickchart.io.
+ *
+ * Acciones disponibles:
+ * - `downloadCard`: carga html2canvas dinámicamente desde CDN y captura el carnet como PNG.
+ *   Si falla, abre el QR directamente en una nueva pestaña como fallback.
+ * - `shareWhatsApp`: envía al miembro su link de portal personal via WhatsApp, incluyendo
+ *   su código de acceso si está disponible.
+ */
 export function MemberCardModal({ member, gymName = "Kallpa", onClose }: MemberCardModalProps) {
     const cardRef = useRef<HTMLDivElement>(null);
     const [downloading, setDownloading] = useState(false);
@@ -41,6 +51,10 @@ export function MemberCardModal({ member, gymName = "Kallpa", onClose }: MemberC
     const memberIdShort = member.id.toUpperCase().slice(-8);
     const planColor = member.planColor || "#7C3AED";
 
+    /**
+     * Descarga el carnet como imagen PNG usando html2canvas (cargado dinámicamente desde CDN).
+     * Escala 3x para alta resolución. Si html2canvas falla, abre el QR como fallback.
+     */
     const downloadCard = async () => {
         setDownloading(true);
         try {
@@ -73,6 +87,7 @@ export function MemberCardModal({ member, gymName = "Kallpa", onClose }: MemberC
         }
     };
 
+    /** Envía al miembro por WhatsApp el link de su portal con mensaje de bienvenida. */
     const shareWhatsApp = () => {
         const portalUrl = `${window.location.origin}/portal/${member.id}`;
         const nombre = member.full_name.split(" ")[0];
@@ -85,6 +100,7 @@ export function MemberCardModal({ member, gymName = "Kallpa", onClose }: MemberC
     return (
         <Dialog open={!!member} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-md p-0 border-none bg-transparent shadow-none overflow-y-auto max-h-[98vh] custom-scrollbar">
+                <DialogTitle className="sr-only">Carnet Digital</DialogTitle>
                 <AnimatePresence>
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: 30 }}
